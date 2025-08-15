@@ -276,38 +276,13 @@
 
   <script>
   // -------- Settings (your SharePoint assets) ----------
-  const SPIMG = {
-    site:   'https://vkolugurihesaa.sharepoint.com',
-    siteRel:'/sites/HESAAWebRequestsPoC',
-    lib:    'MediaAssets',
-    files: {
-      hero:  'Hero.png',
-      slide1:'Slide1.png',
-      slide2:'Slide2.png',
-      slide3:'Slide3.png'
-    }
-  };
-
-  const directUrl = (name) =>
-    `${SPIMG.site}${SPIMG.siteRel}/${SPIMG.lib}/${encodeURIComponent(name)}`;
-
-  // Use the REST $value endpoint as a fallback (forces the raw file stream)
-  const valueUrl = (name) =>
-    `${SPIMG.site}/_api/web/GetFileByServerRelativeUrl('${SPIMG.siteRel}/${SPIMG.lib}/${name.replace(/'/g,"%27")}')/$value`;
-
-  function setSpImg(id, fileName){
-    const el = document.getElementById(id);
-    const first = directUrl(fileName);
-    const fallback = valueUrl(fileName);
-    el.src = first;
-    el.onerror = () => { el.onerror = null; el.src = fallback; };
+function setApiImg(id, file) {
+    document.getElementById(id).src = `/api/media/${encodeURIComponent(file)}`;
   }
-
-  // Set hero + slides (PNG, exact names)
-  setSpImg('heroImg', SPIMG.files.hero);
-  setSpImg('slide1',  SPIMG.files.slide1);
-  setSpImg('slide2',  SPIMG.files.slide2);
-  setSpImg('slide3',  SPIMG.files.slide3);
+  setApiImg('heroImg', 'Hero.png');
+  setApiImg('slide1',  'Slide1.png');
+  setApiImg('slide2',  'Slide2.png');
+  setApiImg('slide3',  'Slide3.png');
 
   // -------- Year ----------
   document.getElementById('yr').textContent = new Date().getFullYear();
