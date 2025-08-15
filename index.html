@@ -6,44 +6,21 @@
   <title>HESAA SWA + SharePoint PoC</title>
 
   <style>
-    /* Base grayscale + inking */
-:root{
-  --ink-900:#0b1220; --ink-800:#162033; --ink-600:#334155;
-  --surface-50:#f8fafc; --surface-100:#f1f5f9; --surface-200:#e2e8f0; --surface-300:#cbd5e1;
-
-  /* Default theme (blue) */
-  --brand-600:#2563eb; --brand-500:#3b82f6; --accent-400:#60a5fa;
-}
-
-/* Teal theme */
-body.theme-teal{
-  --brand-600:#0f766e; --brand-500:#14b8a6; --accent-400:#2dd4bf;
-}
-
-/* Purple theme */
-body.theme-purple{
-  --brand-600:#7c3aed; --brand-500:#8b5cf6; --accent-400:#a78bfa;
-}
-
-/* Rose theme */
-body.theme-rose{
-  --brand-600:#e11d48; --brand-500:#f43f5e; --accent-400:#fb7185;
-}
-
     :root{
-      --bg:#ffffff; --fg:#1b1b1b; --muted:#5c5c5c;
-      --brand:#2563eb; --brand-600:#1e4fd8;
-      --surface:#f5f7fb; --border:#e6e8ee;
-      --success:#0f7b0f; --error:#b91c1c; --focus:#0a84ff;
-      --radius:14px; --shadow:0 8px 30px rgba(0,0,0,.08);
-      --tile:#f7f9ff;
+      --ink-900:#0b1220; --ink-800:#162033; --ink-600:#334155;
+      --surface-50:#f8fafc; --surface-100:#f1f5f9; --surface-200:#e2e8f0; --surface-300:#cbd5e1;
+      --brand-600:#2563eb; --brand-500:#3b82f6; --accent-400:#60a5fa;
+      --bg:#ffffff; --fg:#1b1b1b; --muted:#5c5c5c; --surface:#f5f7fb; --border:#e6e8ee;
+      --success:#0f7b0f; --error:#b91c1c; --focus:#0a84ff; --radius:14px; --shadow:0 8px 30px rgba(0,0,0,.08);
     }
     @media (prefers-color-scheme: dark){
-      :root{ --bg:#0f1115; --fg:#e7e7ea; --muted:#a7a7b2; --surface:#151923; --border:#24283a; --brand:#4c8dff; --brand-600:#3c74e6; --tile:#101626; }
+      :root{ --bg:#0f1115; --fg:#e7e7ea; --muted:#a7a7b2; --surface:#151923; --border:#24283a; --brand-600:#4c8dff; }
     }
+
     *{box-sizing:border-box}
     body{margin:0;font-family:Segoe UI,system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--fg);line-height:1.5}
-    a{color:var(--brand)} a:hover{color:var(--brand-600)}
+    a{color:var(--brand-600);text-decoration:none}
+    a:hover{opacity:.9}
     img{max-width:100%;height:auto}
     .container{max-width:1100px;margin-inline:auto;padding:1rem}
 
@@ -52,18 +29,18 @@ body.theme-rose{
     .skip-link:focus{left:.5rem;top:.5rem}
     :focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}
 
-    /* Header / Nav */
+    /* Header */
     header{background:var(--bg);position:sticky;top:0;z-index:50;border-bottom:1px solid var(--border)}
     .header-inner{display:flex;gap:1rem;align-items:center;justify-content:space-between;padding:.8rem 1rem}
     .brand{display:flex;gap:.6rem;align-items:center;font-weight:600}
     nav ul{display:flex;gap:1rem;list-style:none;margin:0;padding:0}
-    nav a{display:inline-block;padding:.5rem .75rem;border-radius:10px;text-decoration:none}
+    nav a{display:inline-block;padding:.5rem .75rem;border-radius:10px}
     nav a[aria-current="page"], nav a:hover{background:var(--surface)}
     .top-search{display:flex;align-items:center;gap:.5rem}
     .top-search input{width:230px;max-width:40vw;padding:.5rem .7rem;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--fg)}
 
     /* Hero */
-    .hero{position:relative;border-radius:var(--radius);overflow:hidden;background:#dfe9ff}
+    .hero{position:relative;border-radius:var(--radius);overflow:hidden;background:#eaf1ff}
     .hero img{width:100%;display:block;object-fit:cover;max-height:360px}
     .hero .cta{position:absolute;inset:auto 0 0 0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.6));color:#fff;padding:2rem}
     .hero h1{margin:.25rem 0 0;font-size:clamp(1.6rem,3vw,2.2rem)}
@@ -71,132 +48,61 @@ body.theme-rose{
     .badge{display:inline-block;padding:.2rem .5rem;border-radius:999px;border:1px solid var(--border);background:var(--bg);font-size:.8rem;color:var(--muted)}
 
     /* Carousel */
-.carousel { position: relative; overflow: hidden; }
-.carousel-track {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 100%;
-  scroll-snap-type: x mandatory;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.carousel-track::-webkit-scrollbar { display: none; }
-.slide { position: relative; scroll-snap-align: start; }
-.slide img { width: 100%; height: auto; display: block; }
+    .carousel{position:relative;overflow:hidden;margin-top:1rem}
+    .carousel-track{
+      display:grid;grid-auto-flow:column;grid-auto-columns:100%;
+      overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none
+    }
+    .carousel-track::-webkit-scrollbar{display:none}
+    .slide{position:relative;scroll-snap-align:start;display:grid;place-items:center;background:#fff}
+    .slide img{width:100%;max-height:380px;object-fit:contain;display:block}
 
-/* Centered overlay arrows */
-.carousel-arrow {
-  position: absolute; top: 50%; transform: translateY(-50%);
-  width: 48px; height: 48px; border-radius: 9999px;
-  border: none; background: color-mix(in srgb, var(--brand-600) 90%, transparent);
-  color: #fff; font-size: 22px; display: grid; place-items: center;
-  cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.25);
-}
-.carousel-arrow.left  { left: 12px; }
-.carousel-arrow.right { right: 12px; }
-.carousel-arrow:focus-visible { outline: 3px solid var(--accent-400); }
+    .hero-caption{
+      position:absolute;left:0;right:0;bottom:0;color:#fff;
+      padding:clamp(12px,3vw,24px) clamp(16px,4vw,32px);
+    }
+    .hero-caption::before{
+      content:"";position:absolute;inset:-20px 0 0 0;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.55) 70%,rgba(0,0,0,.7));backdrop-filter:blur(2px);z-index:-1
+    }
+    .carousel-arrow{
+      position:absolute;top:50%;transform:translateY(-50%);
+      width:46px;height:46px;border-radius:999px;border:none;
+      background:color-mix(in srgb, var(--brand-600) 92%, transparent);color:#fff;
+      display:grid;place-items:center;font-size:22px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.25)
+    }
+    .carousel-arrow.left{left:12px}
+    .carousel-arrow.right{right:12px}
+    .carousel-arrow:focus-visible{outline:3px solid var(--accent-400)}
 
-/* Improved hero text legibility */
-.hero-caption {
-  position: absolute; left: 0; right: 0; bottom: 0;
-  padding: clamp(12px, 3vw, 24px) clamp(16px, 4vw, 32px);
-  color: #fff;
-}
-.hero-caption::before {
-  content: "";
-  position: absolute; inset: -20px 0 0 0; /* extend slightly above the text */
-  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 70%, rgba(0,0,0,.70) 100%);
-  backdrop-filter: blur(2px);
-  z-index: -1;
-}
-.hero-caption h2 { margin: 0 0 6px; font-size: clamp(22px, 3.2vw, 40px); }
-.hero-caption p  { margin: 0; opacity: .95; }
+    /* Section titles */
+    .section-title{text-align:center;margin:2.2rem 0 1rem;font-weight:800}
 
-/* Center section headers globally */
-.section-title { text-align: center; margin: 2.5rem 0 1rem; font-weight: 700; }
+    /* Quick links & Spotlight shared */
+    .ql{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+    .ql-card{
+      display:grid;place-items:center;gap:10px;padding:18px 14px;border-radius:14px;
+      background:var(--surface-50);border:1px solid var(--surface-200);
+      transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease
+    }
+    .ql-card:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(0,0,0,.08);border-color:var(--surface-300)}
+    .ql-card:focus-visible{outline:3px solid var(--accent-400);outline-offset:2px}
 
+    .ql-icon{
+      width:60px;height:60px;border-radius:14px;display:grid;place-items:center;
+      font-weight:900;font-size:20px;color:#fff;user-select:none
+    }
+    .ql-label{font-weight:600;color:var(--ink-800);text-align:center;line-height:1.25;max-width:18ch}
 
-    /* Grid / Cards */
-    .grid{display:grid;gap:1rem}
-    @media(min-width:900px){.grid.cols-3{grid-template-columns:repeat(3,1fr)}}
-    .section-header{margin:1rem 0 .25rem 0}
-    .section-sub{color:var(--muted);margin:0 0 .75rem 0}
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;box-shadow:var(--shadow)}
+    /* Brand tints */
+    .ql-az{background:#0ea5e9}  /* Azure */
+    .ql-gh{background:#24292e}  /* GitHub */
+    .ql-sp{background:#1372d8}  /* SharePoint */
 
-    /* Quick links */
-/* Layout */
-.ql { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-.ql-card {
-  display: grid; place-items: center; gap: 10px;
-  padding: 18px 14px; border-radius: 14px;
-  background: var(--surface-50); text-decoration: none;
-  border: 1px solid var(--surface-200);
-  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-}
-.ql-card:focus-visible { outline: 3px solid var(--accent-400); outline-offset: 2px; }
-.ql-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,.08); border-color: var(--surface-300); }
-.ql-gh { background:#24292e; }
-
-/* Big centered icon */
-.ql-icon {
-  width: 56px; height: 56px; border-radius: 12px;
-  display: grid; place-items: center;
-  font-weight: 800; font-size: 18px; letter-spacing:.5px;
-  color: #fff; user-select: none; overflow: hidden; flex-shrink: 0;
-}
-
-/* Label never overlaps the icon */
-.ql-label {
-  text-align: center; font-weight: 600; color: var(--ink-800);
-  line-height: 1.25; max-width: 18ch;
-}
-
-/* Brand tints */
-.ql-sp { background: #1372d8; }       /* SharePoint */
-.ql-ms { background: #2563eb; }       /* M365 */
-.ql-az { background: #0ea5e9; }       /* Azure */
-
-
-    /* Spotlight */
-    .spot-card h3{display:flex;align-items:center;gap:.5rem}
-    .spot-icon{width:20px;height:20px}
-    .spotlight .ql-icon { width: 64px; height: 64px; font-size: 20px; }
-  .spotlight .ql-card { padding: 22px 16px; }
-    /* Section headers already centered via .section-title */
-
-/* Spotlight grid reuses .ql but tweaks sizing/spacing */
-.spotlight .ql-card {
-  grid-template-rows: auto auto auto;
-  padding: 22px 18px;
-  min-height: 160px;
-}
-
-/* Bigger centered icon for Spotlight */
-.spotlight .ql-icon {
-  width: 64px;
-  height: 64px;
-  font-size: 20px;
-  border-radius: 14px;
-}
-
-.ql-title {
-  font-weight: 700;
-  font-size: 1.05rem;
-  color: var(--ink-800);
-  text-align: center;
-}
-
-.ql-desc {
-  margin: 0;
-  color: var(--ink-600);
-  text-align: center;
-  line-height: 1.3;
-}
-
-/* If you use image icons */
-.ql-img { object-fit: contain; background: transparent; }
-
-
+    /* Spotlight tweaks (bigger) */
+    .spotlight .ql-icon{width:68px;height:68px;font-size:22px}
+    .spotlight .ql-card{min-height:160px;padding:22px 18px}
+    .ql-title{font-weight:700;font-size:1.05rem;color:var(--ink-800);text-align:center}
+    .ql-desc{margin:0;color:var(--ink-600);text-align:center;line-height:1.3}
 
     /* Table */
     table{width:100%;border-collapse:separate;border-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
@@ -210,27 +116,24 @@ body.theme-rose{
     label{font-weight:600}
     input[type="text"], textarea, select{width:100%;padding:.6rem .7rem;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--fg)}
     .form-row{display:flex;gap:.75rem;flex-wrap:wrap}
-    .form-actions{display:flex;gap:.75rem;align-items:center;margin-top:.25rem}
-    .notice{padding:.6rem .8rem;border-radius:10px;border:1px solid var(--border);margin-top:.6rem}
+    .form-actions{display:flex;gap:.75rem;align-items:center;margin-top:.4rem}
+    .notice{padding:.6rem .8rem;border-radius:10px;border:1px solid var(--border);margin-top:.8rem}
     .notice.success{border-color:#b5e0b5;background:#ecf9ec;color:var(--success)}
     .notice.error{border-color:#f4b4b4;background:#fff1f1;color:var(--error)}
 
     footer{margin-top:2rem;padding:2rem 0;border-top:1px solid var(--border);color:var(--muted)}
   </style>
 
-  <!-- DOMPurify with integrity; we also guard with a fallback in JS -->
-  <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"
-          integrity="sha384-OTe3T2M0RkKkJqTghoJp0P4r0nI4h8q1E3TnWLEK7bFi6cM9a8V3LYnQJqgG1jRH"
-          crossorigin="anonymous"></script>
+  <!-- DOMPurify (for safe rich text) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
 </head>
-
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
 
   <header role="banner">
     <div class="container header-inner">
       <div class="brand" aria-label="HESAA Home">
-        <img src="https://static2.sharepointonline.com/files/fabric/assets/brand-icons/product/svg/office_48x1.svg" width="28" height="28" alt="" />
+        <img src="https://static2.sharepointonline.com/files/fabric/assets/brand-icons/product/svg/office_48x1.svg" width="28" height="28" alt="">
         <span>HESAA Web Requests</span>
       </div>
       <nav aria-label="Primary">
@@ -243,7 +146,7 @@ body.theme-rose{
       </nav>
       <div class="top-search">
         <label class="sr-only" for="topSearch">Search requests</label>
-        <input id="topSearch" type="text" placeholder="Search requests…" />
+        <input id="topSearch" type="text" placeholder="Search requests…">
       </div>
     </div>
   </header>
@@ -251,7 +154,7 @@ body.theme-rose{
   <div class="container">
     <!-- Hero -->
     <section class="hero" aria-label="Hero">
-      <img id="heroImg" src="" alt="Modern abstract background" />
+      <img id="heroHeaderImg" alt="Modern abstract background">
       <div class="cta">
         <p class="badge">PoC</p>
         <h1>SharePoint‑backed Requests</h1>
@@ -260,90 +163,65 @@ body.theme-rose{
     </section>
 
     <!-- Carousel -->
-<section class="carousel" aria-label="Feature slides">
-  <button class="carousel-arrow left"  aria-label="Previous slide">❮</button>
-  <div id="heroCarousel" class="carousel-track" role="group" aria-roledescription="carousel">
-    <figure class="slide">
-      <img id="heroImg" alt="SharePoint-backed Requests" />
-      <figcaption class="hero-caption">
-        <h2>SharePoint‑backed Requests</h2>
-        <p>Create and track website requests backed by Microsoft 365.</p>
-      </figcaption>
-    </figure>
-    <figure class="slide"><img id="slide1" alt="Azure SWA" /></figure>
-    <figure class="slide"><img id="slide2" alt="Git" /></figure>
-    <figure class="slide"><img id="slide3" alt="SharePoint" /></figure>
-  </div>
-  <button class="carousel-arrow right" aria-label="Next slide">❯</button>
-</section>
+    <section class="carousel" aria-label="Feature slides">
+      <button class="carousel-arrow left"  aria-label="Previous slide">❮</button>
+      <div id="heroCarousel" class="carousel-track" role="group" aria-roledescription="carousel" tabindex="0">
+        <figure class="slide">
+          <img id="slideHero" alt="SharePoint-backed Requests">
+          <figcaption class="hero-caption">
+            <h2>SharePoint‑backed Requests</h2>
+            <p>Create and track website requests backed by Microsoft 365.</p>
+          </figcaption>
+        </figure>
+        <figure class="slide"><img id="slide1" alt="Azure SWA"></figure>
+        <figure class="slide"><img id="slide2" alt="Git"></figure>
+        <figure class="slide"><img id="slide3" alt="SharePoint"></figure>
+      </div>
+      <button class="carousel-arrow right" aria-label="Next slide">❯</button>
+    </section>
 
-
-    <!-- Spotlight -->
-   <!-- Spotlight -->
-<section class="spotlight-section" aria-labelledby="spotlight-heading">
-  <h2 class="section-title" id="spotlight-heading">Spotlight</h2>
-
-  <div class="ql spotlight">
-    <!-- Card 1 -->
-    <a class="ql-card" href="https://portal.azure.com/#view/HubsExtension/BrowseResource/resourceType/Microsoft.Web%2FstaticSites"
-       target="_blank" rel="noopener"
-       aria-describedby="sp-az-desc sp-az-title">
-      <span class="ql-icon ql-az" aria-hidden="true">AZ</span>
-      <span class="ql-title" id="sp-az-title">Azure SWA</span>
-      <p class="ql-desc" id="sp-az-desc">Latest build & deployment</p>
-    </a>
-
-    <!-- Card 2 -->
-    <a class="ql-card" href="https://github.com/your-org/hesaa-swa-poc/actions"
-       target="_blank" rel="noopener"
-       aria-describedby="sp-gh-desc sp-gh-title">
-      <span class="ql-icon ql-gh" aria-hidden="true">GH</span>
-      <span class="ql-title" id="sp-gh-title">GitHub Actions</span>
-      <p class="ql-desc" id="sp-gh-desc">CI/CD workflow runs</p>
-    </a>
-
-    <!-- Card 3 -->
-    <a class="ql-card" href="https://vkolugurihesaa.sharepoint.com/sites/HESAAWebRequestsPoC/Lists/Web%20Requests"
-       target="_blank" rel="noopener"
-       aria-describedby="sp-sp-desc sp-sp-title">
-      <span class="ql-icon ql-sp" aria-hidden="true">SP</span>
-      <span class="ql-title" id="sp-sp-title">Requests List</span>
-      <p class="ql-desc" id="sp-sp-desc">Create & manage items</p>
-    </a>
-
-    <!-- Card 4 -->
-    <a class="ql-card" href="https://admin.microsoft.com"
-       target="_blank" rel="noopener"
-       aria-describedby="sp-ms-desc sp-ms-title">
-      <span class="ql-icon ql-ms" aria-hidden="true">MS</span>
-      <span class="ql-title" id="sp-ms-title">M365 Admin</span>
-      <p class="ql-desc" id="sp-ms-desc">Tenant settings & health</p>
-    </a>
-  </div>
-</section>
-
+    <!-- Spotlight (3 cards) -->
+    <section class="spotlight-section" aria-labelledby="spotlight-heading">
+      <h2 class="section-title" id="spotlight-heading">Spotlight</h2>
+      <div class="ql spotlight">
+        <a class="ql-card" href="https://portal.azure.com/#view/HubsExtension/BrowseResource/resourceType/Microsoft.Web%2FstaticSites" target="_blank" rel="noopener">
+          <span class="ql-icon ql-az" aria-hidden="true">AZ</span>
+          <span class="ql-title">Azure SWA</span>
+          <p class="ql-desc">Latest build &amp; deployment</p>
+        </a>
+        <a class="ql-card" href="https://github.com/your-org/hesaa-swa-poc/actions" target="_blank" rel="noopener">
+          <span class="ql-icon ql-gh" aria-hidden="true">GH</span>
+          <span class="ql-title">GitHub Actions</span>
+          <p class="ql-desc">CI/CD workflow runs</p>
+        </a>
+        <a class="ql-card" href="https://vkolugurihesaa.sharepoint.com/sites/HESAAWebRequestsPoC/Lists/Web%20Requests" target="_blank" rel="noopener">
+          <span class="ql-icon ql-sp" aria-hidden="true">SP</span>
+          <span class="ql-title">Requests List</span>
+          <p class="ql-desc">Create &amp; manage items</p>
+        </a>
+      </div>
+    </section>
 
     <!-- Quick Links -->
-<h2 class="section-title">Quick links</h2>
-<div class="ql">
-  <a class="ql-card" href="https://vkolugurihesaa.sharepoint.com/sites/HESAAWebRequestsPoC/Lists/Web%20Requests" target="_blank" rel="noopener">
-    <span class="ql-icon ql-sp" aria-hidden="true">SP</span>
-    <span class="ql-label">Open SharePoint List</span>
-  </a>
-  <a class="ql-card" href="https://admin.microsoft.com" target="_blank" rel="noopener">
-    <span class="ql-icon ql-ms" aria-hidden="true">MS</span>
-    <span class="ql-label">Microsoft 365 Admin</span>
-  </a>
-  <a class="ql-card" href="https://portal.azure.com" target="_blank" rel="noopener">
-    <span class="ql-icon ql-az" aria-hidden="true">AZ</span>
-    <span class="ql-label">Azure Portal</span>
-  </a>
-</div>
-
+    <h2 class="section-title" id="quicklinks">Quick links</h2>
+    <div class="ql">
+      <a class="ql-card" href="https://vkolugurihesaa.sharepoint.com/sites/HESAAWebRequestsPoC/Lists/Web%20Requests" target="_blank" rel="noopener">
+        <span class="ql-icon ql-sp" aria-hidden="true">SP</span>
+        <span class="ql-label">Open SharePoint List</span>
+      </a>
+      <a class="ql-card" href="https://admin.microsoft.com" target="_blank" rel="noopener">
+        <span class="ql-icon ql-az" aria-hidden="true">M</span>
+        <span class="ql-label">Microsoft 365 Admin</span>
+      </a>
+      <a class="ql-card" href="https://portal.azure.com" target="_blank" rel="noopener">
+        <span class="ql-icon ql-az" aria-hidden="true">AZ</span>
+        <span class="ql-label">Azure Portal</span>
+      </a>
+    </div>
 
     <!-- Requests -->
     <main id="main" tabindex="-1">
-      <section id="requests" aria-labelledby="requests-title" style="margin-top:1.5rem">
+      <section id="requests" aria-labelledby="requests-title" style="margin-top:1.6rem">
         <div style="display:flex;justify-content:space-between;align-items:end;gap:1rem">
           <div>
             <h2 id="requests-title" class="section-title">Requests</h2>
@@ -351,7 +229,7 @@ body.theme-rose{
           </div>
           <div>
             <label for="search" class="sr-only">Search requests</label>
-            <input id="search" type="text" placeholder="Search title or description…" aria-describedby="searchHelp" />
+            <input id="search" type="text" placeholder="Search title or description…" aria-describedby="searchHelp">
             <div id="searchHelp" class="sr-only">Type to filter the table rows by title or description.</div>
           </div>
         </div>
@@ -380,13 +258,13 @@ body.theme-rose{
       </section>
 
       <!-- Create Form -->
-      <section id="create" aria-labelledby="create-title" style="margin-top:1.5rem">
+      <section id="create" aria-labelledby="create-title" style="margin-top:1.6rem">
         <h2 id="create-title" class="section-title">Create a Request</h2>
         <div class="card">
           <form id="reqForm" novalidate>
             <div>
               <label for="fTitle">Title</label>
-              <input id="fTitle" name="Title" type="text" required aria-required="true" />
+              <input id="fTitle" name="Title" type="text" required aria-required="true">
             </div>
             <div>
               <label for="fDesc">Description (Enhanced Rich Text supported)</label>
@@ -406,7 +284,7 @@ body.theme-rose{
                 </select>
               </div>
               <div style="display:flex;align-items:center;gap:.5rem">
-                <input id="fEnd" name="RequestEndDate" type="checkbox" />
+                <input id="fEnd" name="RequestEndDate" type="checkbox">
                 <label for="fEnd">End Date?</label>
               </div>
             </div>
@@ -428,145 +306,134 @@ body.theme-rose{
   </div>
 
   <script>
-     (function(){
-    const track = document.getElementById('heroCarousel');
-    const slides = () => track.querySelectorAll('.slide');
-    const slideW = () => track.clientWidth;
-
-    function go(dir){
-      track.scrollBy({ left: (dir==='next' ? slideW() : -slideW()), behavior: 'smooth' });
+    // ---- Image helpers (served by your SWA API /api/media/:file) ----
+    function setApiImg(id, file) {
+      const el = document.getElementById(id);
+      if (el) el.src = `/api/media/${encodeURIComponent(file)}`;
     }
-    document.querySelector('.carousel-arrow.left').onclick  = () => go('prev');
-    document.querySelector('.carousel-arrow.right').onclick = () => go('next');
+    setApiImg('heroHeaderImg', 'Hero.png');
+    setApiImg('slideHero',      'Hero.png');
+    setApiImg('slide1',         'Slide1.png');
+    setApiImg('slide2',         'Slide2.png');
+    setApiImg('slide3',         'Slide3.png');
 
-    // keyboard
-    track.addEventListener('keydown', e => {
-      if (e.key === 'ArrowRight') go('next');
-      if (e.key === 'ArrowLeft')  go('prev');
-    });
-    track.setAttribute('tabindex','0');
-  })();
-    
-  // -------- Settings (your SharePoint assets) ----------
-function setApiImg(id, file) {
-    document.getElementById(id).src = `/api/media/${encodeURIComponent(file)}`;
-  }
-  setApiImg('heroImg', 'Hero.png');
-  setApiImg('slide1',  'Slide1.png');
-  setApiImg('slide2',  'Slide2.png');
-  setApiImg('slide3',  'Slide3.png');
+    // ---- Carousel (single track) ----
+    (function(){
+      const track = document.getElementById('heroCarousel');
+      const go = dir => track.scrollBy({ left: (dir==='next'? track.clientWidth : -track.clientWidth), behavior: 'smooth' });
+      document.querySelector('.carousel-arrow.left').addEventListener('click',  () => go('prev'));
+      document.querySelector('.carousel-arrow.right').addEventListener('click', () => go('next'));
+      track.addEventListener('keydown', e => { if(e.key==='ArrowRight') go('next'); if(e.key==='ArrowLeft') go('prev') });
+    })();
 
-  // -------- Year ----------
-  document.getElementById('yr').textContent = new Date().getFullYear();
+    // ---- Year ----
+    document.getElementById('yr').textContent = new Date().getFullYear();
 
-  // -------- Carousel ----------
-  const track = document.getElementById('carouselTrack');
-  document.getElementById('prevBtn').addEventListener('click', ()=> track.scrollBy({left:-track.clientWidth, behavior: 'smooth'}));
-  document.getElementById('nextBtn').addEventListener('click', ()=> track.scrollBy({left: track.clientWidth, behavior: 'smooth'}));
+    // ---- Requests table ----
+    const rowsEl   = document.getElementById('rows');
+    const countEl  = document.getElementById('resultCount');
+    const searchEl = document.getElementById('search');
+    const topSearch= document.getElementById('topSearch');
+    let DATA = [];
 
-  // -------- Helpers ----------
-  const fmt = (d)=> d ? new Date(d).toLocaleDateString() : '';
-  const rowsEl = document.getElementById('rows');
-  const countEl = document.getElementById('resultCount');
-  const searchEl = document.getElementById('search');
-  const topSearch = document.getElementById('topSearch');
-  let DATA = [];
+    const purify = window.DOMPurify
+      ? (html)=> window.DOMPurify.sanitize(html||'', {ALLOWED_TAGS:['b','i','em','strong','u','span','div','p','ul','ol','li','br','a'], ALLOWED_ATTR:['href','style','target']})
+      : (html)=> String(html||'').replace(/<[^>]+>/g,'');
 
-  // DOMPurify fallback (prevents “DOMPurify is not defined”)
-  const purify = window.DOMPurify
-    ? (html)=> window.DOMPurify.sanitize(html || '', {ALLOWED_TAGS:['b','i','em','strong','u','span','div','p','ul','ol','li','br','a'], ALLOWED_ATTR:['href','style','target']})
-    : (html)=> String(html||'').replace(/<[^>]+>/g,''); // plain text fallback
+    const fmt = d => d ? new Date(d).toLocaleDateString() : '';
 
-  function renderRows(filter=''){
-    const f = filter.trim().toLowerCase();
-    const matches = (t)=> (t||'').toLowerCase().includes(f);
-
-    const visible = DATA.filter(x =>
-      !f || matches(x.Title) || matches((x.RequestDescription||'').replace(/<[^>]+>/g,''))
-    );
-
-    countEl.textContent = visible.length;
-
-    rowsEl.innerHTML = visible.map(x => `
-      <tr>
-        <td>${x.Title ?? ''}</td>
-        <td>${x.RequestType ?? ''}</td>
-        <td>${x.Priority ?? ''}</td>
-        <td>${fmt(x.RequestDate)}</td>
-        <td>${x.RequestEndDate ? 'Yes':'No'}</td>
-        <td>${fmt(x.Created)}</td>
-        <td>${fmt(x.Modified)}</td>
-        <td>
-          <details>
-            <summary>View</summary>
-            <div>${purify(x.RequestDescription)}</div>
-          </details>
-        </td>
-      </tr>
-    `).join('') || `<tr><td colspan="8" class="kpi">No results</td></tr>`;
-  }
-
-  async function loadData(){
-    try{
-      const res = await fetch('/api/requests');
-      const json = await res.json();
-      if(json.ok){
-        DATA = (json.items||[]).map(i=>i);
-        renderRows(searchEl.value || topSearch.value || '');
-      }else{
-        rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Error: ${json.error||'Unknown'}</td></tr>`;
-      }
-    }catch(err){
-      rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Network error: ${String(err)}</td></tr>`;
-    }
-  }
-
-  // Sync both search boxes
-  const syncSearch = (val)=>{ searchEl.value = val; topSearch.value = val; renderRows(val); };
-  searchEl.addEventListener('input', e=> syncSearch(e.target.value));
-  topSearch.addEventListener('input', e=> syncSearch(e.target.value));
-
-  loadData();
-
-  // -------- Create form ----------
-  const form = document.getElementById('reqForm');
-  const msg = document.getElementById('formMsg');
-  const alertBox = document.getElementById('alert');
-
-  function showNotice(text, type){
-    alertBox.textContent = text;
-    alertBox.className = `notice ${type}`;
-    // auto-dismiss after 5s
-    setTimeout(()=>{ alertBox.className = 'notice sr-only'; alertBox.textContent=''; }, 5000);
-  }
-
-  form.addEventListener('submit', async (e)=>{
-    e.preventDefault();
-    msg.textContent = 'Submitting…';
-    alertBox.className = 'notice sr-only';
-    try{
-      const formData = new FormData(form);
-      const data = Object.fromEntries(formData.entries());
-      data.RequestEndDate = !!formData.get('RequestEndDate');
-
-      const res = await fetch('/api/requests', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)
+    function renderRows(filter=''){
+      const q = (filter||'').trim().toLowerCase();
+      const visible = DATA.filter(x=>{
+        const inTitle = (x.Title||'').toLowerCase().includes(q);
+        const inDesc  = (x.RequestDescription||'').replace(/<[^>]+>/g,'').toLowerCase().includes(q);
+        return !q || inTitle || inDesc;
       });
-      const json = await res.json();
-      if(json.ok){
-        msg.textContent = 'Created!';
-        showNotice('Request successfully created.', 'success');
-        form.reset();
-        loadData();
-      }else{
-        msg.textContent = '';
-        showNotice('Failed to create the request: ' + (json.error || 'Unknown error'), 'error');
-      }
-    }catch(err){
-      msg.textContent = '';
-      showNotice('Network error: ' + String(err), 'error');
+
+      countEl.textContent = visible.length;
+
+      rowsEl.innerHTML = visible.map(x=>`
+        <tr>
+          <td>${x.Title ?? ''}</td>
+          <td>${x.RequestType ?? ''}</td>
+          <td>${x.Priority ?? ''}</td>
+          <td>${fmt(x.RequestDate)}</td>
+          <td>${x.RequestEndDate ? 'Yes' : 'No'}</td>
+          <td>${fmt(x.Created)}</td>
+          <td>${fmt(x.Modified)}</td>
+          <td>
+            <details>
+              <summary>View</summary>
+              <div>${purify(x.RequestDescription)}</div>
+            </details>
+          </td>
+        </tr>
+      `).join('') || `<tr><td colspan="8" class="kpi">No results</td></tr>`;
     }
-  });
+
+    async function loadData(){
+      try{
+        const res  = await fetch('/api/requests', { cache: 'no-store' });
+        if(!res.ok){
+          rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Error: /api/requests returned ${res.status}</td></tr>`;
+          return;
+        }
+        const json = await res.json();
+        if(json.ok){
+          DATA = json.items || [];
+          renderRows(searchEl.value || topSearch.value || '');
+        }else{
+          rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Error: ${json.error || 'Unknown'}</td></tr>`;
+        }
+      }catch(err){
+        rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Network error: ${String(err)}</td></tr>`;
+      }
+    }
+
+    const syncSearch = v => { searchEl.value = v; topSearch.value = v; renderRows(v); };
+    searchEl.addEventListener('input', e => syncSearch(e.target.value));
+    topSearch.addEventListener('input', e => syncSearch(e.target.value));
+
+    loadData();
+
+    // ---- Create form ----
+    const form     = document.getElementById('reqForm');
+    const msg      = document.getElementById('formMsg');
+    const alertBox = document.getElementById('alert');
+
+    function showNotice(text, type){
+      alertBox.textContent = text;
+      alertBox.className = `notice ${type}`;
+      setTimeout(()=>{ alertBox.className = 'notice sr-only'; alertBox.textContent=''; }, 5000);
+    }
+
+    form.addEventListener('submit', async e=>{
+      e.preventDefault();
+      msg.textContent = 'Submitting…';
+      alertBox.className = 'notice sr-only';
+      try{
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        data.RequestEndDate = !!formData.get('RequestEndDate');
+
+        const res  = await fetch('/api/requests', {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)
+        });
+        const json = await res.json();
+        if(json.ok){
+          msg.textContent = 'Created!';
+          showNotice('Request successfully created.', 'success');
+          form.reset();
+          loadData();
+        }else{
+          msg.textContent = '';
+          showNotice('Failed to create the request: ' + (json.error || 'Unknown error'), 'error');
+        }
+      }catch(err){
+        msg.textContent = '';
+        showNotice('Network error: ' + String(err), 'error');
+      }
+    });
   </script>
 </body>
 </html>
