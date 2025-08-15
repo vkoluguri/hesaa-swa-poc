@@ -5,33 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>HESAA SWA + SharePoint PoC</title>
 
-  <!-- Accessible, Fluent-ish design tokens -->
   <style>
     :root{
-      --bg: #ffffff;
-      --fg: #1b1b1b;
-      --muted:#5c5c5c;
-      --brand:#2563eb;            /* Fluent-like blue */
-      --brand-600:#1e4fd8;
-      --surface:#f5f7fb;
-      --border:#e6e8ee;
-      --success:#0f7b0f;
-      --error:#b91c1c;
-      --focus:#0a84ff;
-      --radius:14px;
-      --shadow:0 8px 30px rgba(0,0,0,.08);
+      --bg:#ffffff; --fg:#1b1b1b; --muted:#5c5c5c;
+      --brand:#2563eb; --brand-600:#1e4fd8;
+      --surface:#f5f7fb; --border:#e6e8ee;
+      --success:#0f7b0f; --error:#b91c1c; --focus:#0a84ff;
+      --radius:14px; --shadow:0 8px 30px rgba(0,0,0,.08);
+      --tile:#f7f9ff;
     }
     @media (prefers-color-scheme: dark){
-      :root{
-        --bg:#0f1115; --fg:#e7e7ea; --muted:#a7a7b2; --surface:#151923; --border:#24283a;
-        --brand:#4c8dff; --brand-600:#3c74e6;
-      }
+      :root{ --bg:#0f1115; --fg:#e7e7ea; --muted:#a7a7b2; --surface:#151923; --border:#24283a; --brand:#4c8dff; --brand-600:#3c74e6; --tile:#101626; }
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:Segoe UI,system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--fg);line-height:1.5}
     a{color:var(--brand)} a:hover{color:var(--brand-600)}
     img{max-width:100%;height:auto}
     .container{max-width:1100px;margin-inline:auto;padding:1rem}
+
     .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .skip-link{position:absolute;left:-9999px;top:0;background:#fff;padding:.5rem 1rem;border-radius:8px;box-shadow:var(--shadow);z-index:999}
     .skip-link:focus{left:.5rem;top:.5rem}
@@ -39,10 +30,13 @@
 
     /* Header / Nav */
     header{background:var(--bg);position:sticky;top:0;z-index:50;border-bottom:1px solid var(--border)}
+    .header-inner{display:flex;gap:1rem;align-items:center;justify-content:space-between;padding:.8rem 1rem}
     .brand{display:flex;gap:.6rem;align-items:center;font-weight:600}
     nav ul{display:flex;gap:1rem;list-style:none;margin:0;padding:0}
     nav a{display:inline-block;padding:.5rem .75rem;border-radius:10px;text-decoration:none}
     nav a[aria-current="page"], nav a:hover{background:var(--surface)}
+    .top-search{display:flex;align-items:center;gap:.5rem}
+    .top-search input{width:230px;max-width:40vw;padding:.5rem .7rem;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--fg)}
 
     /* Hero */
     .hero{position:relative;border-radius:var(--radius);overflow:hidden;background:#dfe9ff}
@@ -50,6 +44,7 @@
     .hero .cta{position:absolute;inset:auto 0 0 0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.6));color:#fff;padding:2rem}
     .hero h1{margin:.25rem 0 0;font-size:clamp(1.6rem,3vw,2.2rem)}
     .hero p{margin:.25rem 0 0;color:#e9eefc}
+    .badge{display:inline-block;padding:.2rem .5rem;border-radius:999px;border:1px solid var(--border);background:var(--bg);font-size:.8rem;color:var(--muted)}
 
     /* Carousel */
     .carousel{margin-top:1rem;border-radius:var(--radius);overflow:hidden;background:var(--surface)}
@@ -61,50 +56,55 @@
     .btn.primary:hover{background:var(--brand-600)}
     .btn:disabled{opacity:.6;cursor:not-allowed}
 
-    /* Grid */
+    /* Grid / Cards */
     .grid{display:grid;gap:1rem}
     @media(min-width:900px){.grid.cols-3{grid-template-columns:repeat(3,1fr)}}
-
-    /* Cards / Quick links / Spotlight */
+    .section-header{margin:1rem 0 .25rem 0}
+    .section-sub{color:var(--muted);margin:0 0 .75rem 0}
     .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;box-shadow:var(--shadow)}
-    .quicklinks a{display:block;background:var(--bg);border:1px solid var(--border);padding:.7rem .9rem;border-radius:12px;text-decoration:none}
-    .quicklinks a:hover{background:var(--surface)}
-    .badge{display:inline-block;padding:.2rem .5rem;border-radius:999px;border:1px solid var(--border);background:var(--bg);font-size:.8rem;color:var(--muted)}
+
+    /* Quick links */
+    .quicklinks a{display:flex;align-items:center;gap:.7rem;background:var(--tile);border:1px solid var(--border);padding:.9rem 1rem;border-radius:12px;text-decoration:none}
+    .ql-icon{width:28px;height:28px;border-radius:8px;background:var(--brand);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    .quicklinks a:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+
+    /* Spotlight */
+    .spot-card h3{display:flex;align-items:center;gap:.5rem}
+    .spot-icon{width:20px;height:20px}
 
     /* Table */
     table{width:100%;border-collapse:separate;border-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
     thead th{background:var(--bg);text-align:left;padding:.75rem;border-bottom:1px solid var(--border)}
     tbody td{padding:.7rem;border-top:1px solid var(--border);vertical-align:top}
     tbody tr:hover{background:rgba(37,99,235,.05)}
-    .status{font-weight:600}
     .kpi{color:var(--muted);font-size:.9rem}
 
     /* Form */
     form{display:grid;gap:.75rem}
     label{font-weight:600}
     input[type="text"], textarea, select{width:100%;padding:.6rem .7rem;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--fg)}
-    .form-actions{display:flex;gap:.5rem;align-items:center}
-    .notice{padding:.6rem .8rem;border-radius:10px;border:1px solid var(--border)}
+    .form-row{display:flex;gap:.75rem;flex-wrap:wrap}
+    .form-actions{display:flex;gap:.75rem;align-items:center;margin-top:.25rem}
+    .notice{padding:.6rem .8rem;border-radius:10px;border:1px solid var(--border);margin-top:.6rem}
     .notice.success{border-color:#b5e0b5;background:#ecf9ec;color:var(--success)}
     .notice.error{border-color:#f4b4b4;background:#fff1f1;color:var(--error)}
 
     footer{margin-top:2rem;padding:2rem 0;border-top:1px solid var(--border);color:var(--muted)}
   </style>
 
-  <!-- DOMPurify (sanitizes Enhanced Rich Text safely) -->
+  <!-- DOMPurify with integrity; we also guard with a fallback in JS -->
   <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"
-          integrity="sha384-+gQG3LQk5nM3p9tJ2k3oY0n2jz8m0mWz+eL9tRj5c9Y7d7l3O9vSgOZKQ3Y/2B3X"
+          integrity="sha384-OTe3T2M0RkKkJqTghoJp0P4r0nI4h8q1E3TnWLEK7bFi6cM9a8V3LYnQJqgG1jRH"
           crossorigin="anonymous"></script>
 </head>
 
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
 
-  <!-- Header / Navigation -->
   <header role="banner">
-    <div class="container" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.8rem 1rem">
+    <div class="container header-inner">
       <div class="brand" aria-label="HESAA Home">
-        <img src="https://static2.sharepointonline.com/files/fabric/assets/brand-icons/product/svg/office_48x1.svg" alt="" width="28" height="28" />
+        <img src="https://static2.sharepointonline.com/files/fabric/assets/brand-icons/product/svg/office_48x1.svg" width="28" height="28" alt="" />
         <span>HESAA Web Requests</span>
       </div>
       <nav aria-label="Primary">
@@ -115,13 +115,17 @@
           <li><a href="#quicklinks">Quick links</a></li>
         </ul>
       </nav>
+      <div class="top-search">
+        <label class="sr-only" for="topSearch">Search requests</label>
+        <input id="topSearch" type="text" placeholder="Search requests…" />
+      </div>
     </div>
   </header>
 
-  <!-- Hero -->
   <div class="container">
+    <!-- Hero -->
     <section class="hero" aria-label="Hero">
-      <img src="/assets/hero.jpg" alt="Modern abstract background" />
+      <img id="heroImg" src="" alt="Modern abstract background" />
       <div class="cta">
         <p class="badge">PoC</p>
         <h1>SharePoint‑backed Requests</h1>
@@ -129,12 +133,12 @@
       </div>
     </section>
 
-    <!-- Carousel (accessible, no auto-play if reduced motion) -->
+    <!-- Carousel -->
     <section class="carousel" aria-label="Highlights" role="region" aria-roledescription="carousel">
-      <div class="carousel-track" id="carouselTrack">
-        <img src="/assets/slide1.jpg" alt="Modern workspace" />
-        <img src="/assets/slide2.jpg" alt="Team collaboration" />
-        <img src="/assets/slide3.jpg" alt="Analytics and insights" />
+      <div class="carousel-track" id="carouselTrack" tabindex="0" aria-label="Slides">
+        <img id="slide1" alt="Modern workspace" />
+        <img id="slide2" alt="Team collaboration" />
+        <img id="slide3" alt="Analytics and insights" />
       </div>
       <div class="carousel-controls" aria-label="Carousel controls">
         <button class="btn" id="prevBtn" aria-label="Previous slide">← Prev</button>
@@ -143,29 +147,48 @@
     </section>
 
     <!-- Spotlight -->
-    <section class="grid cols-3" aria-label="Spotlight" style="margin-top:1rem">
-      <article class="card">
-        <h3>Accessibility</h3>
-        <p>Built with semantic landmarks, keyboard navigation, visible focus and reduced‑motion preferences.</p>
+    <h2 class="section-header" id="spotlight">Spotlight</h2>
+    <p class="section-sub">Key aspects of this proof of concept</p>
+    <section class="grid cols-3" aria-labelledby="spotlight">
+      <article class="card spot-card">
+        <h3>
+          <svg class="spot-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm1 15h-2v-2h2v2Zm0-4h-2V7h2v6Z"/></svg>
+          Accessibility
+        </h3>
+        <p>Semantic landmarks, keyboard navigation, visible focus and reduced‑motion preferences.</p>
       </article>
-      <article class="card">
-        <h3>Security</h3>
-        <p>Enhanced Rich Text is sanitized on render via DOMPurify to prevent XSS.</p>
+      <article class="card spot-card">
+        <h3>
+          <svg class="spot-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 1 9 5v6c0 5-3.8 9.7-9 11-5.2-1.3-9-6-9-11V6l9-5Zm0 3.2L6 7.4v4.6c0 3.8 2.7 7.3 6 8.3 3.3-1 6-4.5 6-8.3V7.4l-6-3.2Z"/></svg>
+          Security
+        </h3>
+        <p>Enhanced Rich Text is sanitized on render via DOMPurify; graceful fallback if blocked.</p>
       </article>
-      <article class="card">
-        <h3>SharePoint + Graph</h3>
-        <p>Backed by Microsoft Graph with app‑only permissions for server‑side calls.</p>
+      <article class="card spot-card">
+        <h3>
+          <svg class="spot-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 3h18v4H3V3Zm0 7h18v4H3v-4Zm0 7h18v4H3v-4Z"/></svg>
+          SharePoint + Graph
+        </h3>
+        <p>App‑only permissions for server‑side Graph calls—no tokens in the browser.</p>
       </article>
     </section>
 
     <!-- Quick Links -->
-    <section id="quicklinks" class="grid cols-3 quicklinks" aria-label="Quick links" style="margin-top:1rem">
-      <a class="card" href="https://vkolugurihesaa.sharepoint.com/sites/HESAAWebRequestsPoC/Lists/Web%20Requests" target="_blank" rel="noopener">Open SharePoint List</a>
-      <a class="card" href="https://admin.microsoft.com" target="_blank" rel="noopener">Microsoft 365 Admin</a>
-      <a class="card" href="https://portal.azure.com" target="_blank" rel="noopener">Azure Portal</a>
+    <h2 class="section-header" id="quicklinks">Quick links</h2>
+    <p class="section-sub">Frequently used destinations</p>
+    <section class="grid cols-3 quicklinks" aria-labelledby="quicklinks">
+      <a class="card" href="https://vkolugurihesaa.sharepoint.com/sites/HESAAWebRequestsPoC/Lists/Web%20Requests" target="_blank" rel="noopener">
+        <span class="ql-icon">SP</span> Open SharePoint List
+      </a>
+      <a class="card" href="https://admin.microsoft.com" target="_blank" rel="noopener">
+        <span class="ql-icon">M365</span> Microsoft 365 Admin
+      </a>
+      <a class="card" href="https://portal.azure.com" target="_blank" rel="noopener">
+        <span class="ql-icon">AZ</span> Azure Portal
+      </a>
     </section>
 
-    <!-- Requests Table + Search -->
+    <!-- Requests -->
     <main id="main" tabindex="-1">
       <section id="requests" aria-labelledby="requests-title" style="margin-top:1.5rem">
         <div style="display:flex;justify-content:space-between;align-items:end;gap:1rem">
@@ -216,17 +239,14 @@
               <label for="fDesc">Description (Enhanced Rich Text supported)</label>
               <textarea id="fDesc" name="RequestDescription" rows="5" placeholder="You can paste formatted text from Word/Outlook"></textarea>
             </div>
-            <div style="display:flex;gap:.75rem;flex-wrap:wrap">
-              <div style="min-width:200px">
+            <div class="form-row">
+              <div style="min-width:220px">
                 <label for="fType">Type</label>
                 <select id="fType" name="RequestType">
-                  <option>Bug</option>
-                  <option>Enhancement</option>
-                  <option>Inquiry</option>
-                  <option>Maintenance Message</option>
+                  <option>Bug</option><option>Enhancement</option><option>Inquiry</option><option>Maintenance Message</option>
                 </select>
               </div>
-              <div style="min-width:200px">
+              <div style="min-width:220px">
                 <label for="fPri">Priority</label>
                 <select id="fPri" name="Priority">
                   <option>Low</option><option>Medium</option><option>High</option><option>Urgent</option>
@@ -255,55 +275,67 @@
   </div>
 
   <script>
-  // Year
+  // -------- Settings (your SharePoint assets) ----------
+  const ASSETS = "https://vkolugurihesaa.sharepoint.com/sites/HESAAWebRequestsPoC/MediaAssets/";
+  const IMAGES = {
+    hero:  ASSETS + "hero.jpg",
+    slide1: ASSETS + "slide1.jpg",
+    slide2: ASSETS + "slide2.jpg",
+    slide3: ASSETS + "slide3.jpg"
+  };
+  document.getElementById('heroImg').src = IMAGES.hero;
+  document.getElementById('slide1').src = IMAGES.slide1;
+  document.getElementById('slide2').src = IMAGES.slide2;
+  document.getElementById('slide3').src = IMAGES.slide3;
+
+  // -------- Year ----------
   document.getElementById('yr').textContent = new Date().getFullYear();
 
-  // Carousel controls (no auto-play if reduced motion)
+  // -------- Carousel ----------
   const track = document.getElementById('carouselTrack');
   document.getElementById('prevBtn').addEventListener('click', ()=> track.scrollBy({left:-track.clientWidth, behavior: 'smooth'}));
   document.getElementById('nextBtn').addEventListener('click', ()=> track.scrollBy({left: track.clientWidth, behavior: 'smooth'}));
 
-  // Helpers
+  // -------- Helpers ----------
   const fmt = (d)=> d ? new Date(d).toLocaleDateString() : '';
   const rowsEl = document.getElementById('rows');
   const countEl = document.getElementById('resultCount');
   const searchEl = document.getElementById('search');
-
+  const topSearch = document.getElementById('topSearch');
   let DATA = [];
+
+  // DOMPurify fallback (prevents “DOMPurify is not defined”)
+  const purify = window.DOMPurify
+    ? (html)=> window.DOMPurify.sanitize(html || '', {ALLOWED_TAGS:['b','i','em','strong','u','span','div','p','ul','ol','li','br','a'], ALLOWED_ATTR:['href','style','target']})
+    : (html)=> String(html||'').replace(/<[^>]+>/g,''); // plain text fallback
 
   function renderRows(filter=''){
     const f = filter.trim().toLowerCase();
-    const allowed = ['b','i','em','strong','u','span','div','p','ul','ol','li','br','a'];
-    const clean = (html)=> DOMPurify.sanitize(html || '', {ALLOWED_TAGS: allowed, ALLOWED_ATTR: ['href','style','target']});
-    const match = (t)=> t && t.toLowerCase().includes(f);
+    const matches = (t)=> (t||'').toLowerCase().includes(f);
 
     const visible = DATA.filter(x =>
-      !f ||
-      match(x.Title||'') ||
-      match((x.RequestDescription||'').replace(/<[^>]+>/g,''))
+      !f || matches(x.Title) || matches((x.RequestDescription||'').replace(/<[^>]+>/g,''))
     );
 
     countEl.textContent = visible.length;
 
-    rowsEl.innerHTML = visible.map(x => {
-      const descHtml = clean(x.RequestDescription);
-      return `
-        <tr>
-          <td>${x.Title ?? ''}</td>
-          <td>${x.RequestType ?? ''}</td>
-          <td><span class="status">${x.Priority ?? ''}</span></td>
-          <td>${fmt(x.RequestDate)}</td>
-          <td>${x.RequestEndDate ? 'Yes':'No'}</td>
-          <td>${fmt(x.Created)}</td>
-          <td>${fmt(x.Modified)}</td>
-          <td>
-            <details>
-              <summary>View</summary>
-              <div>${descHtml}</div>
-            </details>
-          </td>
-        </tr>`;
-    }).join('') || `<tr><td colspan="8" class="kpi">No results</td></tr>`;
+    rowsEl.innerHTML = visible.map(x => `
+      <tr>
+        <td>${x.Title ?? ''}</td>
+        <td>${x.RequestType ?? ''}</td>
+        <td>${x.Priority ?? ''}</td>
+        <td>${fmt(x.RequestDate)}</td>
+        <td>${x.RequestEndDate ? 'Yes':'No'}</td>
+        <td>${fmt(x.Created)}</td>
+        <td>${fmt(x.Modified)}</td>
+        <td>
+          <details>
+            <summary>View</summary>
+            <div>${purify(x.RequestDescription)}</div>
+          </details>
+        </td>
+      </tr>
+    `).join('') || `<tr><td colspan="8" class="kpi">No results</td></tr>`;
   }
 
   async function loadData(){
@@ -311,8 +343,8 @@
       const res = await fetch('/api/requests');
       const json = await res.json();
       if(json.ok){
-        DATA = (json.items||[]).map(i=>i); // already fields-only from API
-        renderRows(searchEl.value);
+        DATA = (json.items||[]).map(i=>i);
+        renderRows(searchEl.value || topSearch.value || '');
       }else{
         rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Error: ${json.error||'Unknown'}</td></tr>`;
       }
@@ -321,13 +353,24 @@
     }
   }
 
-  searchEl.addEventListener('input', e=>renderRows(e.target.value));
+  // Sync both search boxes
+  const syncSearch = (val)=>{ searchEl.value = val; topSearch.value = val; renderRows(val); };
+  searchEl.addEventListener('input', e=> syncSearch(e.target.value));
+  topSearch.addEventListener('input', e=> syncSearch(e.target.value));
+
   loadData();
 
-  // Create form
+  // -------- Create form ----------
   const form = document.getElementById('reqForm');
   const msg = document.getElementById('formMsg');
   const alertBox = document.getElementById('alert');
+
+  function showNotice(text, type){
+    alertBox.textContent = text;
+    alertBox.className = `notice ${type}`;
+    // auto-dismiss after 5s
+    setTimeout(()=>{ alertBox.className = 'notice sr-only'; alertBox.textContent=''; }, 5000);
+  }
 
   form.addEventListener('submit', async (e)=>{
     e.preventDefault();
@@ -339,26 +382,21 @@
       data.RequestEndDate = !!formData.get('RequestEndDate');
 
       const res = await fetch('/api/requests', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(data)
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)
       });
       const json = await res.json();
       if(json.ok){
         msg.textContent = 'Created!';
-        alertBox.textContent = 'Request successfully created.'; 
-        alertBox.className = 'notice success';
+        showNotice('Request successfully created.', 'success');
         form.reset();
         loadData();
       }else{
         msg.textContent = '';
-        alertBox.textContent = 'Failed to create the request: ' + (json.error || 'Unknown error');
-        alertBox.className = 'notice error';
+        showNotice('Failed to create the request: ' + (json.error || 'Unknown error'), 'error');
       }
     }catch(err){
       msg.textContent = '';
-      alertBox.textContent = 'Network error: ' + String(err);
-      alertBox.className = 'notice error';
+      showNotice('Network error: ' + String(err), 'error');
     }
   });
   </script>
