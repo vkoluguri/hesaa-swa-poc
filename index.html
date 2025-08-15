@@ -39,50 +39,59 @@
     .top-search{display:flex;align-items:center;gap:.5rem}
     .top-search input{width:230px;max-width:40vw;padding:.5rem .7rem;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--fg)}
 
-    /* Hero */
-    .hero{position:relative;border-radius:var(--radius);overflow:hidden;background:#eaf1ff}
-    .hero img{width:100%;display:block;object-fit:cover;max-height:360px}
-    .hero .cta{position:absolute;inset:auto 0 0 0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.6));color:#fff;padding:2rem}
-    .hero h1{margin:.25rem 0 0;font-size:clamp(1.6rem,3vw,2.2rem)}
-    .hero p{margin:.25rem 0 0;color:#e9eefc}
-    .badge{display:inline-block;padding:.2rem .5rem;border-radius:999px;border:1px solid var(--border);background:var(--bg);font-size:.8rem;color:var(--muted)}
-
-    /* Carousel */
-    .carousel{position:relative;overflow:hidden;margin-top:1rem}
-    .carousel-track{
-      display:grid;grid-auto-flow:column;grid-auto-columns:100%;
-      overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none
-    }
-    .carousel-track::-webkit-scrollbar{display:none}
-    .slide{position:relative;scroll-snap-align:start;display:grid;place-items:center;background:#fff}
-    .slide img{width:100%;max-height:380px;object-fit:contain;display:block}
-
+/* === Hero chip (badge) =================================== */
 .hero { position:relative; border-radius:16px; overflow:hidden; }
-.hero img { width:100%; height: clamp(220px, 42vw, 360px); object-fit:cover; object-position:center; display:block; }
+.hero img { width:100%; height:clamp(220px,42vw,360px); object-fit:cover; object-position:center; display:block; }
 .hero .cta {
   position:absolute; inset:auto 0 0 0;
-  padding: clamp(16px, 2.5vw, 24px);
+  padding:clamp(16px,2.5vw,24px);
   color:#fff;
-  background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,.55) 65%, rgba(0,0,0,.75) 100%);
+  background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.55) 65%,rgba(0,0,0,.75) 100%);
 }
-.hero h1 { margin:.25rem 0 0; font-size: clamp(1.6rem, 3.2vw, 2.4rem); }
-.hero p  { margin:.25rem 0 0; color:#e9eefc; }
-.badge   { display:inline-block; background:#fff; color:#111; border-radius:999px; padding:.2rem .6rem; font-weight:600; }
+.hero h1{margin:.25rem 0 0; font-size:clamp(1.6rem,3.2vw,2.4rem)}
+.hero p {margin:.25rem 0 0; color:#e9eefc}
 
-.carousel { position:relative; overflow:hidden; margin-top:1.25rem; border-radius:16px; }
-.carousel-track { display:grid; grid-auto-flow:column; grid-auto-columns:100%; scroll-snap-type:x mandatory; overflow-x:auto; scrollbar-width:none; }
+/* New: top-left chip */
+.hero .chip {
+  position:absolute; top:12px; left:12px;
+  padding:.2rem .6rem; border-radius:999px;
+  font-weight:600; font-size:.8rem; color:#0b1220;
+  background:rgba(255,255,255,.85);
+  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  border:1px solid rgba(0,0,0,.08);
+}
+
+/* === Carousel ============================================ */
+.carousel{ --sidePad:64px; --arrow:46px; position:relative; overflow:hidden; margin-top:1.25rem; border-radius:16px; }
+
+/* Reserve horizontal padding so images never sit under the arrows */
+.carousel-track{
+  display:grid; grid-auto-flow:column; grid-auto-columns:100%;
+  padding-inline:var(--sidePad);
+  scroll-snap-type:x mandatory; overflow-x:auto; scrollbar-width:none;
+}
 .carousel-track::-webkit-scrollbar{ display:none; }
-.slide { position:relative; scroll-snap-align:start; }
-.slide img { width:100%; height: clamp(220px, 42vw, 360px); object-fit:cover; object-position:center; display:block; }
+.slide{ position:relative; scroll-snap-align:start; }
+.slide img{ width:100%; height:clamp(220px,42vw,360px); object-fit:cover; object-position:center; display:block; }
 
-.carousel-arrow {
-  position:absolute; top:50%; transform:translateY(-50%); width:48px; height:48px;
-  border-radius:9999px; border:0; background: color-mix(in srgb, var(--brand-600) 90%, transparent);
-  color:#fff; font-size:22px; display:grid; place-items:center; cursor:pointer;
-  box-shadow: 0 2px 10px rgba(0,0,0,.25);
+/* Soft edge fades so the arrows feel integrated */
+.carousel .edge{
+  position:absolute; top:0; bottom:0; width:var(--sidePad); pointer-events:none; z-index:1;
 }
-.carousel-arrow.left  { left: 12px; }
-.carousel-arrow.right { right: 12px; }
+.carousel .edge.left { left:0;  background:linear-gradient(90deg,rgba(0,0,0,.15),transparent); }
+.carousel .edge.right{ right:0; background:linear-gradient(-90deg,rgba(0,0,0,.15),transparent); }
+
+/* Arrows */
+.carousel-arrow{
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:var(--arrow); height:var(--arrow); border-radius:9999px; border:0;
+  background:color-mix(in srgb, var(--brand-600) 92%, transparent);
+  color:#fff; font-size:22px; display:grid; place-items:center; cursor:pointer;
+  box-shadow:0 2px 10px rgba(0,0,0,.25); z-index:2;
+}
+.carousel-arrow.left  { left:12px; }
+.carousel-arrow.right { right:12px; }
+.carousel-arrow:focus-visible{ outline:3px solid var(--accent-400); outline-offset:2px; }
 
 
     /* Section titles */
@@ -193,32 +202,33 @@
 
   <div class="container">
     <!-- Hero -->
-    <section class="hero" aria-label="Hero">
-      <img id="heroHeaderImg" alt="Modern abstract background">
-      <div class="cta">
-        <p class="badge">PoC</p>
-        <h1>SharePoint‑backed Requests</h1>
-        <p>Create and track website requests backed by Microsoft 365.</p>
-      </div>
-    </section>
+<section class="hero" aria-label="Hero">
+  <img id="heroHeaderImg" alt="Modern abstract background">
+  <span class="chip">PoC</span>        <!-- NEW: cleaner badge -->
+  <div class="cta">
+    <h1>SharePoint-backed Requests</h1>
+    <p>Create and track website requests backed by Microsoft 365.</p>
+  </div>
+</section>
 
-    <!-- Carousel -->
-    <section class="carousel" aria-label="Feature slides">
-      <button class="carousel-arrow left"  aria-label="Previous slide">❮</button>
-      <div id="heroCarousel" class="carousel-track" role="group" aria-roledescription="carousel" tabindex="0">
-        <figure class="slide">
-          <img id="slideHero" alt="SharePoint-backed Requests">
-          <figcaption class="hero-caption">
-            <h2>SharePoint‑backed Requests</h2>
-            <p>Create and track website requests backed by Microsoft 365.</p>
-          </figcaption>
-        </figure>
-        <figure class="slide"><img id="slide1" alt="Azure SWA"></figure>
-        <figure class="slide"><img id="slide2" alt="Git"></figure>
-        <figure class="slide"><img id="slide3" alt="SharePoint"></figure>
-      </div>
-      <button class="carousel-arrow right" aria-label="Next slide">❯</button>
-    </section>
+<!-- Carousel -->
+<section class="carousel" aria-label="Feature slides">
+  <div class="edge left" aria-hidden="true"></div>   <!-- NEW: fades -->
+  <div class="edge right" aria-hidden="true"></div>
+
+  <button class="carousel-arrow left"  aria-label="Previous slide">❮</button>
+  <div id="heroCarousel" class="carousel-track" role="group" aria-roledescription="carousel" tabindex="0">
+    <figure class="slide">
+      <img id="slideHero" alt="SharePoint-backed Requests">
+      <figcaption class="sr-only">SharePoint-backed Requests</figcaption>
+    </figure>
+    <figure class="slide"><img id="slide1" alt="Azure Static Web Apps"></figure>
+    <figure class="slide"><img id="slide2" alt="Git"></figure>
+    <figure class="slide"><img id="slide3" alt="SharePoint 365"></figure>
+  </div>
+  <button class="carousel-arrow right" aria-label="Next slide">❯</button>
+</section>
+
 
     <!-- Spotlight (3 cards) -->
 <h2 class="section-title">Spotlight</h2>
@@ -378,15 +388,44 @@
     setApiImg('slide2',         'Slide2.png');
     setApiImg('slide3',         'Slide3.png');
 
-    // ---- Carousel (single track) ----
     (function(){
-      const track = document.getElementById('heroCarousel');
-      const go = dir => track.scrollBy({ left: (dir==='next'? track.clientWidth : -track.clientWidth), behavior: 'smooth' });
-      document.querySelector('.carousel-arrow.left').addEventListener('click',  () => go('prev'));
-      document.querySelector('.carousel-arrow.right').addEventListener('click', () => go('next'));
-      track.addEventListener('keydown', e => { if(e.key==='ArrowRight') go('next'); if(e.key==='ArrowLeft') go('prev') });
-    })();
+    const track = document.getElementById('heroCarousel');
+    const prev  = document.querySelector('.carousel-arrow.left');
+    const next  = document.querySelector('.carousel-arrow.right');
 
+    const go = dir => track.scrollBy({ left: (dir==='next' ? track.clientWidth : -track.clientWidth), behavior:'smooth' });
+
+    prev.addEventListener('click', ()=>{ stop(); go('prev'); });
+    next.addEventListener('click', ()=>{ stop(); go('next'); });
+
+    track.addEventListener('keydown', e => {
+      if(e.key==='ArrowRight'){ stop(); go('next'); }
+      if(e.key==='ArrowLeft'){  stop(); go('prev'); }
+    });
+
+    // Auto-rotate unless user prefers reduced motion
+    let timer = null;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function start(){
+      if(reduced || timer) return;
+      timer = setInterval(()=> go('next'), 6000);
+    }
+    function stop(){
+      if(timer){ clearInterval(timer); timer = null; }
+    }
+
+    // Pause on hover/focus; resume on leave/blur
+    ['mouseenter','focusin'].forEach(evt => track.addEventListener(evt, stop));
+    ['mouseleave','focusout'].forEach(evt => track.addEventListener(evt, start));
+    ['mouseenter','focusin'].forEach(evt => prev.addEventListener(evt, stop));
+    ['mouseleave','focusout'].forEach(evt => prev.addEventListener(evt, start));
+    ['mouseenter','focusin'].forEach(evt => next.addEventListener(evt, stop));
+    ['mouseleave','focusout'].forEach(evt => next.addEventListener(evt, start));
+
+    // kick off
+    start();
+  })();
     // ---- Year ----
     document.getElementById('yr').textContent = new Date().getFullYear();
 
