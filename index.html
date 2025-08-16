@@ -457,7 +457,7 @@
         const json = await res.json();
         if(json.ok){
           DATA = json.items || [];
-          renderRows(searchEl.value || topSearch.value || '');
+          renderRows((searchEl?.value || document.getElementById('topSearch')?.value || ''));
         }else{
           rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Error: ${json.error || 'Unknown'}</td></tr>`;
         }
@@ -466,9 +466,12 @@
       }
     }
 
-    const syncSearch = v => { searchEl.value = v; topSearch.value = v; renderRows(v); };
-    searchEl.addEventListener('input', e => syncSearch(e.target.value));
-    topSearch.addEventListener('input', e => syncSearch(e.target.value));
+const topSearch = document.getElementById('topSearch');
+const syncSearch = v => { searchEl.value = v; if (topSearch) topSearch.value = v; renderRows(v); };
+
+searchEl.addEventListener('input', e => syncSearch(e.target.value));
+if (topSearch) topSearch.addEventListener('input', e => syncSearch(e.target.value));
+
 
     loadData();
 
