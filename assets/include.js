@@ -17,3 +17,4 @@
       a.setAttribute('aria-current','page');
   });
 })();
+window.dispatchEvent(new CustomEvent('includes:loaded'));
