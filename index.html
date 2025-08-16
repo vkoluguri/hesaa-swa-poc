@@ -536,7 +536,7 @@ const rowsEl   = document.getElementById('rows');
   <div data-include="/partials/footer.html"></div>
 
 <script>
-  document.addEventListener("DOMContentLoaded", function(){
+  window.addEventListener('includes:loaded', () => {
     const y = document.getElementById('yr');
     if (y) y.textContent = new Date().getFullYear();
   });
