@@ -1,20 +1,25 @@
-// Simple HTML include: <div data-include="/partials/header.html"></div>
-(async () => {
-  const slots = document.querySelectorAll('[data-include]');
-  await Promise.all([...slots].map(async el => {
-    try{
-      const url = el.getAttribute('data-include');
-      const res = await fetch(url, {cache:'no-store'});
-      el.innerHTML = await res.text();
-    }catch(e){ el.innerHTML = '<!-- include failed -->'; }
-  }));
+// /assets/include.js
+(function () {
+  async function inject(el) {
+    const url = el.getAttribute('data-include');
+    if (!url) return;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Include failed: ${url} (${res.status})`);
+    const html = await res.text();
+    // Replace the placeholder node with the fetched markup
+    el.outerHTML = html;
+  }
 
-  // Mark active nav link based on current path
-  const path = location.pathname.replace(/\/+$/,'') || '/';
-  document.querySelectorAll('[data-active]').forEach(a=>{
-    const href = a.getAttribute('href');
-    if ((href === '/' && path === '/') || (href !== '/' && path.startsWith(href)))
-      a.setAttribute('aria-current','page');
-  });
+  async function runIncludes() {
+    const nodes = Array.from(document.querySelectorAll('[data-include]'));
+    await Promise.all(nodes.map(inject));
+    // IMPORTANT: tell the page we're done
+    window.dispatchEvent(new CustomEvent('includes:loaded'));
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runIncludes);
+  } else {
+    runIncludes();
+  }
 })();
-window.dispatchEvent(new CustomEvent('includes:loaded'));
