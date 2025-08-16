@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>HESAA SWA + SharePoint PoC</title>
+  <link rel="stylesheet" href="/assets/layout.css">
+  <title>HESAA</title>
 
   <style>
     :root{
@@ -178,28 +179,7 @@
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
-
-  <header role="banner">
-    <div class="container header-inner">
-      <div class="brand" aria-label="HESAA Home">
-        <img src="https://static2.sharepointonline.com/files/fabric/assets/brand-icons/product/svg/office_48x1.svg" width="28" height="28" alt="">
-        <span>HESAA Web Requests</span>
-      </div>
-      <nav aria-label="Primary">
-        <ul>
-          <li><a href="#" aria-current="page">Home</a></li>
-          <li><a href="#requests">Requests</a></li>
-          <li><a href="#create">Create</a></li>
-          <li><a href="#quicklinks">Quick links</a></li>
-        </ul>
-      </nav>
-      <div class="top-search">
-        <label class="sr-only" for="topSearch">Search requests</label>
-        <input id="topSearch" type="text" placeholder="Search requests…">
-      </div>
-    </div>
-  </header>
-
+<div data-include="/partials/header.html"></div>
   <div class="container">
     <!-- Hero -->
 <section class="hero" aria-label="Hero">
@@ -368,12 +348,6 @@
         </div>
       </section>
     </main>
-
-    <footer role="contentinfo">
-      <div class="container">
-        <p>© <span id="yr"></span> HESAA — Proof of Concept</p>
-      </div>
-    </footer>
   </div>
 
   <script>
@@ -535,5 +509,8 @@
       }
     });
   </script>
+  <div data-include="/partials/footer.html"></div>
+<script src="/assets/include.js" defer></script>
+
 </body>
 </html>
