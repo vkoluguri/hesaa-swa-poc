@@ -176,7 +176,6 @@
 
   <!-- DOMPurify (for safe rich text) -->
   <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
-    <link rel="stylesheet" href="/assets/layout.css">
   <script src="/assets/include.js" defer></script> 
 </head>
 <body>
@@ -406,74 +405,93 @@
     //document.getElementById('yr').textContent = new Date().getFullYear();
 
     // ---- Requests table ----
-    const rowsEl   = document.getElementById('rows');
-    const countEl  = document.getElementById('resultCount');
-    const searchEl = document.getElementById('search');
-    const topSearch= document.getElementById('topSearch');
-    let DATA = [];
+const rowsEl   = document.getElementById('rows');
+  const countEl  = document.getElementById('resultCount');
+  const searchEl = document.getElementById('search');
+  let topSearchEl = null; // single declaration
 
-    const purify = window.DOMPurify
-      ? (html)=> window.DOMPurify.sanitize(html||'', {ALLOWED_TAGS:['b','i','em','strong','u','span','div','p','ul','ol','li','br','a'], ALLOWED_ATTR:['href','style','target']})
-      : (html)=> String(html||'').replace(/<[^>]+>/g,'');
+  const purify = window.DOMPurify
+    ? (html)=> window.DOMPurify.sanitize(html||'', {ALLOWED_TAGS:['b','i','em','strong','u','span','div','p','ul','ol','li','br','a'], ALLOWED_ATTR:['href','style','target']})
+    : (html)=> String(html||'').replace(/<[^>]+>/g,'');
 
-    const fmt = d => d ? new Date(d).toLocaleDateString() : '';
+  const fmt = d => d ? new Date(d).toLocaleDateString() : '';
 
-    function renderRows(filter=''){
-      const q = (filter||'').trim().toLowerCase();
-      const visible = DATA.filter(x=>{
-        const inTitle = (x.Title||'').toLowerCase().includes(q);
-        const inDesc  = (x.RequestDescription||'').replace(/<[^>]+>/g,'').toLowerCase().includes(q);
-        return !q || inTitle || inDesc;
-      });
+  function getTopSearchValue(){
+    return (topSearchEl && topSearchEl.value) ? topSearchEl.value : '';
+  }
 
-      countEl.textContent = visible.length;
+  function renderRows(filter=''){
+    const q = (filter||'').trim().toLowerCase();
+    const visible = DATA.filter(x=>{
+      const inTitle = (x.Title||'').toLowerCase().includes(q);
+      const inDesc  = (x.RequestDescription||'').replace(/<[^>]+>/g,'').toLowerCase().includes(q);
+      return !q || inTitle || inDesc;
+    });
 
-      rowsEl.innerHTML = visible.map(x=>`
-        <tr>
-          <td>${x.Title ?? ''}</td>
-          <td>${x.RequestType ?? ''}</td>
-          <td>${x.Priority ?? ''}</td>
-          <td>${fmt(x.RequestDate)}</td>
-          <td>${x.RequestEndDate ? 'Yes' : 'No'}</td>
-          <td>${fmt(x.Created)}</td>
-          <td>${fmt(x.Modified)}</td>
-          <td>
-            <details>
-              <summary>View</summary>
-              <div>${purify(x.RequestDescription)}</div>
-            </details>
-          </td>
-        </tr>
-      `).join('') || `<tr><td colspan="8" class="kpi">No results</td></tr>`;
-    }
+    countEl.textContent = visible.length;
 
-    async function loadData(){
-      try{
-        const res  = await fetch('/api/requests', { cache: 'no-store' });
-        if(!res.ok){
-          rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Error: /api/requests returned ${res.status}</td></tr>`;
-          return;
-        }
-        const json = await res.json();
-        if(json.ok){
-          DATA = json.items || [];
-          renderRows((searchEl?.value || document.getElementById('topSearch')?.value || ''));
-        }else{
-          rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Error: ${json.error || 'Unknown'}</td></tr>`;
-        }
-      }catch(err){
-        rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Network error: ${String(err)}</td></tr>`;
+    rowsEl.innerHTML = visible.map(x=>`
+      <tr>
+        <td>${x.Title ?? ''}</td>
+        <td>${x.RequestType ?? ''}</td>
+        <td>${x.Priority ?? ''}</td>
+        <td>${fmt(x.RequestDate)}</td>
+        <td>${x.RequestEndDate ? 'Yes' : 'No'}</td>
+        <td>${fmt(x.Created)}</td>
+        <td>${fmt(x.Modified)}</td>
+        <td>
+          <details>
+            <summary>View</summary>
+            <div>${purify(x.RequestDescription)}</div>
+          </details>
+        </td>
+      </tr>
+    `).join('') || `<tr><td colspan="8" class="kpi">No results</td></tr>`;
+  }
+
+  async function loadData(){
+    try{
+      const res  = await fetch('/api/requests', { cache: 'no-store' });
+      if(!res.ok){
+        rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Error: /api/requests returned ${res.status}</td></tr>`;
+        return;
       }
+      const json = await res.json();
+      if(json.ok){
+        DATA = json.items || [];
+        renderRows(searchEl.value || getTopSearchValue());
+      }else{
+        rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Error: ${json.error || 'Unknown'}</td></tr>`;
+      }
+    }catch(err){
+      rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Network error: ${String(err)}</td></tr>`;
     }
+  }
 
-const topSearch = document.getElementById('topSearch');
-const syncSearch = v => { searchEl.value = v; if (topSearch) topSearch.value = v; renderRows(v); };
+  // Keep one sync function, wire it to both inputs
+  const syncSearch = v => {
+    searchEl.value = v;
+    if (topSearchEl) topSearchEl.value = v;
+    renderRows(v);
+  };
 
-searchEl.addEventListener('input', e => syncSearch(e.target.value));
-if (topSearch) topSearch.addEventListener('input', e => syncSearch(e.target.value));
+  // Local input always available
+  searchEl.addEventListener('input', e => syncSearch(e.target.value));
 
+  // Wait until header partial injects #topSearch, then wire it once
+  function wireTopSearchIfPresent(){
+    const el = document.getElementById('topSearch');
+    if (!el || el === topSearchEl) return;
+    topSearchEl = el;
+    topSearchEl.addEventListener('input', e => syncSearch(e.target.value));
+  }
 
-    loadData();
+  // Observe DOM for injected header
+  new MutationObserver(wireTopSearchIfPresent).observe(document.body, {subtree:true, childList:true});
+  // Also try once after DOM is ready
+  document.addEventListener('DOMContentLoaded', wireTopSearchIfPresent);
+
+  loadData();
 
     // ---- Create form ----
     const form     = document.getElementById('reqForm');
