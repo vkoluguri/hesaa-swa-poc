@@ -67,3 +67,15 @@ header img {
 .ft-links{display:flex; flex-wrap:wrap; gap:12px; list-style:none; margin:0; padding:0}
 .ft-links a{text-decoration:none; color:var(--ink-600)} .ft-links a:hover{color:var(--brand)}
 .ft-copy{margin:0; color:var(--ink-600)}
+/* Inputs: prevent iOS zoom */
+input[type="text"], textarea, select, input[type="search"],
+button, .btn {
+  font-size:16px; /* min 16 to avoid zoom */
+}
+
+h1.section-title,
+#requests-title,
+#create-title {
+  font-size: clamp(1.4rem, 2.8vw, 2rem);
+}
+label { font-size: clamp(.95rem, 2.2vw, 1rem); }
