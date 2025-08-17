@@ -1,26 +1,43 @@
-<header role="banner" class="site-header">
-  <div class="wrap">
-    <a class="brand" href="/" aria-label="HESAA Home">
-      <img src="/assets/hesaa-logo.png" 
-     alt="HESAA Logo" 
-     style="height:50px;"/>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="/">
+      <img src="/assets/HESAALogo.png" width="32" height="32" alt="HESAA">
       <span>HESAA</span>
     </a>
 
-    <nav aria-label="Primary" class="primary-nav">
+    <button id="navToggle"
+            class="nav-toggle"
+            aria-label="Open menu"
+            aria-controls="primaryNav"
+            aria-expanded="false">☰</button>
+
+    <nav id="primaryNav" class="nav" aria-label="Primary">
       <ul>
-        <!--<li><a href="/"          data-active="home">Home</a></li>-->
-        <li><a href="/students"  data-active="students">Students</a></li>
-        <li><a href="/aboutus"   data-active="about">About</a></li>
-        <li><a href="/contactus" data-active="contact">Contact</a></li>
+        <li><a href="/" aria-current="page">Home</a></li>
+        <li><a href="/students">Students</a></li>
+        <li><a href="/aboutus">About</a></li>
+        <li><a href="/contactus">Contact</a></li>
       </ul>
     </nav>
-
-<form class="top-search" role="search" aria-label="Site">
-  <label class="sr-only" for="topSearch">Search</label>
-  <input id="topSearch" name="q" type="search" placeholder="Search…">
-  <button type="submit" class="btn-search" aria-label="Search">⌕</button>
-</form>
-
   </div>
 </header>
+
+<script>
+  // small, isolated toggle that doesn’t race the include loader
+  (function () {
+    function wire() {
+      const btn = document.getElementById('navToggle');
+      const nav = document.getElementById('primaryNav');
+      if (!btn || !nav) return;
+      btn.addEventListener('click', () => {
+        const open = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', String(!open));
+        nav.classList.toggle('open', !open);
+        btn.setAttribute('aria-label', !open ? 'Close menu' : 'Open menu');
+      });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', wire);
+    } else { wire(); }
+  })();
+</script>
