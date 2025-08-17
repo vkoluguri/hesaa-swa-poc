@@ -23,3 +23,13 @@
     runIncludes();
   }
 })();
+window.addEventListener('includes:loaded', () => {
+  const topSearch = document.getElementById('topSearch');
+  const topSearchBtn = document.getElementById('topSearchBtn');
+  const pageSearch = document.getElementById('search');
+  if (!topSearch || !pageSearch) return;
+
+  const sync = v => { pageSearch.value = v; pageSearch.dispatchEvent(new Event('input', {bubbles:true})); }
+  topSearch.addEventListener('input', e => sync(e.target.value));
+  topSearchBtn?.addEventListener('click', () => sync(topSearch.value));
+});
