@@ -364,44 +364,63 @@
     setApiImg('slide2',         'Slide2.png');
     setApiImg('slide3',         'Slide3.png');
 
-    (function(){
-    const track = document.getElementById('heroCarousel');
-    const prev  = document.querySelector('.carousel-arrow.left');
-    const next  = document.querySelector('.carousel-arrow.right');
+(function () {
+  const track = document.getElementById('heroCarousel');
+  const prev  = document.querySelector('.carousel-arrow.left');
+  const next  = document.querySelector('.carousel-arrow.right');
+  const slides = Array.from(track.querySelectorAll('.slide'));
 
-    const go = dir => track.scrollBy({ left: (dir==='next' ? track.clientWidth : -track.clientWidth), behavior:'smooth' });
+  // how far to subtract for padding
+  const padLeft  = parseInt(getComputedStyle(track).paddingLeft || 0, 10);
+  // index state
+  let i = 0;
 
-    prev.addEventListener('click', ()=>{ stop(); go('prev'); });
-    next.addEventListener('click', ()=>{ stop(); go('next'); });
+  function goTo(n) {
+    i = (n + slides.length) % slides.length;              // loop
+    const x = slides[i].offsetLeft - padLeft;             // offset minus padding
+    track.scrollTo({ left: x, behavior: 'smooth' });
+  }
+  const goNext = () => goTo(i + 1);
+  const goPrev = () => goTo(i - 1);
 
-    track.addEventListener('keydown', e => {
-      if(e.key==='ArrowRight'){ stop(); go('next'); }
-      if(e.key==='ArrowLeft'){  stop(); go('prev'); }
-    });
+  // Buttons
+  prev.addEventListener('click', () => { stop(); goPrev(); });
+  next.addEventListener('click', () => { stop(); goNext(); });
 
-    // Auto-rotate unless user prefers reduced motion
-    let timer = null;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Keyboard
+  track.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') { stop(); goNext(); }
+    if (e.key === 'ArrowLeft')  { stop(); goPrev(); }
+  });
 
-    function start(){
-      if(reduced || timer) return;
-      timer = setInterval(()=> go('next'), 6000);
-    }
-    function stop(){
-      if(timer){ clearInterval(timer); timer = null; }
-    }
+  // ---- Auto rotate (ADA-friendly) ----
+  let timer = null;
+  let hover = false;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Pause on hover/focus; resume on leave/blur
-    ['mouseenter','focusin'].forEach(evt => track.addEventListener(evt, stop));
-    ['mouseleave','focusout'].forEach(evt => track.addEventListener(evt, start));
-    ['mouseenter','focusin'].forEach(evt => prev.addEventListener(evt, stop));
-    ['mouseleave','focusout'].forEach(evt => prev.addEventListener(evt, start));
-    ['mouseenter','focusin'].forEach(evt => next.addEventListener(evt, stop));
-    ['mouseleave','focusout'].forEach(evt => next.addEventListener(evt, start));
+  // only run when visible on screen
+  let visible = true;
+  const io = new IntersectionObserver(entries => {
+    visible = entries[0].isIntersecting;
+    if (visible) start(); else stop();
+  }, { rootMargin: '0px', threshold: 0.25 });
+  io.observe(track);
 
-    // kick off
-    start();
-  })();
+  function start() {
+    if (reduced || hover || timer || !visible) return;
+    timer = setInterval(goNext, 6000);
+  }
+  function stop() {
+    if (timer) { clearInterval(timer); timer = null; }
+  }
+
+  // pause on hover/focus
+  ['mouseenter','focusin'].forEach(evt => track.addEventListener(evt, () => { hover = true; stop(); }));
+  ['mouseleave','focusout'].forEach(evt => track.addEventListener(evt, () => { hover = false; start(); }));
+
+  // kick off on first paint of images
+  window.addEventListener('load', start);
+})();
     // ---- Year ----
     //document.getElementById('yr').textContent = new Date().getFullYear();
 
