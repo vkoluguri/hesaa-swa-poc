@@ -1,17 +1,14 @@
 <header class="site-header">
   <div class="wrap header-inner">
     <a class="brand" href="/">
-      <img src="/assets/HESAALogo.png" width="32" height="32" alt="HESAA">
-      <span>HESAA</span>
+      <img src="/assets/logo.png" alt="HESAA" class="brand-logo" />
     </a>
 
-    <button id="navToggle"
-            class="nav-toggle"
-            aria-label="Open menu"
-            aria-controls="primaryNav"
-            aria-expanded="false">☰</button>
+    <button class="nav-toggle" aria-label="Menu" aria-expanded="false" data-nav-toggle>
+      <span class="nav-toggle-bar" aria-hidden="true"></span>
+    </button>
 
-    <nav id="primaryNav" class="nav" aria-label="Primary">
+    <nav id="siteNav" class="main-nav" aria-label="Primary">
       <ul>
         <li><a href="/" aria-current="page">Home</a></li>
         <li><a href="/students">Students</a></li>
@@ -19,25 +16,33 @@
         <li><a href="/contactus">Contact</a></li>
       </ul>
     </nav>
+    <form class="top-search" role="search" aria-label="Site search" onsubmit="event.preventDefault();">
+  <label class="sr-only" for="topSearch">Search</label>
+  <input id="topSearch" type="search" placeholder="Search…" inputmode="search" autocomplete="off">
+  <button type="button" class="btn btn-primary" id="topSearchBtn">Search</button>
+</form>
+
   </div>
 </header>
 
+
 <script>
-  // small, isolated toggle that doesn’t race the include loader
-  (function () {
-    function wire() {
-      const btn = document.getElementById('navToggle');
-      const nav = document.getElementById('primaryNav');
-      if (!btn || !nav) return;
-      btn.addEventListener('click', () => {
-        const open = btn.getAttribute('aria-expanded') === 'true';
-        btn.setAttribute('aria-expanded', String(!open));
-        nav.classList.toggle('open', !open);
-        btn.setAttribute('aria-label', !open ? 'Close menu' : 'Open menu');
-      });
-    }
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', wire);
-    } else { wire(); }
-  })();
+(function(){
+  const btn = document.querySelector('[data-nav-toggle]');
+  const nav = document.getElementById('siteNav');
+  if(!btn || !nav) return;
+
+  function toggle(open){
+    const willOpen = open ?? nav.getAttribute('data-open') !== 'true';
+    nav.setAttribute('data-open', willOpen);
+    btn.setAttribute('aria-expanded', String(willOpen));
+  }
+
+  btn.addEventListener('click', ()=>toggle());
+  // Close when a link is clicked (mobile)
+  nav.addEventListener('click', e=>{
+    if(e.target.closest('a')) toggle(false);
+  });
+})();
 </script>
+
