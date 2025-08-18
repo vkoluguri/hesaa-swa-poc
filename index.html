@@ -560,27 +560,9 @@ const rowsEl   = document.getElementById('rows');
       }
     });
   </script>
-  <script>
-  (function(){
-    const topBox  = document.getElementById('topSearch');
-    const topBtn  = document.getElementById('topSearchBtn');
-    const mainBox = document.getElementById('search');
-
-    function syncAndFilter(){
-      if (!mainBox || !topBox) return;
-      mainBox.value = topBox.value;
-      mainBox.dispatchEvent(new Event('input', {bubbles:true}));
-      document.getElementById('requests')?.scrollIntoView({behavior:'smooth'});
-    }
-
-    topBox?.addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); syncAndFilter(); }});
-    topBtn?.addEventListener('click', syncAndFilter);
-  })();
-</script>
 
   <div data-include="/partials/footer.html"></div>
   <!-- Scripts -->
-  <script src="/assets/include.js"></script>
   <script src="/assets/site.js"></script>
 </body>
 </html>
