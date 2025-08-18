@@ -26,23 +26,4 @@
 </header>
 
 
-<script>
-(function(){
-  const btn = document.querySelector('[data-nav-toggle]');
-  const nav = document.getElementById('siteNav');
-  if(!btn || !nav) return;
-
-  function toggle(open){
-    const willOpen = open ?? nav.getAttribute('data-open') !== 'true';
-    nav.setAttribute('data-open', willOpen);
-    btn.setAttribute('aria-expanded', String(willOpen));
-  }
-
-  btn.addEventListener('click', ()=>toggle());
-  // Close when a link is clicked (mobile)
-  nav.addEventListener('click', e=>{
-    if(e.target.closest('a')) toggle(false);
-  });
-})();
-</script>
 
