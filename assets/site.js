@@ -7,10 +7,14 @@
     return false;
   };
 
-  function setYear(){
-    const year = new Date().getFullYear();
-    document.querySelectorAll('#yr').forEach(el => el.textContent = year);
-  }
+function setYear(){
+  const year = String(new Date().getFullYear());
+  // fill any #yr spans
+  document.querySelectorAll('#yr').forEach(el => { if (el.textContent !== year) el.textContent = year; });
+  // fallback: if no #yr found, patch footer text once
+  const ft = document.querySelector('.ft-copy');
+  if (ft && !/20\d{2}/.test(ft.textContent)) ft.innerHTML = `© <span id="yr">${year}</span> HESAA. All rights reserved.`;
+}
 
   function isHome(){
     const p = location.pathname.replace(/\/+$/,'') || '/';
@@ -75,30 +79,48 @@
   }
 
   /* ---------- Breadcrumbs ---------- */
-  function buildBreadcrumbs(){
-    if (isHome() || document.querySelector('.breadcrumbs')) return;
-    const container = document.getElementById('breadcrumb-container');
-    if (!container) return;
+function buildBreadcrumbs(){
+  // no crumbs on home
+  const pathClean = (location.pathname || '/').replace(/\/+$/,'') || '/';
+  if (pathClean === '/' || /\/index\.html?$/i.test(pathClean)) return;
 
-    const segs = location.pathname.replace(/\/+/g,'/').split('/').filter(Boolean);
-    let path = '';
-    const parts = segs.map((seg, i) => {
-      path += '/' + seg;
-      const label = decodeURIComponent(seg).replace(/[-_]/g,' ').replace(/\b\w/g, c => c.toUpperCase());
-      const isLast = i === segs.length - 1;
-      return isLast
-        ? `<li aria-current="page">${label}</li>`
-        : `<li><a href="${path}">${label}</a></li>`;
-    });
+  const container = document.getElementById('breadcrumb-container');
+  if (!container) return;
 
-    container.innerHTML = `
+  // helper: title-case + strip .html/.htm
+  const prettify = seg => {
+    const noExt = seg.replace(/\.[^.\/]+$/,''); // remove extension
+    const spaced = decodeURIComponent(noExt).replace(/[-_]/g,' ');
+    return spaced.replace(/\b\w/g, c => c.toUpperCase());
+  };
+
+  const homeSvg = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+      <path d="M12 3.2 2.8 11a1 1 0 0 0-.3.7V21a1 1 0 0 0 1 1h6v-6h5v6h6a1 1 0 0 0 1-1v-9.3a1 1 0 0 0-.3-.7L12 3.2z"/>
+    </svg>`;
+
+  const segs = pathClean.split('/').filter(Boolean);
+  let path = '';
+  const parts = segs.map((seg, i) => {
+    path += '/' + seg;
+    const label = prettify(seg);
+    const isLast = i === segs.length - 1;
+    return isLast
+      ? `<li aria-current="page">${label}</li>`
+      : `<li><a href="${path}">${label}</a></li>`;
+  });
+
+  container.innerHTML = `
+    <div class="wrap">
       <nav class="breadcrumbs" aria-label="Breadcrumb">
         <ol>
-          <li><a href="/">Home</a></li>
+          <li><a href="/" aria-label="Home">${homeSvg}</a></li>
           ${parts.join('<li>/</li>')}
         </ol>
-      </nav>`;
-  }
+      </nav>
+    </div>`;
+}
+
 
  /* ---------- Image helpers (SWA -> SharePoint) ---------- */
 function setApiImg(id, file) {
@@ -134,18 +156,56 @@ setApiImg('slide3', 'Slide3.png');
 
   const fmt = d => d ? new Date(d).toLocaleDateString() : '';
 
-  function render(filter=''){
-    const q = filter.trim().toLowerCase();
-    const out = DATA.filter(x =>
-      !q ||
-      (x.Title||'').toLowerCase().includes(q) ||
-      sanitize(x.RequestDescription||'').toLowerCase().includes(q) ||
-      (x.RequestType||'').toLowerCase().includes(q) ||
-      (x.Priority||'').toLowerCase().includes(q)
-    );
+function render(filter=''){
+  const q = (filter||'').trim().toLowerCase();
 
-    countEl && (countEl.textContent = out.length);
-    rowsEl.innerHTML = out.map(x => `
+  // normalize attachments from various API shapes
+  const getAttachments = x => {
+    if (Array.isArray(x?.AttachmentFiles)) {
+      return x.AttachmentFiles.map(a => ({
+        name: a.FileName || a.name || 'file',
+        url:  a.ServerRelativeUrl || a.Url || a.url || ''
+      }));
+    }
+    if (Array.isArray(x?.Attachments)) {         // some APIs use this name
+      return x.Attachments.map(a => ({
+        name: a.FileName || a.name || 'file',
+        url:  a.Url || a.url || ''
+      }));
+    }
+    if (x?.AttachmentName || x?.AttachmentUrl) { // single file shape
+      return [{ name: x.AttachmentName || 'file', url: x.AttachmentUrl || '' }];
+    }
+    return [];
+  };
+
+  const fmt = d => d ? new Date(d).toLocaleDateString() : '';
+  const plain = html => (sanitize ? sanitize(html) : String(html||'').replace(/<[^>]+>/g,''));
+
+  const out = DATA.filter(x => {
+    if (!q) return true;
+    const atts = getAttachments(x);
+    return (
+      (x.Title||'').toLowerCase().includes(q) ||
+      (x.RequestType||'').toLowerCase().includes(q) ||
+      (x.Priority||'').toLowerCase().includes(q) ||
+      plain(x.RequestDescription||'').toLowerCase().includes(q) ||
+      atts.some(a => (a.name||'').toLowerCase().includes(q))
+    );
+  });
+
+  countEl && (countEl.textContent = out.length);
+
+  rowsEl.innerHTML = out.map(x => {
+    const atts = getAttachments(x);
+    const attCell = atts.length
+      ? atts.map(a => a.url
+          ? `<a href="${a.url}" target="_blank" rel="noopener">${a.name}</a>`
+          : `<span>${a.name}</span>`
+        ).join('<br>')
+      : '—';
+
+    return `
       <tr>
         <td>${x.Title ?? ''}</td>
         <td>${x.RequestType ?? ''}</td>
@@ -154,10 +214,12 @@ setApiImg('slide3', 'Slide3.png');
         <td>${x.RequestEndDate ? 'Yes':'No'}</td>
         <td>${fmt(x.Created)}</td>
         <td>${fmt(x.Modified)}</td>
-        <td><details><summary>View</summary><div>${sanitize(x.RequestDescription)}</div></details></td>
-      </tr>
-    `).join('') || `<tr><td colspan="8" class="kpi">No results</td></tr>`;
-  }
+        <td>${attCell}</td>                                <!-- attachments -->
+        <td><details><summary>View</summary><div>${plain(x.RequestDescription)}</div></details></td>
+      </tr>`;
+  }).join('') || `<tr><td colspan="9" class="kpi">No results</td></tr>`;
+}
+
 
   async function loadData(){
     rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Loading…</td></tr>`;
@@ -202,38 +264,47 @@ setApiImg('slide3', 'Slide3.png');
     setTimeout(()=>{ alertBox.className = 'notice sr-only'; alertBox.textContent=''; }, 5000);
   }
 
-  form && form.addEventListener('submit', async e=>{
-    e.preventDefault();
-    formMsg.textContent = 'Submitting…';
-    alertBox.className = 'notice sr-only';
-    try{
-      const fd = new FormData(form);
-      const data = Object.fromEntries(fd.entries());
-      // required fields basic check
-      if(!data.Title || !data.Priority || !data.RequestType){
-        formMsg.textContent = '';
-        showNotice('Please fill Title, Type, and Priority.', 'error');
-        return;
-      }
-      data.RequestEndDate = !!fd.get('RequestEndDate');
+form && form.addEventListener('submit', async e=>{
+  e.preventDefault();
+  formMsg.textContent = 'Submitting…';
+  alertBox.className = 'notice sr-only';
+  try{
+    const fd = new FormData(form);
+    const hasFile = (form.querySelector('#fFile')?.files?.length || 0) > 0;
 
-      const res = await fetch('/api/requests', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(data)
-      });
-      const json = await res.json().catch(()=>({ok:false,error:`HTTP ${res.status} ${res.statusText}`}));
-      if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
-
-      formMsg.textContent = 'Created!';
-      showNotice('Request successfully created.', 'success');
-      form.reset();
-      await loadData();
-    }catch(err){
+    // basic client-side requireds
+    if(!fd.get('Title') || !fd.get('RequestType') || !fd.get('Priority')){
       formMsg.textContent = '';
-      showNotice('Failed: ' + String(err.message || err), 'error');
+      showNotice('Please fill Title, Type, and Priority.', 'error');
+      return;
     }
-  });
+
+    // normalize boolean
+    if (fd.get('RequestEndDate')) fd.set('RequestEndDate','true'); else fd.set('RequestEndDate','false');
+
+    let res, json;
+    if (hasFile){
+      // send multipart for SharePoint attachment support via your API
+      res  = await fetch('/api/requests', { method:'POST', body: fd });
+    }else{
+      const obj = Object.fromEntries(fd.entries());
+      res  = await fetch('/api/requests', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(obj)
+      });
+    }
+    json = await res.json().catch(()=>({ok:false,error:`HTTP ${res.status} ${res.statusText}`}));
+    if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+
+    formMsg.textContent = 'Created!';
+    showNotice('Request successfully created.', 'success');
+    form.reset();
+    await loadData();
+  }catch(err){
+    formMsg.textContent = '';
+    showNotice('Failed: ' + String(err.message || err), 'error');
+  }
+});
+
 
   // initial load
   loadData();
@@ -241,13 +312,13 @@ setApiImg('slide3', 'Slide3.png');
 
 
   /* ---------- Init ---------- */
-  function init(){
-    setYear();
-    initNav();
-    initSearch();
-    buildBreadcrumbs();
-    initRequestsApp();
-  }
+function init(){
+  setYear();
+  initNav();
+  initMobileSearchToggle();
+  buildBreadcrumbs();
+  initRequestsApp && initRequestsApp(); // if defined later in file
+}
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
