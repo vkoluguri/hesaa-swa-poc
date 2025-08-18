@@ -1,14 +1,17 @@
 <header class="site-header" role="banner">
   <a href="#main" class="sr-only">Skip to content</a>
   <div class="wrap header-inner">
+    <!-- Hamburger (left) -->
     <button class="nav-toggle" aria-label="Menu" aria-expanded="false" data-nav-toggle>
       <span class="nav-toggle-bar" aria-hidden="true"></span>
     </button>
 
+    <!-- Logo (center on mobile; natural size) -->
     <a class="brand" href="/" aria-label="HESAA home">
       <img src="/assets/HESAALogo.png" alt="HESAA" class="brand-logo" />
     </a>
 
+    <!-- Primary nav -->
     <nav id="siteNav" class="main-nav" aria-label="Primary">
       <ul>
         <li><a href="/" aria-current="page">Home</a></li>
@@ -18,14 +21,15 @@
       </ul>
     </nav>
 
+    <!-- Search (compact; icon on mobile) -->
     <div class="search-container" role="search">
       <button class="search-toggle" aria-label="Open search">
         <i class="fa fa-search" aria-hidden="true"></i>
       </button>
       <div class="search-box">
-        <label for="q" class="sr-only">Search</label>
-        <input id="q" name="q" type="search" placeholder="Search…" />
-        <button class="btn btn-primary">Search</button>
+        <label for="q" class="sr-only">Search requests</label>
+        <input id="q" name="q" type="search" placeholder="Search requests…" />
+        <button type="button" class="btn btn-primary" data-search-btn>Search</button>
       </div>
     </div>
   </div>
