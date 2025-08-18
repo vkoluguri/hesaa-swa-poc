@@ -1,3 +1,4 @@
+<link rel="icon" type="image/x-icon" href="/assets/HESAAFAVICON.ico">
 <header class="site-header" role="banner">
   <a href="#main" class="sr-only">Skip to content</a>
   <div class="wrap header-inner">
@@ -21,16 +22,18 @@
       </ul>
     </nav>
 
-    <!-- Search (compact; icon on mobile) -->
-    <div class="search-container" role="search">
-      <button class="search-toggle" aria-label="Open search">
-        <i class="fa fa-search" aria-hidden="true"></i>
-      </button>
-      <div class="search-box">
-        <label for="q" class="sr-only">Search requests</label>
-        <input id="q" name="q" type="search" placeholder="Search requests…" />
-        <button type="button" class="btn btn-primary" data-search-btn>Search</button>
-      </div>
-    </div>
+<!-- search container -->
+<div class="search-container" role="search">
+  <button class="search-toggle" aria-label="Open search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M21 21l-4.3-4.3m1.1-5.4a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z"/>
+    </svg>
+  </button>
+  <div class="search-box">
+    <label for="q" class="sr-only">Search requests</label>
+    <input id="q" name="q" type="search" placeholder="Search requests…" />
+    <button type="button" class="btn btn-primary" data-search-btn>Search</button>
+  </div>
+</div>
   </div>
 </header>
