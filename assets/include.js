@@ -1,35 +1,21 @@
-// /assets/include.js
-(function () {
-  async function inject(el) {
-    const url = el.getAttribute('data-include');
-    if (!url) return;
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`Include failed: ${url} (${res.status})`);
-    const html = await res.text();
-    // Replace the placeholder node with the fetched markup
-    el.outerHTML = html;
+/*! simple includes loader */
+(function(){
+  async function inject(el){
+    const src = el.getAttribute('data-include');
+    if(!src) return;
+    try{
+      const res = await fetch(src, {cache:'no-cache'});
+      const html = await res.text();
+      el.outerHTML = html;
+    }catch(e){
+      console.error('Include failed:', src, e);
+    }
   }
-
-  async function runIncludes() {
+  async function run(){
     const nodes = Array.from(document.querySelectorAll('[data-include]'));
-    await Promise.all(nodes.map(inject));
-    // IMPORTANT: tell the page we're done
+    for(const el of nodes){ await inject(el); }
     window.dispatchEvent(new CustomEvent('includes:loaded'));
   }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', runIncludes);
-  } else {
-    runIncludes();
-  }
+  if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', run); }
+  else{ run(); }
 })();
-window.addEventListener('includes:loaded', () => {
-  const topSearch = document.getElementById('topSearch');
-  const topSearchBtn = document.getElementById('topSearchBtn');
-  const pageSearch = document.getElementById('search');
-  if (!topSearch || !pageSearch) return;
-
-  const sync = v => { pageSearch.value = v; pageSearch.dispatchEvent(new Event('input', {bubbles:true})); }
-  topSearch.addEventListener('input', e => sync(e.target.value));
-  topSearchBtn?.addEventListener('click', () => sync(topSearch.value));
-});
