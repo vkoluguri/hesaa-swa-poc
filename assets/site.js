@@ -6,6 +6,17 @@
     el.dataset[key] = '1';
     return false;
   };
+  
+function ensureFavicon(){
+  const have = document.querySelector('link[rel~="icon"]');
+  if (!have){
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/x-icon';
+    link.href = '/assets/HESAAFAVICON.ico';
+    document.head.appendChild(link);
+  }
+}
 
 function setYear(){
   const year = String(new Date().getFullYear());
@@ -80,46 +91,36 @@ function setYear(){
 
   /* ---------- Breadcrumbs ---------- */
 function buildBreadcrumbs(){
-  // no crumbs on home
-  const pathClean = (location.pathname || '/').replace(/\/+$/,'') || '/';
-  if (pathClean === '/' || /\/index\.html?$/i.test(pathClean)) return;
+  const path = (location.pathname || '/').replace(/\/+$/,'') || '/';
+  if (path === '/' || /\/index\.html?$/i.test(path)) return;
 
-  const container = document.getElementById('breadcrumb-container');
-  if (!container) return;
+  const host = document.getElementById('breadcrumb-container');
+  if (!host) return;
 
-  // helper: title-case + strip .html/.htm
-  const prettify = seg => {
-    const noExt = seg.replace(/\.[^.\/]+$/,''); // remove extension
-    const spaced = decodeURIComponent(noExt).replace(/[-_]/g,' ');
-    return spaced.replace(/\b\w/g, c => c.toUpperCase());
-  };
+  const segs = path.split('/').filter(Boolean);
+  const prettify = s => decodeURIComponent(s.replace(/\.[^.\/]+$/,''))
+                        .replace(/[-_]/g,' ')
+                        .replace(/\b\w/g,c=>c.toUpperCase());
 
-  const homeSvg = `
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
-      <path d="M12 3.2 2.8 11a1 1 0 0 0-.3.7V21a1 1 0 0 0 1 1h6v-6h5v6h6a1 1 0 0 0 1-1v-9.3a1 1 0 0 0-.3-.7L12 3.2z"/>
-    </svg>`;
-
-  const segs = pathClean.split('/').filter(Boolean);
-  let path = '';
-  const parts = segs.map((seg, i) => {
-    path += '/' + seg;
-    const label = prettify(seg);
-    const isLast = i === segs.length - 1;
-    return isLast
-      ? `<li aria-current="page">${label}</li>`
-      : `<li><a href="${path}">${label}</a></li>`;
+  let acc = '';
+  const parts = segs.map((seg, i)=>{
+    acc += '/' + seg;
+    const last = i === segs.length-1;
+    return last
+      ? `<span aria-current="page">${prettify(seg)}</span>`
+      : `<a href="${acc}">${prettify(seg)}</a>`;
   });
 
-  container.innerHTML = `
+  host.innerHTML = `
     <div class="wrap">
       <nav class="breadcrumbs" aria-label="Breadcrumb">
-        <ol>
-          <li><a href="/" aria-label="Home">${homeSvg}</a></li>
-          ${parts.join('<li>/</li>')}
-        </ol>
+        <span class="bc-home"><a href="/">Home</a></span>
+        <span class="bc-sep">/</span>
+        ${parts.join(`<span class="bc-sep">/</span>`)}
       </nav>
     </div>`;
 }
+
 
 
  /* ---------- Image helpers (SWA -> SharePoint) ---------- */
@@ -317,6 +318,7 @@ function init(){
   initNav();            // hamburger
   initSearch();         // <-- correct function name
   buildBreadcrumbs();   // breadcrumbs
+  ensureFavicon();    //favicon
 }
 
 if (document.readyState === 'loading') {
