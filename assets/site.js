@@ -100,73 +100,145 @@
       </nav>`;
   }
 
-  /* ---------- Requests app (PoC) ---------- */
-  const STORAGE_KEY = 'hesaa_poc_requests';
+ /* ---------- Image helpers (SWA -> SharePoint) ---------- */
+function setApiImg(id, file) {
+  const el = document.getElementById(id);
+  if (el) el.src = `/api/media/${encodeURIComponent(file)}`;
+}
+// Assign hero images (IDs must be on <img> tags in index.html)
+setApiImg('heroHeaderImg', 'Hero.png');
+setApiImg('slide1', 'Slide1.png');
+setApiImg('slide2', 'Slide2.png');
+setApiImg('slide3', 'Slide3.png');
 
-  function loadRequests(){
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-    catch { return []; }
-  }
-  function saveRequests(rows){ localStorage.setItem(STORAGE_KEY, JSON.stringify(rows||[])); }
+/* ---------- Requests app (API-backed) ---------- */
+(function RequestsApp(){
+  const rowsEl   = document.getElementById('rows');
+  const countEl  = document.getElementById('resultCount');
+  const pageBox  = document.getElementById('search');
+  const topBox   = document.getElementById('q');            // header search
+  const form     = document.getElementById('reqForm');
+  const formMsg  = document.getElementById('formMsg');
+  const alertBox = document.getElementById('alert');
+  const table    = document.getElementById('requestsTable');
 
-  function renderRequests(rows){
-    const tbody = document.querySelector('#requestsTable tbody');
-    if (!tbody) return;
-    tbody.innerHTML = rows.map((r,i)=>`
-      <tr>
-        <td>${r.id}</td>
-        <td>${r.title}</td>
-        <td>${r.description}</td>
-        <td>${r.requestDate || ''}</td>
-        <td><span class="badge ${r.priority||''}">${r.priority||''}</span></td>
-        <td>${r.attachmentName || ''}</td>
-      </tr>
-    `).join('');
-  }
+  if (!table) return; // Not on the home/requests page
 
-  function filterRequestsTable(q){
-    const all = loadRequests();
-    const qn = (q||'').toLowerCase();
-    const filtered = !qn ? all : all.filter(r =>
-      [r.title, r.description, r.priority, r.requestDate, r.attachmentName]
-        .filter(Boolean)
-        .some(v => String(v).toLowerCase().includes(qn))
+  let DATA = [];
+
+  const sanitize = window.DOMPurify
+    ? html => window.DOMPurify.sanitize(html || '',
+        {ALLOWED_TAGS:['b','i','em','strong','u','span','div','p','ul','ol','li','br','a'],
+         ALLOWED_ATTR:['href','style','target']})
+    : html => String(html||'').replace(/<[^>]+>/g,'');
+
+  const fmt = d => d ? new Date(d).toLocaleDateString() : '';
+
+  function render(filter=''){
+    const q = filter.trim().toLowerCase();
+    const out = DATA.filter(x =>
+      !q ||
+      (x.Title||'').toLowerCase().includes(q) ||
+      sanitize(x.RequestDescription||'').toLowerCase().includes(q) ||
+      (x.RequestType||'').toLowerCase().includes(q) ||
+      (x.Priority||'').toLowerCase().includes(q)
     );
-    renderRequests(filtered);
+
+    countEl && (countEl.textContent = out.length);
+    rowsEl.innerHTML = out.map(x => `
+      <tr>
+        <td>${x.Title ?? ''}</td>
+        <td>${x.RequestType ?? ''}</td>
+        <td>${x.Priority ?? ''}</td>
+        <td>${fmt(x.RequestDate)}</td>
+        <td>${x.RequestEndDate ? 'Yes':'No'}</td>
+        <td>${fmt(x.Created)}</td>
+        <td>${fmt(x.Modified)}</td>
+        <td><details><summary>View</summary><div>${sanitize(x.RequestDescription)}</div></details></td>
+      </tr>
+    `).join('') || `<tr><td colspan="8" class="kpi">No results</td></tr>`;
   }
 
-  function initRequestsApp(){
-    const form = document.getElementById('requestForm');
-    const table = document.getElementById('requestsTable');
-    if (!form || !table || once(form,'jsbound')) return;
+  async function loadData(){
+    rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Loading…</td></tr>`;
+    try{
+      const res = await fetch('/api/requests');
+      let payload;
+      try{ payload = await res.json(); }catch{ payload = { ok:false, error: `HTTP ${res.status} ${res.statusText}` }; }
+      if(!res.ok) throw new Error(payload.error || `HTTP ${res.status}`);
+      if(!payload.ok) throw new Error(payload.error || 'Unknown API error');
 
-    // Render existing
-    renderRequests(loadRequests());
+      DATA = Array.isArray(payload.items) ? payload.items : [];
+      const q = (pageBox && pageBox.value) || (topBox && topBox.value) || '';
+      render(q);
+    }catch(err){
+      console.error('Requests API error:', err);
+      rowsEl.innerHTML = `<tr><td colspan="8" class="kpi">Error loading requests: ${String(err.message || err)}</td></tr>`;
+    }
+  }
 
-    // Submit
-    form.addEventListener('submit', (e)=>{
-      e.preventDefault();
+  // sync header search <-> page search
+  const sync = (v) => {
+    if (pageBox && pageBox.value !== v) pageBox.value = v;
+    if (topBox  && topBox.value  !== v) topBox.value  = v;
+    render(v);
+  };
+
+  // debounce for input
+  function debounce(fn, ms=200){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
+  const debouncedSync = debounce(sync, 180);
+
+  pageBox && pageBox.addEventListener('input', e => debouncedSync(e.target.value));
+  topBox  && topBox.addEventListener('input',  e => debouncedSync(e.target.value));
+
+  // also wire header search button (if present)
+  const topBtn = document.querySelector('[data-search-btn]');
+  topBtn && topBtn.addEventListener('click', ()=> sync((topBox && topBox.value) || ''));
+
+  // create form POST -> /api/requests
+  function showNotice(text,type){
+    alertBox.textContent = text;
+    alertBox.className = `notice ${type}`;
+    setTimeout(()=>{ alertBox.className = 'notice sr-only'; alertBox.textContent=''; }, 5000);
+  }
+
+  form && form.addEventListener('submit', async e=>{
+    e.preventDefault();
+    formMsg.textContent = 'Submitting…';
+    alertBox.className = 'notice sr-only';
+    try{
       const fd = new FormData(form);
-      const title = (fd.get('RequestTitle')||'').trim();
-      const description = (fd.get('RequestDescription')||'').trim();
-      const requestDate = fd.get('RequestDate') || '';
-      const priority = fd.get('Priority') || '';
-      const file = form.querySelector('input[type="file"]')?.files?.[0];
-      const attachmentName = file ? file.name : '';
-
-      if (!title || !description || !priority || !requestDate){
-        alert('Please complete all required fields.');
+      const data = Object.fromEntries(fd.entries());
+      // required fields basic check
+      if(!data.Title || !data.Priority || !data.RequestType){
+        formMsg.textContent = '';
+        showNotice('Please fill Title, Type, and Priority.', 'error');
         return;
       }
+      data.RequestEndDate = !!fd.get('RequestEndDate');
 
-      const rows = loadRequests();
-      const id = rows.length ? Math.max(...rows.map(r=>r.id))+1 : 1;
-      rows.unshift({ id, title, description, requestDate, priority, attachmentName });
-      saveRequests(rows);
+      const res = await fetch('/api/requests', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+      const json = await res.json().catch(()=>({ok:false,error:`HTTP ${res.status} ${res.statusText}`}));
+      if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+
+      formMsg.textContent = 'Created!';
+      showNotice('Request successfully created.', 'success');
       form.reset();
-      renderRequests(rows);
-    });
-  }
+      await loadData();
+    }catch(err){
+      formMsg.textContent = '';
+      showNotice('Failed: ' + String(err.message || err), 'error');
+    }
+  });
+
+  // initial load
+  loadData();
+})();
+
 
   /* ---------- Init ---------- */
   function init(){
@@ -182,15 +254,5 @@
 
   window.addEventListener('includes:loaded', init);
 })();
-// ---- Image helpers (served by your SWA API /api/media/:file) ----
-function setApiImg(id, file) {
-  const el = document.getElementById(id);
-  if (el) el.src = `/api/media/${encodeURIComponent(file)}`;
-}
 
-// Assign images to carousel
-setApiImg('heroHeaderImg', 'Hero.png');
-setApiImg('slide1', 'Slide1.png');
-setApiImg('slide2', 'Slide2.png');
-setApiImg('slide3', 'Slide3.png');
 
