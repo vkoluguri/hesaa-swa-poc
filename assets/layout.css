@@ -1,5 +1,5 @@
 /* =========================
-   HESAA — Global Layout CSS 
+   HESAA — Global Layout CSS
    ========================= */
 
 /* ---- Theme tokens ---- */
@@ -76,25 +76,21 @@ textarea, select, button, .btn{ font-size:16px }
 .nav-toggle-bar::before{ position:absolute; top:-7px; left:0 }
 .nav-toggle-bar::after{ position:absolute; top:7px; left:0 }
 
-/* Search (desktop: compact; mobile: icon -> popover) */
-/* desktop search: compact, aligned */
-.search-container{ display:flex; align-items:center; gap:.5rem; margin-left:auto }
-.search-box{ display:flex; gap:.5rem; align-items:center }
-.search-box input[type="search"]{ width: clamp(180px, 28vw, 240px) }
-
-/* Breadcrumbs */
-#breadcrumb-container{ background:#fff; border-bottom:1px solid var(--border) }
-#breadcrumb-container .wrap{ padding:8px 16px }
-.breadcrumbs{ background:transparent; border:0 }
-.breadcrumbs ol{ padding:0 }
-.breadcrumbs{ background:#fff; border-bottom:1px solid var(--border) }
-.breadcrumbs ol{
-  list-style:none; margin:0; padding:8px 16px;
-  display:flex; flex-wrap:wrap; gap:.5rem; align-items:center
+/* Search controls (remove UA dots, align sizes) */
+.search-toggle{
+  appearance:none; -webkit-appearance:none;
+  background:transparent; border:0; padding:0; margin:0;
+  display:flex; align-items:center; justify-content:center;
+  width:34px; height:34px; border-radius:8px; line-height:1;
 }
-.breadcrumbs a{ color:var(--ink-700) }
-.breadcrumbs li{ color:var(--muted) }
-.breadcrumbs li[aria-current="page"]{ color:var(--ink-900); font-weight:600 }
+.search-toggle svg{ width:18px; height:18px }
+
+/* Desktop search: compact input + button */
+@media (min-width:901px){
+  .search-container{ display:flex; align-items:center; gap:.5rem; margin-left:auto }
+  .search-box{ display:flex; gap:.5rem; align-items:center }
+  .search-box input[type="search"]{ width: clamp(180px, 26vw, 240px) }
+}
 
 /* Mobile layout */
 @media (max-width:900px){
@@ -117,41 +113,58 @@ textarea, select, button, .btn{ font-size:16px }
   .site-header .wrap.header-inner{ display:flex; align-items:center }
   .nav-toggle{ order:1 }
   .brand{ order:2; flex:1; display:flex; justify-content:center }
-  .search-toggle{ order:3 }
 
-  .search-container{ position:relative }
-  .search-box{              /* closed by default on mobile */
-    display:none; position:absolute; top:100%; right:0; left:auto;
-    width:min(90vw, 360px); background:#fff; border:1px solid #e2e2e2; padding:10px; z-index:99
+  .search-container{ order:3; position:relative }
+  .search-box{
+    display:none; position:absolute; top:100%; right:0;
+    width:min(90vw, 360px); background:#fff; border:1px solid #e2e2e2;
+    padding:10px; z-index:99; border-radius:10px
   }
-  .search-container.open .search-box{ display:flex }
-  .search-toggle{ background:none; border:0; font-size:1.2rem; line-height:1 }
+  .search-container.open .search-box{ display:flex; gap:.5rem; align-items:center }
   .search-box input[type="search"]{ flex:1; min-width:0 }
 }
 
-/* Hero carousel polish (Adobe-style clean) */
-.hero { background:#fff; padding: 16px 0 4px }
+/* =========================
+   Breadcrumbs
+   ========================= */
+#breadcrumb-container{ background:#fff; border-bottom:1px solid var(--border) }
+#breadcrumb-container .wrap{ padding:8px 16px }
+.breadcrumbs{ background:transparent; border:0 }
+.breadcrumbs ol{
+  list-style:none; margin:0; padding:0;
+  display:flex; flex-wrap:wrap; gap:.5rem; align-items:center
+}
+.breadcrumbs a{ color:var(--ink-700) }
+.breadcrumbs li{ color:var(--muted) }
+.breadcrumbs li[aria-current="page"]{ color:var(--ink-900); font-weight:600 }
+
+/* =========================
+   Hero carousel (Adobe‑style clean)
+   ========================= */
+.hero { background:#fff; padding:16px 0 4px }
 .hero-card{ position:relative; overflow:hidden; border-radius:24px; box-shadow:var(--shadow) }
 .hero-card .carousel,
 .hero-card .carousel-inner,
-.hero-card .carousel-item { border-radius:24px }
+.hero-card .carousel-item{ border-radius:24px }
 .hero-card img{ width:100%; height:auto; display:block }
 
-/* Soft, minimal indicators */
-.carousel-indicators [data-bs-target]{
-  width:10px; height:10px; border-radius:999px; background:#e5e7eb;
-}
+/* Soft indicators */
+.carousel-indicators [data-bs-target]{ width:10px; height:10px; border-radius:999px; background:#e5e7eb }
 .carousel-indicators .active{ background:#2563eb }
 
-/* Keep overlay subtle and bottom-aligned */
+/* Subtle bottom overlay; keep image visible */
 .hero-overlay{
   position:absolute; inset:auto 0 0 0; padding:24px;
-  background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.45) 80%);
+  background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.35) 80%);
   color:#fff;
 }
 .hero h1{ font-size: clamp(1.8rem, 3.8vw, 3rem); margin:0 0 .25em }
 .hero p{ margin:0; color:#f1f5ff }
-
+@media (max-width:700px){
+  .hero-overlay{ padding:12px; background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.28) 90%) }
+  .hero h1{ font-size: clamp(1.2rem, 5vw, 1.6rem) }
+  .hero p{ display:none } /* keep image clean on phones */
+}
 
 /* =========================
    Cards / Buttons
@@ -179,13 +192,11 @@ form{ display:grid; gap:.75rem }
 .form-row{ display:flex; gap:.75rem; flex-wrap:wrap }
 .form-actions{ display:flex; gap:.75rem; align-items:center; margin-top:.4rem }
 input[type="text"], input[type="search"], input[type="date"], textarea, select{
-  width:100%; padding:.55rem .65rem; border:1px solid var(--border); border-radius:10px;
+  width:100%; padding:.55rem .65rem; border:1px solid var(--border); border-radius:10px
 }
 select{ background:#fff }
 textarea{ min-height:110px; resize:vertical }
-.badge{
-  display:inline-block; padding:.25rem .5rem; border-radius:999px; background:#eef2ff; color:#3730a3; font-weight:600;
-}
+.badge{ display:inline-block; padding:.25rem .5rem; border-radius:999px; background:#eef2ff; color:#3730a3; font-weight:600 }
 .badge.High{ background:#fee2e2; color:#991b1b }
 .badge.Medium{ background:#fef3c7; color:#92400e }
 .badge.Low{ background:#dcfce7; color:#166534 }
@@ -217,15 +228,15 @@ tbody tr:hover{ background:rgba(37,99,235,.05) }
 .ft-copy{ margin:0; color:var(--ink-600) }
 
 /* =========================
-   Quick links (home)
+   Spotlight + Quick links
    ========================= */
 .ql{ display:grid; gap:16px; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)) }
 .ql-card{
   display:grid; place-items:center; gap:10px; padding:18px 16px; border-radius:14px;
-  background:var(--surface); border:1px solid var(--border);font-size: 20px;
+  background:var(--surface); border:1px solid var(--border); font-size:20px;
   transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease
 }
-.ql-card:hover{ transform:translateY(-2px); text-align: center; box-shadow:var(--shadow)}
+.ql-card:hover{ transform:translateY(-2px); text-align:center; box-shadow:var(--shadow) }
 .ql-icon{ width:60px; height:60px; border-radius:14px; display:grid; place-items:center }
 .ql-icon .ql-svg{ width:28px; height:28px }
 
@@ -253,13 +264,8 @@ tbody tr:hover{ background:rgba(37,99,235,.05) }
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.2), 0 6px 16px rgba(0,0,0,.12);
 }
 .spot-ico{ width:28px; height:28px; fill:#fff }
-
-/* brand-ish gradients (generic, not official marks) */
 .spot-azure{ background:linear-gradient(135deg,#1e90ff,#0078d4) }
 .spot-github{ background:linear-gradient(135deg,#111827,#374151) }
 .spot-sp{    background:linear-gradient(135deg,#008272,#00b294) }
-
 .spot-body > strong{ display:block; color:var(--ink-900); margin-top:2px }
 .spot-body > .kpi{ margin:2px 0 0; color:var(--ink-700) }
-
-
