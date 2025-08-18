@@ -311,19 +311,21 @@ form && form.addEventListener('submit', async e=>{
 })();
 
 
-  /* ---------- Init ---------- */
+/* ---------- Init ---------- */
 function init(){
-  setYear();
-  initNav();
-  initMobileSearchToggle();
-  buildBreadcrumbs();
-  initRequestsApp && initRequestsApp(); // if defined later in file
+  setYear();            // copyright
+  initNav();            // hamburger
+  initSearch();         // <-- correct function name
+  buildBreadcrumbs();   // breadcrumbs
 }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+window.addEventListener('includes:loaded', init);
 
-  window.addEventListener('includes:loaded', init);
 })();
 
 
