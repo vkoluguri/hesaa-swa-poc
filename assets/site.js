@@ -22,6 +22,23 @@
     // Close menu after clicking a link (mobile)
     nav.addEventListener('click', e => { if (e.target.closest('a')) toggle(false); });
   }
+  function initMobileSearchToggle() {
+  const toggleBtn = document.querySelector('.search-toggle');
+  const container = document.querySelector('.search-container');
+
+  if (toggleBtn && container) {
+    toggleBtn.addEventListener('click', () => {
+      container.classList.toggle('open');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!container.contains(e.target)) {
+        container.classList.remove('open');
+      }
+    });
+  }
+}
+
 
   function buildBreadcrumbs(){
     if (location.pathname === '/' || document.querySelector('.breadcrumbs')) return;
@@ -49,11 +66,13 @@
     headerWrap.insertAdjacentElement('afterend', nav);
   }
 
-  function init(){
-    setYear();
-    initNav();
-    buildBreadcrumbs();
-  }
+function init(){
+  setYear();
+  initNav();
+  buildBreadcrumbs();
+  initMobileSearchToggle(); // ← add this
+}
+
 
   // Run on DOM ready and after includes are injected
   if (document.readyState === 'loading') {
