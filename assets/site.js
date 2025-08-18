@@ -182,3 +182,15 @@
 
   window.addEventListener('includes:loaded', init);
 })();
+// ---- Image helpers (served by your SWA API /api/media/:file) ----
+function setApiImg(id, file) {
+  const el = document.getElementById(id);
+  if (el) el.src = `/api/media/${encodeURIComponent(file)}`;
+}
+
+// Assign images to carousel
+setApiImg('heroHeaderImg', 'Hero.png');
+setApiImg('slide1', 'Slide1.png');
+setApiImg('slide2', 'Slide2.png');
+setApiImg('slide3', 'Slide3.png');
+
