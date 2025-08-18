@@ -76,9 +76,38 @@ label{ font-size: clamp(.95rem, 2.2vw, 1rem) }
 .brand{ display:flex; align-items:center; gap:8px; text-decoration:none; color:inherit; font-weight:700 }
 
 /* ——— Search ——— */
-.top-search{ margin-left:auto; display:flex; gap:.5rem; align-items:center }
-.top-search input{ border:1px solid var(--border); border-radius:10px; padding:.5rem .65rem; min-width:240px }
-.btn.btn-primary{ border:0; background:var(--brand); color:#fff; border-radius:10px; padding:.5rem .9rem; cursor:pointer }
+/* Hide search box on mobile, show icon */
+@media (max-width: 768px) {
+  .search-container {
+    display: flex;
+    align-items: center;
+    position: relative;
+  }
+
+  .search-box {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #fff;
+    border: 1px solid #ccc;
+    z-index: 99;
+    width: 100%;
+    padding: 10px;
+  }
+
+  .search-container.open .search-box {
+    display: flex;
+    gap: 0.5rem;
+    flex-direction: row;
+  }
+
+  .search-toggle {
+    background: none;
+    border: none;
+    font-size: 1.2em;
+  }
+}
 
 
 /* ——— Primary nav (desktop) ——— */
