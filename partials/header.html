@@ -1,33 +1,32 @@
-<header class="site-header">
+<header class="site-header" role="banner">
+  <a href="#main" class="sr-only">Skip to content</a>
   <div class="wrap header-inner">
-    <a class="brand" href="/">
-      <img src="/assets/HESAALogo.png" alt="HESAA" class="brand-logo" />
-    </a>
-
     <button class="nav-toggle" aria-label="Menu" aria-expanded="false" data-nav-toggle>
       <span class="nav-toggle-bar" aria-hidden="true"></span>
     </button>
 
+    <a class="brand" href="/" aria-label="HESAA home">
+      <img src="/assets/HESAALogo.png" alt="HESAA" class="brand-logo" />
+    </a>
+
     <nav id="siteNav" class="main-nav" aria-label="Primary">
       <ul>
         <li><a href="/" aria-current="page">Home</a></li>
-        <li><a href="/students">Students</a></li>
-        <li><a href="/aboutus">About</a></li>
-        <li><a href="/contactus">Contact</a></li>
+        <li><a href="/students.html">Students</a></li>
+        <li><a href="/aboutus.html">About</a></li>
+        <li><a href="/contactus.html">Contact</a></li>
       </ul>
     </nav>
-<div class="search-container">
-  <button class="search-toggle" aria-label="Open search">
-    <i class="fa fa-search"></i>
-  </button>
-  <div class="search-box">
-    <input type="text" placeholder="Search…" />
-    <button class="btn btn-primary">Search</button>
-  </div>
-</div>
 
+    <div class="search-container" role="search">
+      <button class="search-toggle" aria-label="Open search">
+        <i class="fa fa-search" aria-hidden="true"></i>
+      </button>
+      <div class="search-box">
+        <label for="q" class="sr-only">Search</label>
+        <input id="q" name="q" type="search" placeholder="Search…" />
+        <button class="btn btn-primary">Search</button>
+      </div>
+    </div>
   </div>
 </header>
-
-
-
