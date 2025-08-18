@@ -48,74 +48,69 @@ h1.section-title, #requests-title, #create-title{
 /* Labels */
 label{ font-size: clamp(.95rem, 2.2vw, 1rem) }
 
-/* ---- Brand logo ---- */
-.brand-logo{ height:32px; width:auto }
-@media (max-width:768px){
-  .brand-logo{ height:28px }
-}
-
+/* ——— Brand / logo ——— */
+.brand-logo{ height:44px; width:auto; display:block }
+@media (max-width:900px){ .brand-logo{ height:36px } }
 /* =========================
    Header / Navigation
    ========================= */
 
-.site-header{
-  position:sticky; top:0; z-index:40;
-  background:var(--bg);
-  border-bottom:1px solid var(--border);
-}
-.site-header .wrap{ display:flex; align-items:center; gap:16px; padding:12px 16px }
+/* ——— Header shell ——— */
+.site-header{ position:sticky; top:0; z-index:40; background:#fff; border-bottom:1px solid var(--border) }
+.header-inner{ display:flex; align-items:center; gap:12px; padding:.65rem 0 }
 
 /* brand block */
 .brand{ display:flex; align-items:center; gap:8px; text-decoration:none; color:inherit; font-weight:700 }
 
-/* top search (desktop) */
-.top-search{ margin-left:auto; display:flex; align-items:center; gap:6px }
-.top-search input{
-  border:1px solid var(--border); border-radius:10px; padding:6px 8px; background:#fff; color:var(--ink-900);
-}
-.btn-search{
-  border:0; background:var(--brand); color:#fff;
-  border-radius:10px; padding:6px 10px; cursor:pointer;
-}
-.btn-search:hover{ background:var(--brand-600) }
+/* ——— Search ——— */
+.top-search{ margin-left:auto; display:flex; gap:.5rem; align-items:center }
+.top-search input{ border:1px solid var(--border); border-radius:10px; padding:.5rem .65rem; min-width:240px }
+.btn.btn-primary{ border:0; background:var(--brand); color:#fff; border-radius:10px; padding:.5rem .9rem; cursor:pointer }
 
-/* main nav (desktop) */
-.main-nav{ margin-left:12px }
-.main-nav ul{ display:flex; gap:10px; list-style:none; margin:0; padding:0 }
-.main-nav a{
-  text-decoration:none; color:var(--ink-900);
-  display:inline-block; padding:8px 10px; border-radius:10px;
-}
-.main-nav a:hover,
-.main-nav a[aria-current="page"]{ background:var(--surface) }
 
-/* hamburger */
-.nav-toggle{
-  display:none; background:transparent; border:0; width:44px; height:44px;
-  border-radius:8px; color:var(--ink-900);
-}
-.nav-toggle-bar{
-  width:22px; height:2px; background:currentColor; display:block; position:relative; margin-inline:auto;
-}
-.nav-toggle-bar::before, .nav-toggle-bar::after{
-  content:""; position:absolute; left:0; width:22px; height:2px; background:currentColor;
-}
-.nav-toggle-bar::before{ top:-6px } 
-.nav-toggle-bar::after { top: 6px }
+/* ——— Primary nav (desktop) ——— */
+.main-nav{ display:flex }
+.main-nav ul{ display:flex; gap:.5rem; list-style:none; margin:0; padding:0 }
+.main-nav a{ display:block; padding:.5rem .7rem; border-radius:10px; text-decoration:none; color:var(--ink-900) }
+.main-nav a[aria-current="page"], .main-nav a:hover{ background:var(--surface) }
 
-/* responsive nav */
+/* ——— Hamburger button ——— */
+.nav-toggle{ display:none; border:0; background:transparent; width:42px; height:42px; border-radius:10px; cursor:pointer }
+.nav-toggle:focus-visible{ outline:3px solid #0a84ff; outline-offset:2px }
+.nav-toggle-bar,
+.nav-toggle-bar::before,
+.nav-toggle-bar::after{
+  content:""; display:block; height:2px; width:22px; background:var(--ink-900); margin:0 auto;
+  position:relative; transition:transform .18s ease, opacity .18s ease;
+}
+.nav-toggle-bar{ top:0 }
+.nav-toggle-bar::before{ position:absolute; top:-7px; left:0 }
+.nav-toggle-bar::after{ position:absolute; top:7px; left:0 }
+
+
+/* ——— Mobile layout ——— */
 @media (max-width:900px){
-  .top-search{ display:none }                 /* hide search in header on small screens */
-  .nav-toggle{ display:block; margin-left:auto }
-  .main-nav{
-    position:absolute; top:64px; left:0; right:0;
-    background:var(--bg); border-bottom:1px solid var(--border);
-    transform: translateY(-120%); transition:.18s ease;
-  }
-  .main-nav ul{ display:grid; gap:.25rem; padding:.5rem 1rem }
-  .main-nav[data-open="true"]{ transform: translateY(0) }
-}
+  .nav-toggle{ display:block }
+  .top-search{ order:3; width:100%; margin-left:0; padding:.5rem 0 }
+  .top-search input{ flex:1; min-width:0 }
 
+  /* hidden by default */
+  .main-nav{
+    position:absolute; left:0; right:0; top:100%;
+    background:#fff; border-bottom:1px solid var(--border);
+    transform:translateY(-8px); opacity:0; pointer-events:none; transition:.18s ease;
+  }
+     /* show when your script sets data-open="true" */
+  .main-nav[data-open="true"]{ transform:none; opacity:1; pointer-events:auto }
+
+  .main-nav ul{ flex-direction:column; padding:.5rem }
+  .main-nav a{ padding:.75rem 1rem }
+
+  /* animate hamburger to "X" when open */
+  .nav-toggle[aria-expanded="true"] .nav-toggle-bar{ opacity:0 }
+  .nav-toggle[aria-expanded="true"] .nav-toggle-bar::before{ transform:translateY(7px) rotate(45deg) }
+  .nav-toggle[aria-expanded="true"] .nav-toggle-bar::after{  transform:translateY(-7px) rotate(-45deg) }
+}
 /* =========================
    Cards / Buttons
    ========================= */
@@ -161,10 +156,10 @@ tbody tr:hover{ background:rgba(37,99,235,.05) }
 
 form{ display:grid; gap:.75rem }
 label{ font-weight:600 }
-input[type="text"], textarea, select{
-  width:100%; padding:.6rem .7rem; border-radius:10px; border:1px solid var(--border);
-  background:#fff; color:var(--ink-900);
-}
+/* Forms & table polish (keep if you don’t already have) */
+input[type="text"], input[type="search"], textarea, select, button, .btn{ font-size:16px }
+.card > [role="region"]{ overflow:auto }
+.card table{ min-width:720px }
 .form-row{ display:flex; gap:.75rem; flex-wrap:wrap }
 .form-actions{ display:flex; gap:.75rem; align-items:center; margin-top:.4rem }
 
