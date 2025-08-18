@@ -128,19 +128,29 @@ textarea, select, button, .btn{ font-size:16px }
   .search-box input[type="search"]{ flex:1; min-width:0 }
 }
 
-/* =========================
-   Hero
-   ========================= */
-.hero{ background:#fff; padding: 24px 0 8px }
+/* Hero carousel polish (Adobe-style clean) */
+.hero { background:#fff; padding: 16px 0 4px }
 .hero-card{ position:relative; overflow:hidden; border-radius:24px; box-shadow:var(--shadow) }
+.hero-card .carousel,
+.hero-card .carousel-inner,
+.hero-card .carousel-item { border-radius:24px }
 .hero-card img{ width:100%; height:auto; display:block }
+
+/* Soft, minimal indicators */
+.carousel-indicators [data-bs-target]{
+  width:10px; height:10px; border-radius:999px; background:#e5e7eb;
+}
+.carousel-indicators .active{ background:#2563eb }
+
+/* Keep overlay subtle and bottom-aligned */
 .hero-overlay{
   position:absolute; inset:auto 0 0 0; padding:24px;
-  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.45) 75%);
+  background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.45) 80%);
   color:#fff;
 }
 .hero h1{ font-size: clamp(1.8rem, 3.8vw, 3rem); margin:0 0 .25em }
 .hero p{ margin:0; color:#f1f5ff }
+
 
 /* =========================
    Cards / Buttons
