@@ -127,16 +127,17 @@ textarea, select, button, .btn{ font-size:16px }
 /* =========================
    Breadcrumbs
    ========================= */
-#breadcrumb-container{ background:#fff; border-bottom:1px solid var(--border) }
+#breadcrumb-container{ background:#fafbff } /* subtle tint */
 #breadcrumb-container .wrap{ padding:8px 16px }
-.breadcrumbs{ background:transparent; border:0 }
-.breadcrumbs ol{
-  list-style:none; margin:0; padding:0;
-  display:flex; flex-wrap:wrap; gap:.5rem; align-items:center
+.breadcrumbs{
+  background:transparent;
+  display:flex; flex-wrap:wrap; gap:.5rem; align-items:center;
+  color:var(--muted);
 }
 .breadcrumbs a{ color:var(--ink-700) }
-.breadcrumbs li{ color:var(--muted) }
-.breadcrumbs li[aria-current="page"]{ color:var(--ink-900); font-weight:600 }
+.breadcrumbs [aria-current="page"]{ color:var(--ink-900); font-weight:600 }
+.bc-sep{ color:#c5c9d6; padding:0 .1rem }
+
 
 /* =========================
    Hero carousel (Adobe‑style clean)
@@ -269,3 +270,6 @@ tbody tr:hover{ background:rgba(37,99,235,.05) }
 .spot-sp{    background:linear-gradient(135deg,#008272,#00b294) }
 .spot-body > strong{ display:block; color:var(--ink-900); margin-top:2px }
 .spot-body > .kpi{ margin:2px 0 0; color:var(--ink-700) }
+a.spot-card, .ql-card a{ color:inherit }
+.spot-body > strong, .ql-card strong{ color:var(--ink-900) }
+.spot-body .kpi{ color:var(--ink-700) }
