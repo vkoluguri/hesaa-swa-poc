@@ -87,6 +87,22 @@ label{ font-size: clamp(.95rem, 2.2vw, 1rem) }
 .nav-toggle-bar::before{ position:absolute; top:-7px; left:0 }
 .nav-toggle-bar::after{ position:absolute; top:7px; left:0 }
 
+/* Breadcrumbs */
+.breadcrumbs { background:#fff; border-bottom:1px solid var(--border); }
+.breadcrumbs ol {
+  list-style:none; margin:0; padding:8px 16px;
+  display:flex; flex-wrap:wrap; gap:.5rem; align-items:center;
+}
+.breadcrumbs a { color: var(--ink-700); }
+.breadcrumbs li { color: var(--muted); }
+.breadcrumbs li[aria-current="page"] { color: var(--ink-900); font-weight:600; }
+
+/* Keep header above the dropdown nav and ensure logo feels visible on mobile */
+.site-header { z-index:60; }
+@media (max-width:900px){
+  .brand-logo{ height:36px; width:auto; display:block; }
+}
+
 
 /* ——— Mobile layout ——— */
 @media (max-width:900px){
