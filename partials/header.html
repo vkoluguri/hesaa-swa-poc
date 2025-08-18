@@ -16,11 +16,16 @@
         <li><a href="/contactus">Contact</a></li>
       </ul>
     </nav>
-    <form class="top-search" role="search" aria-label="Site search" onsubmit="event.preventDefault();">
-  <label class="sr-only" for="topSearch">Search</label>
-  <input id="topSearch" type="search" placeholder="Search…" inputmode="search" autocomplete="off">
-  <button type="button" class="btn btn-primary" id="topSearchBtn">Search</button>
-</form>
+<div class="search-container">
+  <button class="search-toggle" aria-label="Open search">
+    <i class="fa fa-search"></i>
+  </button>
+  <div class="search-box">
+    <input type="text" placeholder="Search…" />
+    <button class="btn btn-primary">Search</button>
+  </div>
+</div>
+
 
   </div>
 </header>
