@@ -1,16 +1,15 @@
 <script>
 /* /assets/site.js */
 (function () {
-  function setYear(){
-    document.querySelectorAll('#yr').forEach(el=>{
-      if(!el.textContent) el.textContent = new Date().getFullYear();
-    });
+  function setYear() {
+    const year = new Date().getFullYear();
+    document.querySelectorAll('#yr').forEach(el => el.textContent = year);
   }
 
   function initNav(){
     const btn = document.querySelector('[data-nav-toggle]');
     const nav = document.getElementById('siteNav');
-    if (!btn || !nav) return;
+    if (!btn || !nav || btn.dataset.jsbound === '1') return;  // ← guard
 
     function toggle(open){
       const willOpen = open ?? nav.getAttribute('data-open') !== 'true';
@@ -19,32 +18,33 @@
     }
 
     btn.addEventListener('click', () => toggle());
-    // Close menu after clicking a link (mobile)
     nav.addEventListener('click', e => { if (e.target.closest('a')) toggle(false); });
+    btn.dataset.jsbound = '1'; // ← mark as bound
   }
-  function initMobileSearchToggle() {
-  const toggleBtn = document.querySelector('.search-toggle');
-  const container = document.querySelector('.search-container');
 
-  if (toggleBtn && container) {
+  function initMobileSearchToggle() {
+    const toggleBtn = document.querySelector('.search-toggle');
+    const container = document.querySelector('.search-container');
+    if (!toggleBtn || !container || toggleBtn.dataset.jsbound === '1') return; // ← guard
+
     toggleBtn.addEventListener('click', () => {
       container.classList.toggle('open');
     });
 
     document.addEventListener('click', (e) => {
-      if (!container.contains(e.target)) {
+      if (!container.contains(e.target) && e.target !== toggleBtn) {
         container.classList.remove('open');
       }
     });
-  }
-}
 
+    toggleBtn.dataset.jsbound = '1'; // ← mark as bound
+  }
 
   function buildBreadcrumbs(){
     if (location.pathname === '/' || document.querySelector('.breadcrumbs')) return;
 
-    const headerWrap = document.querySelector('.site-header .wrap');
-    if (!headerWrap) return;
+    const container = document.getElementById('breadcrumb-container');
+    if (!container) return;
 
     const segs = location.pathname.replace(/\/+/g,'/').split('/').filter(Boolean);
     let path = '';
@@ -57,24 +57,22 @@
         : `<li><a href="${path}">${label}</a></li>`;
     });
 
-    const nav = document.createElement('nav');
-    nav.className = 'breadcrumbs';
-    nav.setAttribute('aria-label','Breadcrumb');
-    nav.innerHTML = `<ol><li><a href="/">Home</a></li>${parts.length ? '<li>/</li>' : ''}${parts.join('<li>/</li>')}</ol>`;
-
-    // Insert right after the header bar
-    headerWrap.insertAdjacentElement('afterend', nav);
+    container.innerHTML = `
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Home</a></li>
+          ${parts.join('<li>/</li>')}
+        </ol>
+      </nav>`;
   }
 
-function init(){
-  setYear();
-  initNav();
-  buildBreadcrumbs();
-  initMobileSearchToggle(); // ← add this
-}
+  function init(){
+    setYear();
+    initNav();
+    buildBreadcrumbs();
+    initMobileSearchToggle();
+  }
 
-
-  // Run on DOM ready and after includes are injected
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
