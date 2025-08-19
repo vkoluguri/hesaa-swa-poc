@@ -107,18 +107,22 @@ function initNav(){
       }
     });
 
-    function performSearch(){
-      const q = (input.value || '').trim().toLowerCase();
-      // If Requests table is on page, filter rows. Else redirect to home with ?q=
-      const table = document.querySelector('#requestsTable');
-      if (!table){
-        const url = new URL('/', location.origin);
-        if (q) url.searchParams.set('q', q);
-        location.href = url.toString();
-        return;
-      }
-      filterRequestsTable(q);
-    }
+function performSearch(){
+  const q = (input.value || '').trim().toLowerCase();
+  const table = document.querySelector('#requestsTable');
+
+  if (!table){
+    const url = new URL('/', location.origin);
+    if (q) url.searchParams.set('q', q);
+    location.href = url.toString();
+    return;
+  }
+
+  filterRequestsTable(q);
+  container.classList.remove('open');     // close mobile popover after searching
+  toggleBtn.blur();                       // remove focus ring
+}
+
 
     btn.addEventListener('click', performSearch);
     input.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') performSearch(); });
