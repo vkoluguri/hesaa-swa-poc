@@ -1,4 +1,4 @@
-<script>
+
 /* site behavior */
 (function(){
   /* ---------- Utilities ---------- */
@@ -397,4 +397,3 @@
   }
   window.addEventListener('includes:loaded', init);
 })();
-</script>
