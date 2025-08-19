@@ -240,6 +240,9 @@ textarea{ min-height:110px; resize:vertical }
   color:#991b1b; background:#fee2e2; border:1px solid #fca5a5;
   padding:.5rem .75rem; border-radius:8px; font-weight:500;
 }
+.notice.success { background:#ecf9ec; color:#0f7b0f; border-color:#b5e0b5; }
+.notice.error   { background:#fff1f1; color:#b91c1c; border-color:#f4b4b4; }
+
 
 /* table */
 .table-wrap{ overflow:auto; -webkit-overflow-scrolling:touch; border-radius:14px }
