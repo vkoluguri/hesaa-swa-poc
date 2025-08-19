@@ -132,7 +132,14 @@ main{ min-height: calc(100vh - 220px) }
   .main-nav[data-open="true"]{ transform:translateY(0); pointer-events:auto }
   .nav-sheet-head{ display:flex; align-items:center; justify-content:flex-end; padding:14px 16px; border-bottom:1px solid #eef1f7 }
   .nav-close{ background:transparent; border:0; font-size:32px; line-height:1; padding:2px 6px; border-radius:10px; cursor:pointer }
-  .main-nav ul{ padding:8px 8px 24px; overflow:auto }
+    /* ⬇️ Force vertical stack on mobile; overrides desktop row layout */
+  .main-nav ul{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    padding:8px 8px 24px;
+    overflow:auto;
+  }
   .main-nav li{ margin:4px 0 }
   .main-nav a{ display:flex; align-items:center; justify-content:space-between; padding:14px 12px; border-radius:12px; font-size:1.1rem }
   .main-nav a::after{ content:"›"; font-size:20px; color:#c2c8d6 }
@@ -140,16 +147,24 @@ main{ min-height: calc(100vh - 220px) }
 
   /* mobile search popover anchored under the icon (smaller + tidy) */
   .search-toggle{ padding:0; margin:0 }                     /* keep icon tight */
-  .search-box{
-    display:none; position:absolute; top: calc(100% + 6px); right:0;
-    width:min(92vw, 320px); background:#fff; border:1px solid #e2e2e2;
-    padding:8px; z-index:99; border-radius:10px; box-shadow:0 10px 24px rgba(0,0,0,.1);
-  }
+    .search-box {
+        display: none;
+        position: absolute;
+        top: calc(100% + -53px);
+        right: 30px;
+        width: min(92vw, 320px);
+        background: #fff;
+        border: 1px solid #e2e2e2;
+        padding: 20px;
+        /* z-index: 9999; */
+        border-radius: 10px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, .1);
+    }
   .search-container.open .search-box{ display:flex; gap:.5rem; align-items:center }
   .search-box input[type="search"]{
-    flex:1; min-width:0; font-size:.85rem; padding:.4rem .55rem; border:1px solid var(--border); border-radius:10px
+    flex:1; min-width:0; font-size:.8rem; padding:.2rem .5rem; border:1px solid var(--border); border-radius:10px
   }
-  .search-box .btn{ padding:.4rem .65rem; font-size:.85rem }
+  .search-box .btn{ padding:.4rem .65rem; font-size:.8rem }
 }
 
 /* =========================
