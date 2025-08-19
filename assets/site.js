@@ -1,4 +1,3 @@
-
 /* site behavior */
 (function(){
   /* ---------- Utilities ---------- */
@@ -53,7 +52,6 @@
     const nav = document.getElementById('siteNav');
     if (!btn || !nav) return;
 
-    // overlay once
     let overlay = document.getElementById('navOverlay');
     if (!overlay){
       overlay = document.createElement('div');
@@ -75,6 +73,7 @@
     btn.addEventListener('click', toggle);
     closeBtn && closeBtn.addEventListener('click', ()=>setOpen(false));
     overlay.addEventListener('click', ()=>setOpen(false));
+
     nav.addEventListener('click', e => { if (e.target.closest('a')) setOpen(false); });
     document.addEventListener('keydown', e=>{ if (e.key === 'Escape' && nav.getAttribute('data-open') === 'true') setOpen(false); });
   }
@@ -87,7 +86,6 @@
     const btn        = document.querySelector('[data-search-btn]');
     if (!container || !toggleBtn || !input || !btn || once(btn,'jsbound')) return;
 
-    // Toggle popover on mobile
     toggleBtn.addEventListener('click', () => {
       container.classList.toggle('open');
       if (container.classList.contains('open')) input.focus();
@@ -121,9 +119,7 @@
 
     if (isHome()){
       const urlQ = new URLSearchParams(location.search).get('q') || '';
-      if (urlQ && typeof window.filterRequestsTable==='function') {
-        input.value = urlQ; window.filterRequestsTable(urlQ.toLowerCase());
-      }
+      if (urlQ) { input.value = urlQ; if (typeof window.filterRequestsTable==='function') window.filterRequestsTable(urlQ.toLowerCase()); }
     }
   }
 
@@ -169,20 +165,18 @@
   setApiImg('slide2', 'Slide2.png');
   setApiImg('slide3', 'Slide3.png');
 
-  /* =======================================================
-     Requests app (table + form)
-     ======================================================= */
+  /* ---------- Requests app (API-backed) ---------- */
   (function RequestsApp(){
-    const table    = document.getElementById('requestsTable');
-    if (!table) return; // only run on the page that has the table
-
     const rowsEl   = document.getElementById('rows');
     const countEl  = document.getElementById('resultCount');
-    const pageBox  = document.getElementById('search'); // on-page filter
-    const topBox   = document.getElementById('q');      // header search
+    const pageBox  = document.getElementById('search');
+    const topBox   = document.getElementById('q');
     const form     = document.getElementById('reqForm');
-    const formMsg  = document.getElementById('formMsg'); // “Submitting…”
+    const formMsg  = document.getElementById('formMsg');      // only shows “Submitting…”
     const alertBox = document.getElementById('alert');
+    const table    = document.getElementById('requestsTable');
+
+    if (!table) return;
 
     let DATA = [];
 
@@ -195,17 +189,17 @@
     const fmtDate = d => d ? new Date(d).toLocaleDateString() : '';
     const plain = html => (sanitize ? sanitize(html) : String(html||'').replace(/<[^>]+>/g,''));
 
-    /* ---------- Attachment normalization ---------- */
-    const getAttachments = x => {
+    /* ---- attachment helpers ---- */
+    const normaliseAttachments = x => {
       if (Array.isArray(x?.AttachmentFiles)) {
         return x.AttachmentFiles.map(a => ({
-          name: a.FileName || a.Name || a.name || 'file',
+          name: a.FileName || a.name || 'file',
           url:  a.ServerRelativeUrl || a.Url || a.url || ''
         }));
       }
       if (Array.isArray(x?.Attachments)) {
         return x.Attachments.map(a => ({
-          name: a.FileName || a.Name || a.name || 'file',
+          name: a.FileName || a.name || 'file',
           url:  a.Url || a.url || ''
         }));
       }
@@ -215,131 +209,85 @@
       return [];
     };
 
-    /* ---------- Table render ---------- */
+    async function fetchItemAttachments(id){
+      try{
+        // preferred route
+        let r = await fetch(`/api/requests/${encodeURIComponent(id)}/attachments`);
+        if (!r.ok) { // fallback route
+          r = await fetch(`/api/requests/attachments?id=${encodeURIComponent(id)}`);
+        }
+        if (!r.ok) return [];
+        const j = await r.json().catch(()=>({ok:false}));
+        const files = (j && (j.files || j.items || j.data)) || j || [];
+        return Array.isArray(files) ? files.map(a => ({
+          name: a.FileName || a.name || 'file',
+          url:  a.ServerRelativeUrl || a.Url || a.url || ''
+        })) : [];
+      }catch{ return []; }
+    }
+
     function render(filter=''){
       const q = (filter||'').trim().toLowerCase();
 
       const out = DATA.filter(x => {
+        const title = (x.Title || x.RequestTitle || '').toLowerCase();
+        const type  = (x.RequestType || '').toLowerCase();
+        const pri   = (x.Priority || '').toLowerCase();
+        const desc  = plain(x.RequestDescription || x.Description || '').toLowerCase();
+        const atts  = normaliseAttachments(x);
         if (!q) return true;
-        const atts = getAttachments(x);
-        return (
-          (x.Title||'').toLowerCase().includes(q) ||
-          (x.RequestType||'').toLowerCase().includes(q) ||
-          (x.Priority||'').toLowerCase().includes(q) ||
-          plain(x.RequestDescription||'').toLowerCase().includes(q) ||
-          atts.some(a => (a.name||'').toLowerCase().includes(q))
-        );
+        return title.includes(q) || type.includes(q) || pri.includes(q) || desc.includes(q) ||
+               atts.some(a => (a.name||'').toLowerCase().includes(q));
       });
 
       countEl && (countEl.textContent = out.length);
 
       rowsEl.innerHTML = out.map(x => {
-        const atts = getAttachments(x);
+        const atts = normaliseAttachments(x);
         const attCell = atts.length
           ? atts.map(a => a.url
               ? `<a href="${a.url}" target="_blank" rel="noopener">${a.name}</a>`
-              : `<span>${a.name}</span>`
-            ).join('<br>')
-          : (x.HasAttachments && x.Id ? `<a href="#" class="link" data-load-atts="${x.Id}">View</a>` : '—');
+              : `<span>${a.name}</span>`).join('<br>')
+          : (x.Attachments ? '…' : '—'); // “…” while we hydrate
 
         return `
-          <tr>
-            <td>${x.Title || ''}</td>
+          <tr data-id="${x.Id || x.ID || x.id || ''}">
+            <td>${x.Title || x.RequestTitle || ''}</td>
             <td>${x.RequestType || ''}</td>
             <td>${x.Priority || ''}</td>
             <td>${fmtDate(x.RequestDate)}</td>
             <td>${x.RequestEndDate ? 'Yes':'No'}</td>
             <td>${fmtDate(x.Created)}</td>
             <td>${fmtDate(x.Modified)}</td>
-            <td>${attCell}</td>
-            <td><details><summary>View</summary><div>${plain(x.RequestDescription)}</div></details></td>
+            <td class="att-cell">${attCell}</td>
+            <td><details><summary>View</summary><div>${plain(x.RequestDescription || x.Description)}</div></details></td>
           </tr>`;
       }).join('') || `<tr><td colspan="9" class="kpi">No results</td></tr>`;
 
-      // lazy load links
-      document.querySelectorAll('[data-load-atts]').forEach(a=>{
-        if (once(a,'atts')) return;
-        a.addEventListener('click', e=>{
-          e.preventDefault();
-          const id = a.getAttribute('data-load-atts');
-          loadAttachmentsForRow(id, a);
-        });
+      // If API only gave the boolean, hydrate those rows.
+      const needs = Array.from(rowsEl.querySelectorAll('tr')).filter(tr=>{
+        const id = tr.getAttribute('data-id');
+        const row = DATA.find(r => (r.Id||r.ID||r.id) == id);
+        return row && row.Attachments && normaliseAttachments(row).length === 0;
       });
-    }
-    window.filterRequestsTable = render; // for header search
 
-    /* ---------- Robust attachment enrichment ---------- */
-    async function tryJson(url){
-      try{
-        const r = await fetch(url);
-        if(!r.ok) return null;
-        return await r.json().catch(()=>null);
-      }catch{ return null; }
-    }
-    function extractFiles(obj){
-      if (!obj) return [];
-      if (Array.isArray(obj)) return obj;
-      if (Array.isArray(obj.items)) return obj.items;
-      if (obj.AttachmentFiles) return obj.AttachmentFiles;
-      if (obj.Attachments) return obj.Attachments;
-      if (obj.File || obj.Files) return [].concat(obj.File||[], obj.Files||[]);
-      return [];
-    }
-    function mapFiles(arr){
-      return arr.map(a=>({
-        name: a.FileName || a.Name || a.name || 'file',
-        url:  a.ServerRelativeUrl || a.Url || a.url || ''
-      })).filter(x=>x.name);
-    }
-
-    async function loadAttachmentsForRow(id, anchorEl){
-      if (!id) return;
-      anchorEl.textContent = 'Loading…';
-
-      // Try several endpoints; first one that yields files wins
-      const urls = [
-        `/api/requests/${encodeURIComponent(id)}/attachments`,
-        `/api/requests/${encodeURIComponent(id)}?expand=attachments`,
-        `/api/requests/${encodeURIComponent(id)}`,
-        `/api/requests/${encodeURIComponent(id)}/files`
-      ];
-
-      let files = [];
-      for (const u of urls){
-        const j = await tryJson(u);
-        const raw = extractFiles(j);
-        const mapped = mapFiles(raw);
-        if (mapped.length){
-          files = mapped;
-          console.debug('[attachments] using', u, mapped);
-          break;
-        }
-      }
-
-      if (files.length){
-        anchorEl.outerHTML = files.map(f => f.url
-          ? `<a href="${f.url}" target="_blank" rel="noopener">${f.name}</a>`
-          : `<span>${f.name}</span>`
-        ).join('<br>');
-      }else{
-        anchorEl.outerHTML = '—';
+      if (needs.length){
+        needs.forEach(async tr=>{
+          const id = tr.getAttribute('data-id');
+          const cell = tr.querySelector('.att-cell');
+          const files = await fetchItemAttachments(id);
+          cell.innerHTML = files.length
+            ? files.map(a => a.url
+                ? `<a href="${a.url}" target="_blank" rel="noopener">${a.name}</a>`
+                : `<span>${a.name}</span>`).join('<br>')
+            : '—';
+        });
       }
     }
 
-    async function enrichMissingAttachments(items){
-      const targets = items.filter(x => getAttachments(x).length === 0 && (x.HasAttachments || x.Id)).slice(0, 20);
-      for (const x of targets){
-        const dummy = document.createElement('a');
-        dummy.setAttribute('data-load-atts', x.Id);
-        await loadAttachmentsForRow(x.Id, dummy);
-        if (dummy.outerHTML !== '—'){
-          // crude parse to push into row (not strictly needed; UI already shows via lazy link)
-          // we rely on on-demand links for clarity
-        }
-      }
-    }
+    // expose renderer for header search
+    window.filterRequestsTable = render;
 
-    /* ---------- Load data ---------- */
     async function loadData(){
       rowsEl.innerHTML = `<tr><td colspan="9" class="kpi">Loading…</td></tr>`;
       try{
@@ -350,10 +298,6 @@
         if(!payload.ok) throw new Error(payload.error || 'Unknown API error');
 
         DATA = Array.isArray(payload.items) ? payload.items : [];
-
-        // Hydrate attachments if server doesn't expand them
-        await enrichMissingAttachments(DATA);
-
         const q = (pageBox && pageBox.value) || (topBox && topBox.value) || '';
         render(q);
       }catch(err){
@@ -368,6 +312,7 @@
       if (topBox  && topBox.value  !== v) topBox.value  = v;
       render(v);
     };
+
     function debounce(fn, ms=200){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
     const debouncedSync = debounce(sync, 180);
 
@@ -377,64 +322,85 @@
     const topBtn = document.querySelector('[data-search-btn]');
     topBtn && topBtn.addEventListener('click', ()=> sync((topBox && topBox.value) || ''));
 
+    /* ---- notices ---- */
     function showNotice(text,type){
       if(!alertBox) return;
       alertBox.textContent = text;
-      alertBox.className = `notice ${type}`;
+      alertBox.className = `notice ${type}`; // .success / .error in CSS
       setTimeout(()=>{ alertBox.className = 'notice sr-only'; alertBox.textContent=''; }, 5000);
     }
 
-    /* ---------- Submit (always multipart) ---------- */
+    /* ---- create item then (optionally) upload attachment ---- */
     form && form.addEventListener('submit', async e=>{
       e.preventDefault();
-      if (formMsg) formMsg.textContent = 'Submitting…';
+      formMsg && (formMsg.textContent = 'Submitting…');
       alertBox && (alertBox.className = 'notice sr-only');
 
       try{
-        const title   = form.querySelector('#fTitle')?.value?.trim() || '';
-        const desc    = form.querySelector('#fDesc')?.value || '';
-        const type    = form.querySelector('#fType')?.value || '';
-        const pri     = form.querySelector('#fPri')?.value || '';
-        const endDate = form.querySelector('#fEnd')?.checked ? 'true' : 'false';
-        const fileEl  = form.querySelector('#fFile');
+        const fd = new FormData(form);
+        const fileInput = form.querySelector('#fFile');
+        const file = fileInput && fileInput.files && fileInput.files[0];
 
-        if(!title || !type || !pri){
-          if (formMsg) formMsg.textContent = '';
+        // normalise field names (Title vs RequestTitle)
+        const payload = {
+          Title: (fd.get('Title') || fd.get('RequestTitle') || '').trim(),
+          RequestTitle: (fd.get('RequestTitle') || '').trim(), // keep if your API expects it
+          RequestDescription: fd.get('RequestDescription') || fd.get('Description') || '',
+          RequestType: fd.get('RequestType') || '',
+          Priority: fd.get('Priority') || '',
+          RequestDate: fd.get('RequestDate') || '',
+          RequestEndDate: !!fd.get('RequestEndDate')
+        };
+
+        if (!payload.Title && payload.RequestTitle) payload.Title = payload.RequestTitle;
+        if (!payload.Title){
+          formMsg && (formMsg.textContent = '');
+          showNotice('Please fill Title, Type, and Priority.', 'error');
+          return;
+        }
+        if (!payload.RequestType || !payload.Priority){
+          formMsg && (formMsg.textContent = '');
           showNotice('Please fill Title, Type, and Priority.', 'error');
           return;
         }
 
-        // Always multipart to avoid servers that ignore JSON+file mixes
-        const fd = new FormData();
-        fd.append('Title',              title);
-        fd.append('RequestDescription', desc);
-        fd.append('RequestType',        type);
-        fd.append('Priority',           pri);
-        fd.append('RequestEndDate',     endDate);
+        // 1) create the item (JSON)
+        const createRes = await fetch('/api/requests', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const createJson = await createRes.json().catch(()=>({ok:false,error:`HTTP ${createRes.status} ${createRes.statusText}`}));
+        if(!createRes.ok || !createJson.ok) throw new Error(createJson.error || `HTTP ${createRes.status}`);
 
-        const files = (fileEl && fileEl.files) ? Array.from(fileEl.files) : [];
-        if (files.length){
-          // primary expected name
-          const primaryName = (fileEl.getAttribute('name') || 'Attachment');
-          files.forEach(f => fd.append(primaryName, f, f.name));
-          // compatibility aliases (some backends expect other keys)
-          files.forEach(f => fd.append('Attachments', f, f.name));
-          files.forEach(f => fd.append('files[]', f, f.name));
-          files.forEach(f => fd.append('file', f, f.name));
+        const newId = createJson.id || createJson.Id || createJson.itemId || (createJson.item && (createJson.item.Id||createJson.item.id));
+        if (!newId && file) throw new Error('Created, but no item id returned for attachment upload');
+
+        // 2) upload attachment if provided
+        if (file && newId){
+          const formData = new FormData();
+          formData.append('file', file, file.name);
+
+          // preferred RESTful route
+          let upRes = await fetch(`/api/requests/${encodeURIComponent(newId)}/attachments`, { method:'POST', body: formData });
+          if (!upRes.ok){
+            // fallback query-string route
+            upRes = await fetch(`/api/requests/attachments?id=${encodeURIComponent(newId)}`, { method:'POST', body: formData });
+          }
+          if (!upRes.ok){
+            const t = await upRes.text().catch(()=>(''));
+            console.warn('Attachment upload failed:', t || upRes.status);
+            // don’t hard-fail the whole creation—just notify
+            showNotice('Request created (attachment upload failed).', 'error');
+          }
         }
 
-        // DO NOT set Content-Type header; let the browser set multipart boundary
-        const res  = await fetch('/api/requests', { method:'POST', body: fd });
-        const json = await res.json().catch(()=>({ok:false,error:`HTTP ${res.status} ${res.statusText}`}));
-        if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
-
-        if (formMsg) formMsg.textContent = '';
+        formMsg && (formMsg.textContent = '');
         showNotice('Request successfully created.', 'success');
         form.reset();
         await loadData();
       }catch(err){
-        if (formMsg) formMsg.textContent = '';
-        console.error('Submit error:', err);
+        formMsg && (formMsg.textContent = '');
         showNotice('Failed: ' + String(err.message || err), 'error');
       }
     });
@@ -460,4 +426,3 @@
   }
   window.addEventListener('includes:loaded', init);
 })();
-
