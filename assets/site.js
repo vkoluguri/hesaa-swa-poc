@@ -189,7 +189,6 @@
     const fmtDate = d => d ? new Date(d).toLocaleDateString() : '';
     const plain = html => (sanitize ? sanitize(html) : String(html||'').replace(/<[^>]+>/g,''));
 
-    /* ---- attachment helpers ---- */
     const normaliseAttachments = x => {
       if (Array.isArray(x?.AttachmentFiles)) {
         return x.AttachmentFiles.map(a => ({
@@ -211,13 +210,12 @@
 
     async function fetchItemAttachments(id){
       try{
-        // preferred route
         let r = await fetch(`/api/requests/${encodeURIComponent(id)}/attachments`);
-        if (!r.ok) { // fallback route
+        if (r.status === 404 || r.status === 405 || r.status === 501){
           r = await fetch(`/api/requests/attachments?id=${encodeURIComponent(id)}`);
         }
         if (!r.ok) return [];
-        const j = await r.json().catch(()=>({ok:false}));
+        const j = await r.json().catch(()=>({}));
         const files = (j && (j.files || j.items || j.data)) || j || [];
         return Array.isArray(files) ? files.map(a => ({
           name: a.FileName || a.name || 'file',
@@ -248,7 +246,7 @@
           ? atts.map(a => a.url
               ? `<a href="${a.url}" target="_blank" rel="noopener">${a.name}</a>`
               : `<span>${a.name}</span>`).join('<br>')
-          : (x.Attachments ? '…' : '—'); // “…” while we hydrate
+          : (x.Attachments ? '…' : '—');
 
         return `
           <tr data-id="${x.Id || x.ID || x.id || ''}">
@@ -264,7 +262,6 @@
           </tr>`;
       }).join('') || `<tr><td colspan="9" class="kpi">No results</td></tr>`;
 
-      // If API only gave the boolean, hydrate those rows.
       const needs = Array.from(rowsEl.querySelectorAll('tr')).filter(tr=>{
         const id = tr.getAttribute('data-id');
         const row = DATA.find(r => (r.Id||r.ID||r.id) == id);
@@ -285,7 +282,6 @@
       }
     }
 
-    // expose renderer for header search
     window.filterRequestsTable = render;
 
     async function loadData(){
@@ -306,7 +302,6 @@
       }
     }
 
-    // sync header search <-> page search
     const sync = (v) => {
       if (pageBox && pageBox.value !== v) pageBox.value = v;
       if (topBox  && topBox.value  !== v) topBox.value  = v;
@@ -322,15 +317,14 @@
     const topBtn = document.querySelector('[data-search-btn]');
     topBtn && topBtn.addEventListener('click', ()=> sync((topBox && topBox.value) || ''));
 
-    /* ---- notices ---- */
     function showNotice(text,type){
       if(!alertBox) return;
       alertBox.textContent = text;
-      alertBox.className = `notice ${type}`; // .success / .error in CSS
+      alertBox.className = `notice ${type}`;
       setTimeout(()=>{ alertBox.className = 'notice sr-only'; alertBox.textContent=''; }, 5000);
     }
 
-    /* ---- create item then (optionally) upload attachment ---- */
+    // --- CREATE ITEM: try JSON+upload, fall back to single multipart ---
     form && form.addEventListener('submit', async e=>{
       e.preventDefault();
       formMsg && (formMsg.textContent = 'Submitting…');
@@ -341,58 +335,78 @@
         const fileInput = form.querySelector('#fFile');
         const file = fileInput && fileInput.files && fileInput.files[0];
 
-        // normalise field names (Title vs RequestTitle)
         const payload = {
           Title: (fd.get('Title') || fd.get('RequestTitle') || '').trim(),
-          RequestTitle: (fd.get('RequestTitle') || '').trim(), // keep if your API expects it
+          RequestTitle: (fd.get('RequestTitle') || '').trim(),
           RequestDescription: fd.get('RequestDescription') || fd.get('Description') || '',
           RequestType: fd.get('RequestType') || '',
           Priority: fd.get('Priority') || '',
           RequestDate: fd.get('RequestDate') || '',
           RequestEndDate: !!fd.get('RequestEndDate')
         };
-
         if (!payload.Title && payload.RequestTitle) payload.Title = payload.RequestTitle;
-        if (!payload.Title){
+
+        if (!payload.Title || !payload.RequestType || !payload.Priority){
           formMsg && (formMsg.textContent = '');
           showNotice('Please fill Title, Type, and Priority.', 'error');
           return;
         }
-        if (!payload.RequestType || !payload.Priority){
-          formMsg && (formMsg.textContent = '');
-          showNotice('Please fill Title, Type, and Priority.', 'error');
-          return;
+
+        // Path A: create JSON, then upload attachment
+        let createdId = null;
+        let pathAWorked = false;
+        try{
+          const createRes = await fetch('/api/requests', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(payload)
+          });
+          const createJson = await createRes.json().catch(()=>({ok:false,error:`HTTP ${createRes.status} ${createRes.statusText}`}));
+          if(!createRes.ok || !createJson.ok) throw new Error(createJson.error || `HTTP ${createRes.status}`);
+
+          createdId = createJson.id || createJson.Id || createJson.itemId || (createJson.item && (createJson.item.Id||createJson.item.id));
+
+          if (file && createdId){
+            const upFd = new FormData();
+            upFd.append('file', file, file.name);
+            let upRes = await fetch(`/api/requests/${encodeURIComponent(createdId)}/attachments`, { method:'POST', body: upFd });
+
+            if (upRes.status === 404 || upRes.status === 405 || upRes.status === 501){
+              upRes = await fetch(`/api/requests/attachments?id=${encodeURIComponent(createdId)}`, { method:'POST', body: upFd });
+            }
+            if (!upRes.ok){
+              const t = await upRes.text().catch(()=>(''));
+              throw new Error(`Attachment upload failed: ${t || upRes.status}`);
+            }
+          }
+          pathAWorked = true;
+        }catch(errA){
+          // Only fall back if the problem is "endpoint not supported / not found"
+          if (!(String(errA).includes('404') || String(errA).includes('405') || String(errA).includes('501'))){
+            // real error, surface it
+            throw errA;
+          }
         }
 
-        // 1) create the item (JSON)
-        const createRes = await fetch('/api/requests', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(payload)
-        });
-        const createJson = await createRes.json().catch(()=>({ok:false,error:`HTTP ${createRes.status} ${createRes.statusText}`}));
-        if(!createRes.ok || !createJson.ok) throw new Error(createJson.error || `HTTP ${createRes.status}`);
-
-        const newId = createJson.id || createJson.Id || createJson.itemId || (createJson.item && (createJson.item.Id||createJson.item.id));
-        if (!newId && file) throw new Error('Created, but no item id returned for attachment upload');
-
-        // 2) upload attachment if provided
-        if (file && newId){
-          const formData = new FormData();
-          formData.append('file', file, file.name);
-
-          // preferred RESTful route
-          let upRes = await fetch(`/api/requests/${encodeURIComponent(newId)}/attachments`, { method:'POST', body: formData });
-          if (!upRes.ok){
-            // fallback query-string route
-            upRes = await fetch(`/api/requests/attachments?id=${encodeURIComponent(newId)}`, { method:'POST', body: formData });
+        // Path B: single multipart (fields + file)
+        if (!pathAWorked){
+          const mfd = new FormData();
+          // append fields explicitly so Title never goes missing
+          mfd.append('Title', payload.Title);
+          mfd.append('RequestTitle', payload.RequestTitle || payload.Title);
+          mfd.append('RequestDescription', payload.RequestDescription);
+          mfd.append('RequestType', payload.RequestType);
+          mfd.append('Priority', payload.Priority);
+          if (payload.RequestDate) mfd.append('RequestDate', payload.RequestDate);
+          mfd.append('RequestEndDate', payload.RequestEndDate ? 'true' : 'false');
+          if (file){
+            // add under both keys to satisfy various server expectations
+            mfd.append('Attachment', file, file.name);
+            mfd.append('file', file, file.name);
           }
-          if (!upRes.ok){
-            const t = await upRes.text().catch(()=>(''));
-            console.warn('Attachment upload failed:', t || upRes.status);
-            // don’t hard-fail the whole creation—just notify
-            showNotice('Request created (attachment upload failed).', 'error');
-          }
+          const mres = await fetch('/api/requests', { method:'POST', body: mfd });
+          const mjson = await mres.json().catch(()=>({ok:false,error:`HTTP ${mres.status} ${mres.statusText}`}));
+          if(!mres.ok || !mjson.ok) throw new Error(mjson.error || `HTTP ${mres.status}`);
         }
 
         formMsg && (formMsg.textContent = '');
