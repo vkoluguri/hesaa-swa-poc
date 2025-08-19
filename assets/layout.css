@@ -72,7 +72,6 @@ main{ min-height: calc(100vh - 220px) } /* ~ header + footer space */
   background: rgba(37,99,235,.12);
   color: var(--brand-600);
 }
-
 /* Hamburger */
 .nav-toggle{
   display:none; border:0; background:transparent;
