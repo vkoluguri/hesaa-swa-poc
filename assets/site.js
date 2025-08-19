@@ -1,3 +1,4 @@
+<script>
 /* site behavior */
 (function(){
   /* ---------- Utilities ---------- */
@@ -318,33 +319,54 @@
       alertBox && (alertBox.className = 'notice sr-only');
 
       try{
-        const fd = new FormData(form);
-        const hasFile = (form.querySelector('#fFile')?.files?.length || 0) > 0;
+        // Collect values explicitly (prevents “Untitled” when a file is present)
+        const title   = form.querySelector('#fTitle')?.value?.trim() || '';
+        const desc    = form.querySelector('#fDesc')?.value || '';
+        const type    = form.querySelector('#fType')?.value || '';
+        const pri     = form.querySelector('#fPri')?.value || '';
+        const endDate = form.querySelector('#fEnd')?.checked ? 'true' : 'false';
+        const fileEl  = form.querySelector('#fFile');
+        const hasFile = !!(fileEl && fileEl.files && fileEl.files.length);
 
-        // basic client-side requireds
-        if(!fd.get('Title') || !fd.get('RequestType') || !fd.get('Priority')){
+        if(!title || !type || !pri){
           if (formMsg) formMsg.textContent = '';
           showNotice('Please fill Title, Type, and Priority.', 'error');
           return;
         }
 
-        // normalize boolean
-        if (fd.get('RequestEndDate')) fd.set('RequestEndDate','true'); else fd.set('RequestEndDate','false');
-
         let res, json;
+
         if (hasFile){
-          // multipart for SharePoint attachment support via your API
+          // multipart: append all fields + the file explicitly
+          const fd = new FormData();
+          fd.append('Title',              title);
+          fd.append('RequestDescription', desc);
+          fd.append('RequestType',        type);
+          fd.append('Priority',           pri);
+          fd.append('RequestEndDate',     endDate);
+          // use the input’s name if present (falls back to "Attachment")
+          const fileFieldName = (fileEl.getAttribute('name') || 'Attachment');
+          fd.append(fileFieldName, fileEl.files[0]);
+
           res  = await fetch('/api/requests', { method:'POST', body: fd });
         }else{
-          const obj = Object.fromEntries(fd.entries());
+          // plain JSON (no file)
+          const obj = {
+            Title: title,
+            RequestDescription: desc,
+            RequestType: type,
+            Priority: pri,
+            RequestEndDate: endDate
+          };
           res  = await fetch('/api/requests', {
             method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(obj)
           });
         }
+
         json = await res.json().catch(()=>({ok:false,error:`HTTP ${res.status} ${res.statusText}`}));
         if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
 
-        if (formMsg) formMsg.textContent = '';          // clear status (no “Created!” text)
+        if (formMsg) formMsg.textContent = ''; // clear status (no “Created!” text)
         showNotice('Request successfully created.', 'success');
         form.reset();
         await loadData();
@@ -375,3 +397,4 @@
   }
   window.addEventListener('includes:loaded', init);
 })();
+</script>
