@@ -53,6 +53,8 @@ main{ min-height: calc(100vh - 220px) } /* ~ header + footer space */
 .header-inner ul,
 .header-inner li{ list-style:none; margin:0; padding:0 }
 .header-inner li::marker{ content:'' }
+/* Nuke any list markers in/near the header to kill stray dots */
+.site-header *::marker{ content:'' }
 
 /* Brand / logo: keep natural size on all screens */
 .brand{ display:flex; align-items:center; gap:8px; text-decoration:none; color:inherit; font-weight:700 }
@@ -112,43 +114,49 @@ main{ min-height: calc(100vh - 220px) } /* ~ header + footer space */
 }
 #navOverlay[data-open="true"]{ opacity:1; pointer-events:auto }
 
-/* Turn .main-nav into a sheet on mobile */
+/* hide sheet header by default; only show on mobile */
+.nav-sheet-head{ display:none }
+
+/* prevent page scroll when mobile sheet is open */
+.no-scroll, .no-scroll body{ overflow:hidden }
+
+/* --- Mobile sheet styles (single @media block) --- */
 @media (max-width:900px){
+  .nav-toggle{ display:block }
+
+  #navOverlay{
+    position:fixed; inset:0; background:rgba(11,18,32,.45);
+    opacity:0; pointer-events:none; transition:opacity .18s ease; z-index:59;
+  }
+  #navOverlay[data-open="true"]{ opacity:1; pointer-events:auto }
+
   .main-nav{
-    position:fixed; inset:0 0 0 0; z-index:60;
-    background:#fff; border:0; height:100vh;
-    transform:translateY(-100%); opacity:1; pointer-events:none; transition:transform .22s ease;
-    display:flex; flex-direction:column;
+    position:fixed; inset:0; z-index:60; background:#fff;
+    height:100vh; transform:translateY(-100%); pointer-events:none;
+    transition:transform .22s ease; display:flex; flex-direction:column;
   }
   .main-nav[data-open="true"]{ transform:translateY(0); pointer-events:auto }
 
-  /* sheet header */
-  .nav-sheet-head{
+  .nav-sheet-head{                 /* now visible only on mobile */
     display:flex; align-items:center; justify-content:flex-end;
     padding:14px 16px; border-bottom:1px solid #eef1f7;
   }
   .nav-close{
-    appearance:none; -webkit-appearance:none;
-    background:transparent; border:0; font-size:32px; line-height:1; padding:2px 6px;
-    border-radius:10px; cursor:pointer; color:#111827;
+    appearance:none; background:transparent; border:0; font-size:32px;
+    line-height:1; padding:2px 6px; border-radius:10px; cursor:pointer; color:#111827;
   }
   .nav-close:focus-visible{ outline:3px solid var(--brand); outline-offset:2px }
 
-  /* nav body */
-  .main-nav ul{
-    display:block; padding:8px 8px 24px; margin:0; overflow:auto;
-  }
+  .main-nav ul{ display:block; padding:8px 8px 24px; margin:0; overflow:auto }
   .main-nav li{ margin:4px 0 }
   .main-nav a{
     display:flex; align-items:center; justify-content:space-between;
     padding:14px 12px; border-radius:12px; font-size:1.1rem;
   }
-  /* optional chevron for submenu feel */
-  .main-nav a::after{
-    content:"›"; font-size:20px; line-height:1; color:#c2c8d6;
-  }
-  .main-nav a[aria-current="page"]::after{ color:transparent } /* hide on active */
+  .main-nav a::after{ content:"›"; font-size:20px; color:#c2c8d6 }
+  .main-nav a[aria-current="page"]::after{ color:transparent }
 }
+
 
   /* Hamburger → X */
   .nav-toggle[aria-expanded="true"] .nav-toggle-bar{ opacity:0 }
@@ -319,14 +327,17 @@ tbody tr:hover{ background:rgba(37,99,235,.05) }
 a.spot-card, .ql-card a{ color:inherit }
 .spot-body > strong, .ql-card strong{ color:var(--ink-900) }
 .spot-body .kpi{ color:var(--ink-700) }
-/* Forms: never overflow on narrow screens */
-.card{ max-width:100% }
+/* never allow sideways scroll due to any overflowing child */
+html, body{ overflow-x:hidden }
+
+/* Forms: shrink reliably on phones */
 form{ max-width:100% }
-.form-row > *{ flex:1 1 260px; min-width:0 }         /* desktop default */
+.form-row{ display:flex; gap:.75rem; flex-wrap:wrap }
+.form-row > *{ flex:1 1 260px; min-width:0 } /* desktop */
 @media (max-width:760px){
-  .form-row{ gap:.6rem }
-  .form-row > *{ flex:1 1 100%; min-width:0 }        /* full-width fields on phones */
+  .form-row > *{ flex:1 1 100%; min-width:0 }  /* 1‑column on phones */
   input[type="text"], input[type="search"], input[type="date"],
-  textarea, select{ width:100%; max-width:100% }     /* no overflow */
+  textarea, select, input[type="file"]{ width:100%; max-width:100% }
 }
-input[type="file"]{ max-width:100% }                 /* attachment chooser fits */
+/* file input and buttons never push layout */
+input[type="file"], .btn{ max-width:100% }
