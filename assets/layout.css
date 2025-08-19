@@ -42,11 +42,17 @@ textarea, select, button, .btn{ font-size:16px }
 /* =========================
    Header / Navigation
    ========================= */
+/* Give content a reasonable minimum height so pages don't feel tiny */
+main{ min-height: calc(100vh - 220px) } /* ~ header + footer space */
 .site-header{
   position:sticky; top:0; z-index:60;
   background:#fff; border-bottom:1px solid var(--border)
 }
 .header-inner{ display:flex; align-items:center; gap:12px; padding:.65rem 0 }
+/* Kill any list bullets/markers that could appear near the search */
+.header-inner ul,
+.header-inner li{ list-style:none; margin:0; padding:0 }
+.header-inner li::marker{ content:'' }
 
 /* Brand / logo: keep natural size on all screens */
 .brand{ display:flex; align-items:center; gap:8px; text-decoration:none; color:inherit; font-weight:700 }
@@ -59,7 +65,11 @@ textarea, select, button, .btn{ font-size:16px }
   display:block; padding:.5rem .7rem; border-radius:10px;
   text-decoration:none; color:var(--ink-900)
 }
-.main-nav a[aria-current="page"], .main-nav a:hover{ background:var(--surface) }
+/* Active tab color */
+.main-nav a[aria-current="page"]{
+  background: rgba(37,99,235,.12);
+  color: var(--brand-600);
+}
 
 /* Hamburger */
 .nav-toggle{
@@ -95,14 +105,50 @@ textarea, select, button, .btn{ font-size:16px }
 /* Mobile layout */
 @media (max-width:900px){
   .nav-toggle{ display:block }
+/* ---------- Mobile nav as full-screen sheet ---------- */
+#navOverlay{
+  position:fixed; inset:0; background:rgba(11,18,32,.45);
+  opacity:0; pointer-events:none; transition:opacity .18s ease; z-index:59;
+}
+#navOverlay[data-open="true"]{ opacity:1; pointer-events:auto }
+
+/* Turn .main-nav into a sheet on mobile */
+@media (max-width:900px){
   .main-nav{
-    position:absolute; left:0; right:0; top:100%;
-    background:#fff; border-bottom:1px solid var(--border);
-    transform:translateY(-8px); opacity:0; pointer-events:none; transition:.18s ease
+    position:fixed; inset:0 0 0 0; z-index:60;
+    background:#fff; border:0; height:100vh;
+    transform:translateY(-100%); opacity:1; pointer-events:none; transition:transform .22s ease;
+    display:flex; flex-direction:column;
   }
-  .main-nav[data-open="true"]{ transform:none; opacity:1; pointer-events:auto }
-  .main-nav ul{ flex-direction:column; padding:.5rem }
-  .main-nav a{ padding:.75rem 1rem }
+  .main-nav[data-open="true"]{ transform:translateY(0); pointer-events:auto }
+
+  /* sheet header */
+  .nav-sheet-head{
+    display:flex; align-items:center; justify-content:flex-end;
+    padding:14px 16px; border-bottom:1px solid #eef1f7;
+  }
+  .nav-close{
+    appearance:none; -webkit-appearance:none;
+    background:transparent; border:0; font-size:32px; line-height:1; padding:2px 6px;
+    border-radius:10px; cursor:pointer; color:#111827;
+  }
+  .nav-close:focus-visible{ outline:3px solid var(--brand); outline-offset:2px }
+
+  /* nav body */
+  .main-nav ul{
+    display:block; padding:8px 8px 24px; margin:0; overflow:auto;
+  }
+  .main-nav li{ margin:4px 0 }
+  .main-nav a{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 12px; border-radius:12px; font-size:1.1rem;
+  }
+  /* optional chevron for submenu feel */
+  .main-nav a::after{
+    content:"›"; font-size:20px; line-height:1; color:#c2c8d6;
+  }
+  .main-nav a[aria-current="page"]::after{ color:transparent } /* hide on active */
+}
 
   /* Hamburger → X */
   .nav-toggle[aria-expanded="true"] .nav-toggle-bar{ opacity:0 }
@@ -273,3 +319,14 @@ tbody tr:hover{ background:rgba(37,99,235,.05) }
 a.spot-card, .ql-card a{ color:inherit }
 .spot-body > strong, .ql-card strong{ color:var(--ink-900) }
 .spot-body .kpi{ color:var(--ink-700) }
+/* Forms: never overflow on narrow screens */
+.card{ max-width:100% }
+form{ max-width:100% }
+.form-row > *{ flex:1 1 260px; min-width:0 }         /* desktop default */
+@media (max-width:760px){
+  .form-row{ gap:.6rem }
+  .form-row > *{ flex:1 1 100%; min-width:0 }        /* full-width fields on phones */
+  input[type="text"], input[type="search"], input[type="date"],
+  textarea, select{ width:100%; max-width:100% }     /* no overflow */
+}
+input[type="file"]{ max-width:100% }                 /* attachment chooser fits */
