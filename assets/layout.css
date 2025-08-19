@@ -231,6 +231,15 @@ textarea{ min-height:110px; resize:vertical }
   .form-row > *{ flex:1 1 100% }
   input[type="file"]{ max-width:100% }
 }
+/* form messages */
+.msg-success{
+  color:#166534; background:#dcfce7; border:1px solid #86efac;
+  padding:.5rem .75rem; border-radius:8px; font-weight:500;
+}
+.msg-error{
+  color:#991b1b; background:#fee2e2; border:1px solid #fca5a5;
+  padding:.5rem .75rem; border-radius:8px; font-weight:500;
+}
 
 /* table */
 .table-wrap{ overflow:auto; -webkit-overflow-scrolling:touch; border-radius:14px }
