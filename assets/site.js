@@ -17,6 +17,21 @@ function ensureFavicon(){
     document.head.appendChild(link);
   }
 }
+function highlightCurrentNav(){
+  const here = (location.pathname.replace(/\/+$/,'') || '/')
+                .split('/').pop().toLowerCase() || 'index.html';
+
+  document.querySelectorAll('.main-nav a').forEach(a=>{
+    const href = (a.getAttribute('href')||'').split('/').pop().toLowerCase();
+    const isHome = (here==='/' || here==='' || here==='index.html');
+    const match =
+      (isHome && (!href || href==='/' || href==='index.html')) ||
+      (!!href && href === here);
+
+    if (match) a.setAttribute('aria-current','page');
+    else       a.removeAttribute('aria-current');
+  });
+}
 
 function setYear(){
   const year = String(new Date().getFullYear());
@@ -33,19 +48,45 @@ function setYear(){
   }
 
   /* ---------- Nav (hamburger) ---------- */
-  function initNav(){
-    const btn = document.querySelector('[data-nav-toggle]');
-    const nav = document.getElementById('siteNav');
-    if (!btn || !nav || once(btn,'jsbound')) return;
+function initNav(){
+  const btn = document.querySelector('[data-nav-toggle]');
+  const nav = document.getElementById('siteNav');
+  if (!btn || !nav) return;
 
-    function toggle(open){
-      const willOpen = open ?? nav.getAttribute('data-open') !== 'true';
-      nav.setAttribute('data-open', String(willOpen));
-      btn.setAttribute('aria-expanded', String(willOpen));
-    }
-    btn.addEventListener('click', () => toggle());
-    nav.addEventListener('click', e => { if (e.target.closest('a')) toggle(false); });
+  // create an overlay once (behind sheet)
+  let overlay = document.getElementById('navOverlay');
+  if (!overlay){
+    overlay = document.createElement('div');
+    overlay.id = 'navOverlay';
+    document.body.appendChild(overlay);
   }
+
+  const closeBtn = nav.querySelector('[data-nav-close]');
+
+  function setOpen(open){
+    const willOpen = !!open;
+    nav.setAttribute('data-open', String(willOpen));
+    overlay.setAttribute('data-open', String(willOpen));
+    btn.setAttribute('aria-expanded', String(willOpen));
+    document.documentElement.classList.toggle('no-scroll', willOpen);
+  }
+  function toggle(){ setOpen(nav.getAttribute('data-open') !== 'true'); }
+
+  btn.addEventListener('click', toggle);
+  closeBtn && closeBtn.addEventListener('click', ()=>setOpen(false));
+  overlay.addEventListener('click', ()=>setOpen(false));
+
+  // Close after choosing a link (mobile)
+  nav.addEventListener('click', e => {
+    if (e.target.closest('a')) setOpen(false);
+  });
+
+  // ESC to close
+  document.addEventListener('keydown', e=>{
+    if (e.key === 'Escape' && nav.getAttribute('data-open') === 'true') setOpen(false);
+  });
+}
+
 
   /* ---------- Search (filters Requests table) ---------- */
   function initSearch(){
@@ -319,6 +360,7 @@ function init(){
   initSearch();         // <-- correct function name
   buildBreadcrumbs();   // breadcrumbs
   ensureFavicon();    //favicon
+  highlightCurrentNav();  //activenav
 }
 
 if (document.readyState === 'loading') {
