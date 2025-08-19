@@ -104,46 +104,28 @@ main{ min-height: calc(100vh - 220px) } /* ~ header + footer space */
   .search-box input[type="search"]{ width: clamp(180px, 26vw, 240px) }
 }
 
-/* Mobile layout */
-@media (max-width:900px){
-  .nav-toggle{ display:block }
-/* ---------- Mobile nav as full-screen sheet ---------- */
-#navOverlay{
-  position:fixed; inset:0; background:rgba(11,18,32,.45);
-  opacity:0; pointer-events:none; transition:opacity .18s ease; z-index:59;
-}
-#navOverlay[data-open="true"]{ opacity:1; pointer-events:auto }
-
-/* hide sheet header by default; only show on mobile */
-.nav-sheet-head{ display:none }
-
-/* prevent page scroll when mobile sheet is open */
-.no-scroll, .no-scroll body{ overflow:hidden }
-
-/* --- Mobile sheet styles (single @media block) --- */
 @media (max-width:900px){
   .nav-toggle{ display:block }
 
+  /* overlay */
   #navOverlay{
     position:fixed; inset:0; background:rgba(11,18,32,.45);
     opacity:0; pointer-events:none; transition:opacity .18s ease; z-index:59;
   }
   #navOverlay[data-open="true"]{ opacity:1; pointer-events:auto }
 
+  /* full‑screen sheet */
   .main-nav{
-    position:fixed; inset:0; z-index:60; background:#fff;
-    height:100vh; transform:translateY(-100%); pointer-events:none;
-    transition:transform .22s ease; display:flex; flex-direction:column;
+    position:fixed; inset:0; z-index:60; background:#fff; height:100vh;
+    transform:translateY(-100%); pointer-events:none; transition:transform .22s ease;
+    display:flex; flex-direction:column;
   }
   .main-nav[data-open="true"]{ transform:translateY(0); pointer-events:auto }
-
-  .nav-sheet-head{                 /* now visible only on mobile */
-    display:flex; align-items:center; justify-content:flex-end;
-    padding:14px 16px; border-bottom:1px solid #eef1f7;
-  }
+  .nav-sheet-head{ display:flex; align-items:center; justify-content:flex-end;
+                   padding:14px 16px; border-bottom:1px solid #eef1f7; }
   .nav-close{
-    appearance:none; background:transparent; border:0; font-size:32px;
-    line-height:1; padding:2px 6px; border-radius:10px; cursor:pointer; color:#111827;
+    appearance:none; background:transparent; border:0; font-size:32px; line-height:1;
+    padding:2px 6px; border-radius:10px; cursor:pointer; color:#111827;
   }
   .nav-close:focus-visible{ outline:3px solid var(--brand); outline-offset:2px }
 
@@ -155,7 +137,21 @@ main{ min-height: calc(100vh - 220px) } /* ~ header + footer space */
   }
   .main-nav a::after{ content:"›"; font-size:20px; color:#c2c8d6 }
   .main-nav a[aria-current="page"]::after{ color:transparent }
+
+  /* icon left, logo centered, search popover right */
+  .site-header .wrap.header-inner{ display:flex; align-items:center }
+  .nav-toggle{ order:1 } .brand{ order:2; flex:1; justify-content:center }
+  .search-container{ order:3; position:relative }
+  .search-box{
+    display:none; position:absolute; top:100%; right:0; width:min(90vw,360px);
+    background:#fff; border:1px solid #e2e2e2; padding:10px; z-index:99; border-radius:10px;
+  }
+  .search-container.open .search-box{ display:flex; gap:.5rem; align-items:center }
+  .search-box input[type="search"]{ flex:1; min-width:0 }
 }
+
+/* stop page scroll when the sheet is open */
+.no-scroll, .no-scroll body{ overflow:hidden }
 
 
   /* Hamburger → X */
