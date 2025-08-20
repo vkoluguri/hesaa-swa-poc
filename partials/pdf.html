@@ -11,8 +11,8 @@
   if (file) {
     document.getElementById('pdfTitle').textContent = file.split('/').pop();
     // IMPORTANT: encode each segment to preserve spaces
-    const src = '/api/pdf?file=' + file.split('/').map(encodeURIComponent).join('/');
-    document.getElementById('pdfFrame').src = src;
+const src = '/api/pdf?file=' + encodeURIComponent(file);
+document.getElementById('pdfFrame').src = src;
   } else {
     document.getElementById('pdfTitle').textContent = 'Missing ?doc=...';
   }
