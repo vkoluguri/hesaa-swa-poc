@@ -1,19 +1,20 @@
-<!-- pdf.html -->
+<!-- /partials/pdf.html -->
 <main class="wrap">
-  <h1 id="pdfTitle" style="margin: 16px 0;"></h1>
-  <iframe id="pdfFrame" style="width:100%;height:80vh;border:0;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.08)"></iframe>
+  <h1 id="pdfTitle" style="margin:16px 0;"></h1>
+  <iframe id="pdfFrame" style="width:100%; height:80vh; border:0; border-radius:12px; box-shadow:0 6px 24px rgba(0,0,0,.08)"></iframe>
 </main>
 
 <script>
-  // Example: /pdf.html?doc=Shared Documents/course completion.pdf
-  const p = new URLSearchParams(location.search);
-  const file = p.get('doc');
+  // Usage: /partials/pdf.html?file=course%20completion.pdf
+  // or    /partials/pdf.html?file=Brochures/course%20completion.pdf
+  const qs = new URLSearchParams(location.search);
+  const file = qs.get('file') || qs.get('doc');
+
   if (file) {
     document.getElementById('pdfTitle').textContent = file.split('/').pop();
-    // IMPORTANT: encode each segment to preserve spaces
-const src = '/api/pdf?file=' + encodeURIComponent(file);
-document.getElementById('pdfFrame').src = src;
+    const encoded = file.split('/').map(encodeURIComponent).join('/');
+    document.getElementById('pdfFrame').src = `/api/pdf?file=${encoded}`;
   } else {
-    document.getElementById('pdfTitle').textContent = 'Missing ?doc=...';
+    document.getElementById('pdfTitle').textContent = 'Missing ?file=...';
   }
 </script>
