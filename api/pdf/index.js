@@ -1,134 +1,121 @@
-// /api/pdf/index.js  — Azure Static Web Apps (Node 18)
-// Streams a PDF from a SharePoint library using Microsoft Graph.
-// Required app settings: SP_TENANT_ID, SP_CLIENT_ID, SP_CLIENT_SECRET, SP_SITE_URL
-// Optional: SP_LIBRARY_NAME  (defaults to "Shared Documents")
-//
-// Debugging: add &debug=1 to the URL to get a JSON error response instead of a blank 500.
-// Example: /api/pdf?file=course%20completion.pdf&debug=1
+// Streams a PDF from SharePoint Online to the browser using app-only Graph.
+// App settings required:
+//   SP_TENANT_ID, SP_CLIENT_ID, SP_CLIENT_SECRET, SP_SITE_URL (https://<tenant>.sharepoint.com/sites/<SiteName>)
+// Optional:
+//   SP_LIBRARY_NAME (defaults to "Shared Documents")
 
 export async function onRequest(req, ctx) {
   const url = new URL(req.url);
-  const file = url.searchParams.get("file");           // e.g. "course completion.pdf" or "Folder/My.pdf"
-  const debug = url.searchParams.get("debug") === "1"; // return JSON errors when true
+  // accept ?file=... or ?doc=...
+  const fileParam = url.searchParams.get("file") || url.searchParams.get("doc");
+  const debug = url.searchParams.get("debug") === "1";
 
-  // ---- Guard rails (allow only .pdf, no parent traversal) ----
-  if (!file) {
-    return jsonError(400, "Missing ?file query (e.g. ?file=course%20completion.pdf)", debug);
-  }
-  const safe = /^[\w\-./ %]+\.pdf$/i.test(file) && !file.includes("..");
-  if (!safe) {
-    return jsonError(400, "Invalid file name. Must be a .pdf and cannot contain '..'", debug);
-  }
+  // small helper for consistent error responses
+  const fail = (status, msg, extra = {}) =>
+    new Response(
+      JSON.stringify({ ok: false, error: msg, ...extra }, null, debug ? 2 : 0),
+      { status, headers: { "Content-Type": "application/json" } }
+    );
 
   try {
-    // ---- Config ----
-    const tenant       = must("SP_TENANT_ID");
-    const clientId     = must("SP_CLIENT_ID");
-    const clientSecret = must("SP_CLIENT_SECRET");
-    const siteUrl      = must("SP_SITE_URL");                  // https://<tenant>.sharepoint.com/sites/<SiteName>
-    const libraryName  = process.env.SP_LIBRARY_NAME || "Shared Documents";
+    if (!fileParam) return fail(400, "Query parameter ?file=<pdf> is required.");
 
-    // ---- 1) App-only token for Graph ----
-    const token = await getAppToken(tenant, clientId, clientSecret);
+    // basic guardrails: PDFs only, no traversal
+    const safe = /^[\w\-./ %]+\.pdf$/i.test(fileParam) && !fileParam.includes("..");
+    if (!safe) return fail(400, "Invalid file name.");
 
-    // ---- 2) Resolve site id ----
-    const { hostname, pathname } = new URL(siteUrl);
-    // Graph site lookup format: sites/{hostname}:/sites/{sitePath}
-    const sitePath = pathname.replace(/^\/+/, ""); // e.g. "sites/HESAAWebRequestsPoC"
+    // Normalize path:
+    // - make it relative to the library root
+    // - allow callers to include "Shared Documents/" or not
+    const libraryName = process.env.SP_LIBRARY_NAME || "Shared Documents";
+    let relPath = fileParam.replace(/^\/*/,''); // strip leading slashes
+    relPath = relPath.replace(
+      new RegExp("^" + libraryName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "/?", "i"),
+      ""
+    );
+
+    const tenant       = process.env.SP_TENANT_ID;
+    const clientId     = process.env.SP_CLIENT_ID;
+    const clientSecret = process.env.SP_CLIENT_SECRET;
+    const siteUrl      = process.env.SP_SITE_URL;
+
+    if (!tenant || !clientId || !clientSecret || !siteUrl) {
+      return fail(500, "Missing one or more required app settings (SP_TENANT_ID, SP_CLIENT_ID, SP_CLIENT_SECRET, SP_SITE_URL).");
+    }
+
+    // 1) App-only token
+    const tokenRes = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        scope: "https://graph.microsoft.com/.default",
+        grant_type: "client_credentials",
+      }),
+    });
+
+    const tokenJson = await tokenRes.json().catch(() => ({}));
+    if (!tokenRes.ok || !tokenJson.access_token) {
+      return fail(tokenRes.status || 500, "Failed to obtain access token.", debug ? { tokenJson } : undefined);
+    }
+    const token = tokenJson.access_token;
+
+    // 2) Resolve site id
+    const siteHost = new URL(siteUrl).hostname;               // e.g. vkolugurihesaa.sharepoint.com
+    const sitePath = new URL(siteUrl).pathname                // e.g. /sites/HESAAWebRequestsPoC
+                        .replace(/^\/+/, "")
+                        .replace(/^sites\//i, "sites/");      // ensure "sites/<name>"
+
     const siteRes = await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${encodeURIComponent(hostname)}:/${encodeURIComponent(sitePath)}`,
+      `https://graph.microsoft.com/v1.0/sites/${encodeURIComponent(siteHost)}:/${encodeURIComponent(sitePath)}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    const site = await siteRes.json();
-    if (!siteRes.ok) {
-      return jsonError(siteRes.status, `Site lookup failed: ${siteRes.status} ${siteRes.statusText} :: ${stringify(site)}`, debug);
-    }
-    if (!site?.id) {
-      return jsonError(500, `Could not resolve site id from ${siteUrl} :: ${stringify(site)}`, debug);
+    const site = await siteRes.json().catch(() => ({}));
+    if (!siteRes.ok || !site.id) {
+      return fail(siteRes.status || 500, "Failed to resolve site id.", debug ? { siteResStatus: siteRes.status, site } : undefined);
     }
 
-    // ---- 3) Resolve drive (library) id ----
+    // 3) Resolve drive (library)
     const drivesRes = await fetch(
       `https://graph.microsoft.com/v1.0/sites/${site.id}/drives`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    const drives = await drivesRes.json();
-    if (!drivesRes.ok) {
-      return jsonError(drivesRes.status, `Drives listing failed :: ${stringify(drives)}`, debug);
+    const drives = await drivesRes.json().catch(() => ({}));
+    if (!drivesRes.ok || !Array.isArray(drives.value)) {
+      return fail(drivesRes.status || 500, "Failed to list site drives.", debug ? { drivesResStatus: drivesRes.status, drives } : undefined);
     }
-    const drive = (drives.value || []).find(d => (d.name || "").toLowerCase() === libraryName.toLowerCase())
-               || (drives.value || [])[0];
+
+    // Prefer an exact match; otherwise fall back to the first "documentLibrary" drive.
+    const drive =
+      drives.value.find(d => d.name?.toLowerCase() === libraryName.toLowerCase()) ||
+      drives.value.find(d => d.driveType === "documentLibrary") ||
+      drives.value[0];
+
     if (!drive?.id) {
-      return jsonError(404, `Could not resolve drive for library "${libraryName}"`, debug);
+      return fail(404, `Could not resolve a document library (looked for "${libraryName}").`, debug ? { drives } : undefined);
     }
 
-    // ---- 4) Fetch file content by path ----
-    // Path inside the library is exactly what the user passed in ?file=...
-    // Each segment must be encoded ONE BY ONE
-    const encodedPath = file.split("/").map(encodeURIComponent).join("/");
-    const contentUrl = `https://graph.microsoft.com/v1.0/drives/${drive.id}/root:/${encodedPath}:/content`;
-    const fileResp = await fetch(contentUrl, { headers: { Authorization: `Bearer ${token}` } });
+    // 4) Fetch file content by path (URL-encode each segment)
+    const encodedPath = relPath.split("/").map(encodeURIComponent).join("/");
+    const contentUrl  = `https://graph.microsoft.com/v1.0/drives/${drive.id}/root:/${encodedPath}:/content`;
 
+    const fileResp = await fetch(contentUrl, { headers: { Authorization: `Bearer ${token}` } });
     if (!fileResp.ok) {
       const text = await fileResp.text().catch(() => "");
-      return jsonError(fileResp.status, `Download failed: ${fileResp.status} ${fileResp.statusText} :: ${text}`, debug);
+      return fail(fileResp.status, "Graph returned an error for file content.", debug ? { contentUrl, text } : undefined);
     }
 
-    // ---- 5) Stream back to the browser ----
+    // 5) Stream the PDF to the browser
     return new Response(fileResp.body, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        // Let the viewer show inline; set attachment if you want forced download:
-        // "Content-Disposition": `attachment; filename="${basename(file)}"`
-        "Content-Disposition": `inline; filename="${basename(file)}"`
-      }
+        "Content-Disposition": `inline; filename="${encodeURIComponent(relPath.split("/").pop() || "file.pdf")}"`,
+        "Cache-Control": "private, max-age=300",
+      },
     });
-
   } catch (err) {
-    // Unexpected crash path
-    return jsonError(500, `Unhandled error: ${String(err?.message || err)}`, debug);
+    return fail(500, "Unhandled error.", debug ? { message: String(err), stack: (err && err.stack) || "" } : undefined);
   }
-}
-
-/* ---------- helpers ---------- */
-function must(name) {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing app setting ${name}`);
-  return v;
-}
-async function getAppToken(tenant, clientId, clientSecret) {
-  const tokenRes = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      scope: "https://graph.microsoft.com/.default",
-      grant_type: "client_credentials"
-    })
-  });
-  const json = await tokenRes.json();
-  if (!tokenRes.ok) {
-    throw new Error(`Token error: ${tokenRes.status} ${tokenRes.statusText} :: ${stringify(json)}`);
-  }
-  return json.access_token;
-}
-function basename(p) {
-  const parts = (p || "").split("/");
-  return parts[parts.length - 1] || "file.pdf";
-}
-function stringify(x) {
-  try { return JSON.stringify(x); } catch { return String(x); }
-}
-function jsonError(status, message, debug) {
-  // For normal user flow we keep status and an empty body so viewers don't print JSON,
-  // BUT when debug=1 we return JSON so you can see the exact error in the browser.
-  if (debug) {
-    return new Response(JSON.stringify({ ok: false, error: message }), {
-      status, headers: { "Content-Type": "application/json" }
-    });
-  }
-  // Still include a tiny text (helps in Network tab)
-  return new Response(message, { status, headers: { "Content-Type": "text/plain" } });
 }
