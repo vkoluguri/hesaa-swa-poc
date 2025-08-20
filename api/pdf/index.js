@@ -12,10 +12,19 @@
 export async function onRequest(req, ctx) {
   try {
     const url = new URL(req.url);
-    const file = url.searchParams.get("file"); // e.g. file=Brochure.pdf
-    if (!file) {
-      return new Response(JSON.stringify({ ok: false, error: "file query required" }), { status: 400 });
-    }
+const file = url.searchParams.get('file'); // e.g. file=Brochure.pdf
+if (!file) return new Response(JSON.stringify({ ok:false, error:'file query required' }), { status:400 });
+
+// ✅ Guardrails here
+const ok = /^[\w\-./ %]+\.pdf$/i.test(file) && !file.includes('..');
+if (!ok) return new Response(JSON.stringify({ ok:false, error:'invalid file'}), { status:400 });
+
+// Optional: restrict to a specific folder
+const ALLOWED_PREFIX = 'Brochures/';
+if (!file.startsWith(ALLOWED_PREFIX)) {
+  return new Response(JSON.stringify({ ok:false, error:'not allowed'}), { status:403 });
+}
+
 
     const tenant       = process.env.SP_TENANT_ID;
     const clientId     = process.env.SP_CLIENT_ID;
@@ -73,4 +82,5 @@ export async function onRequest(req, ctx) {
   } catch (e) {
     return new Response(JSON.stringify({ ok:false, error: String(e) }), { status: 500 });
   }
+
 }
