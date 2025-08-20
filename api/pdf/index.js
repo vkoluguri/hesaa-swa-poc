@@ -1,121 +1,112 @@
-// Streams a PDF from SharePoint Online to the browser using app-only Graph.
-// App settings required:
-//   SP_TENANT_ID, SP_CLIENT_ID, SP_CLIENT_SECRET, SP_SITE_URL (https://<tenant>.sharepoint.com/sites/<SiteName>)
-// Optional:
-//   SP_LIBRARY_NAME (defaults to "Shared Documents")
+// /api/pdf/index.js
+// Streams a PDF from SharePoint via Microsoft Graph (app-only).
+// Works on Azure Static Web Apps Node 18 runtime (no extra deps).
 
 export async function onRequest(req, ctx) {
-  const url = new URL(req.url);
-  // accept ?file=... or ?doc=...
-  const fileParam = url.searchParams.get("file") || url.searchParams.get("doc");
-  const debug = url.searchParams.get("debug") === "1";
-
-  // small helper for consistent error responses
-  const fail = (status, msg, extra = {}) =>
-    new Response(
-      JSON.stringify({ ok: false, error: msg, ...extra }, null, debug ? 2 : 0),
-      { status, headers: { "Content-Type": "application/json" } }
-    );
+  const debug = new URL(req.url).searchParams.get('debug'); // &debug=1 shows JSON errors
 
   try {
-    if (!fileParam) return fail(400, "Query parameter ?file=<pdf> is required.");
+    // ----------- 1) Inputs & guardrails -----------
+    const url = new URL(req.url);
+    const fileParam = url.searchParams.get('file'); // e.g. "course completion.pdf" or "Brochures/summer.pdf"
+    if (!fileParam) return jserr(400, 'Missing ?file=...');
 
-    // basic guardrails: PDFs only, no traversal
-    const safe = /^[\w\-./ %]+\.pdf$/i.test(fileParam) && !fileParam.includes("..");
-    if (!safe) return fail(400, "Invalid file name.");
+    // Basic guard: only PDF, no path traversal; allow subfolders.
+    const isValid =
+      /^[\w\-./ %]+\.pdf$/i.test(fileParam) && !fileParam.includes('..') && !fileParam.startsWith('/');
+    if (!isValid) return jserr(400, 'Invalid file name');
 
-    // Normalize path:
-    // - make it relative to the library root
-    // - allow callers to include "Shared Documents/" or not
-    const libraryName = process.env.SP_LIBRARY_NAME || "Shared Documents";
-    let relPath = fileParam.replace(/^\/*/,''); // strip leading slashes
-    relPath = relPath.replace(
-      new RegExp("^" + libraryName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "/?", "i"),
-      ""
-    );
-
-    const tenant       = process.env.SP_TENANT_ID;
-    const clientId     = process.env.SP_CLIENT_ID;
-    const clientSecret = process.env.SP_CLIENT_SECRET;
-    const siteUrl      = process.env.SP_SITE_URL;
-
-    if (!tenant || !clientId || !clientSecret || !siteUrl) {
-      return fail(500, "Missing one or more required app settings (SP_TENANT_ID, SP_CLIENT_ID, SP_CLIENT_SECRET, SP_SITE_URL).");
+    // Optional: restrict to a specific folder prefix (set SP_PDF_PREFIX in env, e.g. "Brochures/")
+    const allowedPrefix = (process.env.SP_PDF_PREFIX || '').trim();
+    if (allowedPrefix && !fileParam.startsWith(allowedPrefix)) {
+      return jserr(403, 'File outside allowed folder');
     }
 
-    // 1) App-only token
+    // Env needed
+    const tenant       = requiredEnv('SP_TENANT_ID');
+    const clientId     = requiredEnv('SP_CLIENT_ID');
+    const clientSecret = requiredEnv('SP_CLIENT_SECRET');
+    const siteUrl      = requiredEnv('SP_SITE_URL');       // e.g. https://vkolugurihesaa.sharepoint.com/sites/HESAAWebRequestsPoC
+    const libraryName  = process.env.SP_LIBRARY_NAME || 'Shared Documents';
+
+    // ----------- 2) App-only token -----------
     const tokenRes = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         client_id: clientId,
         client_secret: clientSecret,
-        scope: "https://graph.microsoft.com/.default",
-        grant_type: "client_credentials",
+        scope: 'https://graph.microsoft.com/.default',
+        grant_type: 'client_credentials',
       }),
     });
-
     const tokenJson = await tokenRes.json().catch(() => ({}));
     if (!tokenRes.ok || !tokenJson.access_token) {
-      return fail(tokenRes.status || 500, "Failed to obtain access token.", debug ? { tokenJson } : undefined);
+      return jserr(tokenRes.status || 500, `Token error: ${tokenJson.error_description || JSON.stringify(tokenJson)}`, debug);
     }
-    const token = tokenJson.access_token;
+    const bearer = `Bearer ${tokenJson.access_token}`;
 
-    // 2) Resolve site id
-    const siteHost = new URL(siteUrl).hostname;               // e.g. vkolugurihesaa.sharepoint.com
-    const sitePath = new URL(siteUrl).pathname                // e.g. /sites/HESAAWebRequestsPoC
-                        .replace(/^\/+/, "")
-                        .replace(/^sites\//i, "sites/");      // ensure "sites/<name>"
+    // ----------- 3) Resolve site & drive -----------
+    // Graph wants: /sites/{hostname}:/sites/{sitePath}
+    const sp = new URL(siteUrl);
+    // strip leading "/sites/" from pathname; leave any nested path intact
+    const sitePath = sp.pathname.replace(/^\/+/, ''); // e.g. "sites/HESAAWebRequestsPoC"
+    const siteApi = `https://graph.microsoft.com/v1.0/sites/${sp.hostname}:/${sitePath}`;
+    const siteInfo = await gget(siteApi, bearer);
+    if (!siteInfo?.id) return jserr(500, `Could not resolve site id from ${siteApi}`, debug);
 
-    const siteRes = await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${encodeURIComponent(siteHost)}:/${encodeURIComponent(sitePath)}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const site = await siteRes.json().catch(() => ({}));
-    if (!siteRes.ok || !site.id) {
-      return fail(siteRes.status || 500, "Failed to resolve site id.", debug ? { siteResStatus: siteRes.status, site } : undefined);
-    }
+    const drivesApi = `https://graph.microsoft.com/v1.0/sites/${siteInfo.id}/drives`;
+    const drives = await gget(drivesApi, bearer);
+    const drive = (drives?.value || []).find(d => d.name === libraryName) || (drives?.value || [])[0];
+    if (!drive?.id) return jserr(500, `Could not resolve drive for library "${libraryName}"`, debug);
 
-    // 3) Resolve drive (library)
-    const drivesRes = await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${site.id}/drives`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const drives = await drivesRes.json().catch(() => ({}));
-    if (!drivesRes.ok || !Array.isArray(drives.value)) {
-      return fail(drivesRes.status || 500, "Failed to list site drives.", debug ? { drivesResStatus: drivesRes.status, drives } : undefined);
-    }
+    // ----------- 4) Download by *path* (encode each segment safely) -----------
+    const safePath = fileParam.split('/').map(encodeURIComponent).join('/'); // keeps folders but encodes spaces, etc.
+    const contentApi = `https://graph.microsoft.com/v1.0/drives/${drive.id}/root:/${safePath}:/content`;
 
-    // Prefer an exact match; otherwise fall back to the first "documentLibrary" drive.
-    const drive =
-      drives.value.find(d => d.name?.toLowerCase() === libraryName.toLowerCase()) ||
-      drives.value.find(d => d.driveType === "documentLibrary") ||
-      drives.value[0];
-
-    if (!drive?.id) {
-      return fail(404, `Could not resolve a document library (looked for "${libraryName}").`, debug ? { drives } : undefined);
+    const pdfResp = await fetch(contentApi, { headers: { Authorization: bearer } });
+    if (!pdfResp.ok) {
+      const t = await pdfResp.text().catch(() => '');
+      return jserr(pdfResp.status, `Graph file error: ${t || pdfResp.statusText}`, debug);
     }
 
-    // 4) Fetch file content by path (URL-encode each segment)
-    const encodedPath = relPath.split("/").map(encodeURIComponent).join("/");
-    const contentUrl  = `https://graph.microsoft.com/v1.0/drives/${drive.id}/root:/${encodedPath}:/content`;
-
-    const fileResp = await fetch(contentUrl, { headers: { Authorization: `Bearer ${token}` } });
-    if (!fileResp.ok) {
-      const text = await fileResp.text().catch(() => "");
-      return fail(fileResp.status, "Graph returned an error for file content.", debug ? { contentUrl, text } : undefined);
-    }
-
-    // 5) Stream the PDF to the browser
-    return new Response(fileResp.body, {
+    // ----------- 5) Stream back -----------
+    // Use the original (unencoded) file name for Content-Disposition
+    return new Response(pdfResp.body, {
       status: 200,
       headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${encodeURIComponent(relPath.split("/").pop() || "file.pdf")}"`,
-        "Cache-Control": "private, max-age=300",
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `inline; filename="${fileParam.split('/').slice(-1)[0]}"`,
+        // (Optional) allow embedding from your own origin
+        'Cache-Control': 'public, max-age=300',
       },
     });
-  } catch (err) {
-    return fail(500, "Unhandled error.", debug ? { message: String(err), stack: (err && err.stack) || "" } : undefined);
+  } catch (e) {
+    return jserr(500, String(e));
+  }
+
+  // ---------- helpers ----------
+  function requiredEnv(name) {
+    const v = process.env[name];
+    if (!v) throw new Error(`Missing environment variable ${name}`);
+    return v;
+  }
+
+  async function gget(url, bearer) {
+    const r = await fetch(url, { headers: { Authorization: bearer } });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(`Graph GET ${url} -> ${r.status} ${JSON.stringify(j)}`);
+    return j;
+  }
+
+  function jserr(status, message, debugFlag) {
+    // If &debug=1 was passed, show JSON; otherwise a plain 4xx/5xx so the browser shows error
+    if (debugFlag) {
+      return new Response(JSON.stringify({ ok: false, error: message }), {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return new Response(message, { status });
   }
 }
