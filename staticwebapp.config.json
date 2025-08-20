@@ -1,8 +1,8 @@
 {
   "routes": [
-    { "route": "/aboutus",   "rewrite": "/aboutus.html"   },
+    { "route": "/aboutus", "rewrite": "/aboutus.html" },
     { "route": "/contactus", "rewrite": "/contactus.html" },
-    { "route": "/students",  "rewrite": "/students.html"  }
-    { "route": "/api/*", "allowedRoles":["anonymous","authenticated"] }
+    { "route": "/students", "rewrite": "/students.html" },
+    { "route": "/api/*", "allowedRoles": ["anonymous","authenticated"] }
   ]
 }
