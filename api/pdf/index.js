@@ -1,5 +1,5 @@
 // /api/pdf/index.js  (Node 18, SWA-style)
-// Streams a file from a SharePoint library back to the browser.
+// Streams a PDF from a SharePoint library back to the browser.
 //
 // Required app settings (Application secrets):
 //   SP_TENANT_ID        e.g. 00000000-0000-0000-0000-000000000000
@@ -8,79 +8,99 @@
 //   SP_SITE_URL         e.g. https://contoso.sharepoint.com/sites/HESAAWebRequestsPoC
 // Optional:
 //   SP_LIBRARY_NAME     defaults to "Shared Documents"
+//   SP_ALLOWED_PREFIX   e.g. "Brochures/" (to fence downloads to a folder). Leave blank to allow any folder.
 
-export async function onRequest(req, ctx) {
+export async function onRequest(req /* , ctx */) {
   try {
-    const url = new URL(req.url);
-const file = url.searchParams.get('file'); // e.g. file=Brochure.pdf
-if (!file) return new Response(JSON.stringify({ ok:false, error:'file query required' }), { status:400 });
+    // ---- Method guard -------------------------------------------------------
+    if (req.method !== 'GET') {
+      return json({ ok:false, error:'Method not allowed' }, 405);
+    }
 
-// ✅ Guardrails here
-const ok = /^[\w\-./ %]+\.pdf$/i.test(file) && !file.includes('..');
-if (!ok) return new Response(JSON.stringify({ ok:false, error:'invalid file'}), { status:400 });
+    // ---- Input --------------------------------------------------------------
+    const url  = new URL(req.url);
+    const file = url.searchParams.get('file'); // e.g. "Shared Documents/course completion.pdf" OR "Brochures/Guide.pdf"
+    if (!file) return json({ ok:false, error:'Query ?file= is required' }, 400);
 
-// Optional: restrict to a specific folder
-const ALLOWED_PREFIX = 'Brochures/';
-if (!file.startsWith(ALLOWED_PREFIX)) {
-  return new Response(JSON.stringify({ ok:false, error:'not allowed'}), { status:403 });
-}
+    // ---- Guardrails ----------------------------------------------------------
+    // 1) PDF only + no traversal
+    const isPdf = /^[\w\-./ %]+\.pdf$/i.test(file) && !file.includes('..') && !file.startsWith('/');
+    if (!isPdf) return json({ ok:false, error:'Invalid file name' }, 400);
 
+    // 2) Optional: restrict to a subfolder (env wins, fallback to constant)
+    const ALLOWED_PREFIX = (process.env.SP_ALLOWED_PREFIX || '').trim(); // e.g. "Brochures/"
+    if (ALLOWED_PREFIX && !file.startsWith(ALLOWED_PREFIX)) {
+      return json({ ok:false, error:'Not allowed' }, 403);
+    }
 
+    // ---- Config -------------------------------------------------------------
     const tenant       = process.env.SP_TENANT_ID;
     const clientId     = process.env.SP_CLIENT_ID;
     const clientSecret = process.env.SP_CLIENT_SECRET;
-    const siteUrl      = process.env.SP_SITE_URL;
-    const libraryName  = process.env.SP_LIBRARY_NAME || "Shared Documents";
+    const siteUrl      = process.env.SP_SITE_URL;                // https://<tenant>.sharepoint.com/sites/<site>
+    const defaultLib   = process.env.SP_LIBRARY_NAME || 'Shared Documents';
 
-    // 1) App-only token for Microsoft Graph
-    const tokenRes = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        scope: "https://graph.microsoft.com/.default",
-        grant_type: "client_credentials"
-      })
-    });
-    const tokenJson = await tokenRes.json();
-    if (!tokenRes.ok) throw new Error(tokenJson.error_description || "Token error");
-    const token = tokenJson.access_token;
-
-    // 2) Resolve the site drive id, then fetch file content by path
-    //    (This works regardless of the full tenant name.)
-    const site = await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${encodeURIComponent(new URL(siteUrl).hostname)}:/sites/${encodeURIComponent(new URL(siteUrl).pathname.replace(/^\/sites\//,''))}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    ).then(r => r.json());
-    if (!site?.id) throw new Error("Could not resolve site id");
-
-    const drives = await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${site.id}/drives`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    ).then(r => r.json());
-    const drive = (drives.value || []).find(d => d.name === libraryName) || (drives.value || [])[0];
-    if (!drive?.id) throw new Error("Could not resolve drive (library)");
-
-    const fileResp = await fetch(
-      `https://graph.microsoft.com/v1.0/drives/${drive.id}/root:/${encodeURIComponent(file)}:/content`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (!fileResp.ok) {
-      const txt = await fileResp.text();
-      return new Response(JSON.stringify({ ok:false, error: txt }), { status: fileResp.status });
+    if (!tenant || !clientId || !clientSecret || !siteUrl) {
+      return json({ ok:false, error:'Missing SP_* environment settings' }, 500);
     }
 
-    // 3) Stream to browser
-    return new Response(fileResp.body, {
+    // ---- Token (Graph app-only) --------------------------------------------
+    const tokenRes = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id:     clientId,
+        client_secret: clientSecret,
+        scope:         'https://graph.microsoft.com/.default',
+        grant_type:    'client_credentials'
+      })
+    });
+    const tok = await tokenRes.json();
+    if (!tokenRes.ok || !tok?.access_token) {
+      return json({ ok:false, error:'Token error', details: tok }, 502);
+    }
+    const auth = { Authorization: `Bearer ${tok.access_token}` };
+
+    // ---- Build content URL using SharePoint _api v2.1 (by path) -------------
+    // If no library segment supplied, assume defaultLib.
+    const hasLibrary = /^([^/]+)\//.test(file);
+    const library    = hasLibrary ? file.split('/')[0] : defaultLib;
+    const pathInLib  = hasLibrary ? file.split('/').slice(1).join('/') : file;
+
+    // Encode each path segment safely (spaces, #, etc.)
+    const encSegs = (s) => s.split('/').map(encodeURIComponent).join('/');
+
+    const contentUrl =
+      `${siteUrl}/_api/v2.1/drives/root:/${encSegs(library)}/${encSegs(pathInLib)}:/content`;
+
+    // ---- Fetch the file stream from SharePoint ------------------------------
+    const spRes = await fetch(contentUrl, { headers: auth });
+    if (!spRes.ok) {
+      const text = await spRes.text().catch(()=>'');
+      return json({ ok:false, error:'SharePoint download failed', status: spRes.status, details: text }, spRes.status);
+    }
+
+    // ---- Stream it back inline ----------------------------------------------
+    const fname = decodeURIComponent(pathInLib.split('/').pop() || 'file.pdf');
+    return new Response(spRes.body, {
       status: 200,
       headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${file}"`
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `inline; filename="${fname}"`,
+        // Helpful caching (tune as you like)
+        'Cache-Control': 'private, max-age=300'
       }
     });
-  } catch (e) {
-    return new Response(JSON.stringify({ ok:false, error: String(e) }), { status: 500 });
-  }
 
+  } catch (e) {
+    return json({ ok:false, error: String(e) }, 500);
+  }
+}
+
+/* --------------------------- helpers --------------------------- */
+function json(obj, status=200) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { 'Content-Type':'application/json' }
+  });
 }
