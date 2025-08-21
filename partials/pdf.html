@@ -1,13 +1,13 @@
-<!-- simple viewer page that points an iframe at /api/pdf -->
+<!-- /partials/pdf.html -->
 <main class="wrap">
   <h1 id="pdfTitle" style="margin:16px 0;"></h1>
   <iframe id="pdfFrame"
-          style="width:100%;height:80vh;border:0;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.08)">
-  </iframe>
+          title="PDF viewer"
+          style="width:100%;height:80vh;border:0;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.08)"></iframe>
 </main>
 
 <script>
-  (function(){
+  (function () {
     const p = new URLSearchParams(location.search);
     const file = p.get('file') || p.get('doc');
     if (!file) {
@@ -17,8 +17,8 @@
     const title = file.split('/').pop();
     document.getElementById('pdfTitle').textContent = title;
 
-    // encode the whole thing once; the API will segment-encode again
-    const src = '/api/pdf?file=' + encodeURIComponent(file);
+    let src = '/api/pdf?file=' + encodeURIComponent(file);
+    if (p.get('debug') === '1') src += '&debug=1';        // <-- forward debug
     document.getElementById('pdfFrame').src = src;
   })();
 </script>
