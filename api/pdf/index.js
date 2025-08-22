@@ -8,6 +8,7 @@
 // Optional:
 //   SP_LIBRARY_NAME     (display name in Graph, usually "Documents")
 
+
 export async function onRequest(req, ctx) {
   const steps = [];
   const url = new URL(req.url);
