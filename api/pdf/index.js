@@ -1,168 +1,168 @@
-// /api/pdf/index.js  (Node 18+, Azure Static Web Apps Functions-style)
-// Streams a PDF from SharePoint Online via Microsoft Graph (app‑only).
+// /api/pdf/index.js  (Azure Static Web Apps / Node 18+)
 //
-// APP SETTINGS you must set in the SWA (Environment variables):
-//   SP_TENANT_ID       (your Entra tenant id, GUID)
-//   SP_CLIENT_ID       (app registration - application (client) id)
-//   SP_CLIENT_SECRET   (client secret value)
-//   SP_SITE_URL        (e.g. https://{tenant}.sharepoint.com/sites/HESAAWebRequestsPoC)
+// Streams a PDF from SharePoint Online via Microsoft Graph (app-only).
+// Works even if /sites/{siteId}/drives returns [] by falling back to
+// the site's default drive: /sites/{siteId}/drive.
+//
+// Required SWA environment variables (Production slot):
+//   SP_TENANT_ID     = <AAD tenant id>
+//   SP_CLIENT_ID     = <app registration (application) id>
+//   SP_CLIENT_SECRET = <client secret>
+//   SP_SITE_URL      = https://<tenant>.sharepoint.com/sites/<SiteName>
 // Optional:
-//   SP_LIBRARY_NAME    (e.g. "Documents"; defaults to "Documents")
-//   SP_PDF_FOLDER      (optional folder prefix inside the library, e.g. "Brochures")
+//   SP_LIBRARY_NAME  = Friendly library name (e.g., "Shared Documents")
 //
-// Usage (from site):
-//   <iframe src="/api/pdf?file=StateHolidays.pdf"></iframe>
-//   // also supports: /partials/pdf.html?file=StateHolidays.pdf
-//
-// Security guards:
-//   - only .pdf is allowed
-//   - no path traversal ("..")
+// Usage from browser:
+//   /api/pdf?file=StateHolidays.pdf
+//   /api/pdf?file=Brochures/2025/guide.pdf
+//   /api/pdf?file=course%20completion.pdf&debug=1   (debug JSON)
+
+const TOKEN_URL = (tenant) =>
+  `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`;
+
+const G = (path) => `https://graph.microsoft.com/v1.0${path}`;
 
 export async function onRequest(req) {
+  const url = new URL(req.url);
+  const debug = url.searchParams.get("debug") === "1";
+
   const steps = [];
-  const debug = new URL(req.url).searchParams.get("debug") === "1";
+  const bad = (status, obj) =>
+    new Response(JSON.stringify(obj, null, 2), {
+      status,
+      headers: { "content-type": "application/json" },
+    });
 
   try {
-    // -------- 0) Read env + validate input --------
-    const url = new URL(req.url);
-
-    const tenant       = process.env.SP_TENANT_ID;
-    const clientId     = process.env.SP_CLIENT_ID;
-    const clientSecret = process.env.SP_CLIENT_SECRET;
-    const siteUrl      = process.env.SP_SITE_URL;
-    const libraryName  = process.env.SP_LIBRARY_NAME || "Documents"; // Modern default
-    const folderPrefix = (process.env.SP_PDF_FOLDER || "").replace(/^\/+|\/+$/g, ""); // optional
+    // ---- 0) read config
+    const tenant = process.env.SP_TENANT_ID || "";
+    const clientId = process.env.SP_CLIENT_ID || "";
+    const clientSecret = process.env.SP_CLIENT_SECRET || "";
+    const siteUrl = process.env.SP_SITE_URL || "";
+    const wantedLibrary = (process.env.SP_LIBRARY_NAME || "").trim();
 
     const fileRaw = (url.searchParams.get("file") || url.searchParams.get("doc") || "").trim();
 
     if (!fileRaw) {
-      return _json({ ok: false, error: "Missing ?file=..." }, 400);
+      return bad(400, { ok: false, error: "Missing ?file=..." });
     }
 
-    // guards
-    const isPdf = /\.pdf$/i.test(fileRaw);
-    const hasTraversal = fileRaw.includes("..");
-    if (!isPdf || hasTraversal) {
-      return _json({ ok: false, error: "Invalid file name." }, 400);
+    // guard: allow only PDFs, no path traversal
+    const safe = /^[\w\-./ %]+\.pdf$/i.test(fileRaw) && !fileRaw.includes("..");
+    if (!safe) {
+      return bad(400, { ok: false, error: "Invalid file path" });
     }
 
-    // -------- 1) App-only token --------
-    const tokenRes = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
+    if (!tenant || !clientId || !clientSecret || !siteUrl) {
+      return bad(500, {
+        ok: false,
+        error: "Missing required environment variables",
+        missing: {
+          SP_TENANT_ID: !!tenant,
+          SP_CLIENT_ID: !!clientId,
+          SP_CLIENT_SECRET: !!clientSecret,
+          SP_SITE_URL: !!siteUrl,
+        },
+      });
+    }
+
+    // ---- 1) token
+    const form = new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      scope: "https://graph.microsoft.com/.default",
+      grant_type: "client_credentials",
+    });
+
+    const tokRes = await fetch(TOKEN_URL(tenant), {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        scope: "https://graph.microsoft.com/.default",
-        grant_type: "client_credentials",
-      }),
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: form,
     });
-    const tokenJson = await tokenRes.json();
-    if (!tokenRes.ok || !tokenJson.access_token) {
-      steps.push({ step: "token", status: "error", statusCode: tokenRes.status, body: tokenJson });
-      return _json({ ok: false, steps }, 500);
+
+    const tok = await tokRes.json().catch(() => ({}));
+    if (!tokRes.ok || !tok?.access_token) {
+      steps.push({ step: "token", ok: false, status: tokRes.status, body: tok });
+      return debug ? bad(500, { ok: false, steps }) : bad(500, { ok: false, error: "Auth failed" });
     }
-    const token = tokenJson.access_token;
-    steps.push({ step: "token", status: "ok" });
+    const auth = { Authorization: `Bearer ${tok.access_token}` };
+    steps.push({ step: "token", ok: true });
 
-    // -------- 2) Resolve site id from SP_SITE_URL --------
-    // Expect: https://{host}/sites/{sitePath...}
-    const parsed = new URL(siteUrl);
-    const host = parsed.hostname;                 // vkolugurihesaa.sharepoint.com
-    const sitePath = parsed.pathname.replace(/^\/+/, ""); // "sites/HESAAWebRequestsPoC"
-    const sitePathTail = sitePath.replace(/^sites\//i, ""); // "HESAAWebRequestsPoC"
+    // ---- 2) resolve site by path (never use the raw composite id in the URL)
+    const { hostname, pathname } = new URL(siteUrl);
+    const sitePath = pathname.replace(/^\/+/, ""); // e.g. "sites/HESAAWebRequestsPoC"
 
-    const siteLookupUrl = `https://graph.microsoft.com/v1.0/sites/${host}:/sites/${encodeURIComponent(sitePathTail)}`;
-    const siteRes = await fetch(siteLookupUrl, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const siteJson = await siteRes.json();
-    if (!siteRes.ok || !siteJson?.id) {
-      steps.push({ step: "site", status: "error", statusCode: siteRes.status, url: siteLookupUrl, body: siteJson });
-      return _json({ ok: false, steps }, 500);
+    const siteRes = await fetch(
+      G(`/sites/${encodeURIComponent(hostname)}:/` + sitePath),
+      { headers: auth }
+    );
+    const site = await siteRes.json().catch(() => ({}));
+    if (!siteRes.ok || !site?.id) {
+      steps.push({ step: "site", ok: false, status: siteRes.status, body: site });
+      return debug ? bad(siteRes.status, { ok: false, steps }) : bad(500, { ok: false, error: "Site lookup failed" });
     }
-    const siteId = siteJson.id; // e.g. "domain.sharepoint.com,GUID,GUID"
-    steps.push({ step: "site", status: "ok", siteId, displayName: siteJson.displayName });
+    steps.push({ step: "site", ok: true, siteId: site.id });
 
-    // -------- 3) List drives (document libraries) for that site --------
-    // IMPORTANT: Use the siteId directly. Encode it once as a path segment.
-    const drivesUrl = `https://graph.microsoft.com/v1.0/sites/${encodeURIComponent(siteId)}/drives?$select=id,name,driveType`;
-    const drivesRes = await fetch(drivesUrl, { headers: { Authorization: `Bearer ${token}` } });
-    const drivesJson = await drivesRes.json();
+    // ---- 3) pick a drive (document library)
+    // If SP_LIBRARY_NAME is supplied, try to match it; otherwise use the default drive.
+    let driveId = null;
 
-    if (!drivesRes.ok) {
-      steps.push({ step: "drives", status: "error", statusCode: drivesRes.status, url: drivesUrl, body: drivesJson });
-      return _json({ ok: false, steps }, 500);
-    }
-
-    const drives = Array.isArray(drivesJson.value) ? drivesJson.value : [];
-    // Try exact name match, otherwise first documentLibrary
-    let drive = drives.find(d => (d.name || "").toLowerCase() === libraryName.toLowerCase());
-    if (!drive) drive = drives.find(d => d.driveType === "documentLibrary");
-    if (!drive) {
-      steps.push({
-        step: "drives",
-        status: "error",
-        reason: `No document library found (looked for "${libraryName}").`,
-        available: drives.map(d => ({ name: d.name, driveType: d.driveType })),
-      });
-      return _json({ ok: false, steps }, 404);
-    }
-    steps.push({ step: "drives", status: "ok", chosen: { id: drive.id, name: drive.name } });
-
-    // -------- 4) Build file path under the library (optionally under folderPrefix) --------
-    // Segment-encode to handle spaces/specials safely.
-    const pathSegments = [];
-    if (folderPrefix) pathSegments.push(...folderPrefix.split("/").filter(Boolean));
-    pathSegments.push(...fileRaw.split("/").filter(Boolean));
-    const pathEncoded = pathSegments.map(encodeURIComponent).join("/");
-
-    // e.g. /v1.0/drives/{driveId}/root:/Brochures/course%20completion.pdf:/content
-    const fileUrl = `https://graph.microsoft.com/v1.0/drives/${drive.id}/root:/${pathEncoded}:/content`;
-
-    // -------- 5) Stream the file --------
-    const pdfRes = await fetch(fileUrl, { headers: { Authorization: `Bearer ${token}` } });
-
-    if (!pdfRes.ok) {
-      let errBody;
-      try { errBody = await pdfRes.text(); } catch {}
-      steps.push({
-        step: "file",
-        status: "error",
-        statusCode: pdfRes.status,
-        url: fileUrl,
-        body: errBody || "<no body>",
-      });
-      return _json({ ok: false, steps }, 404);
+    if (wantedLibrary) {
+      const dRes = await fetch(G(`/sites/${site.id}/drives?$select=id,name,driveType`), { headers: auth });
+      const dJson = await dRes.json().catch(() => ({}));
+      if (dRes.ok && Array.isArray(dJson.value)) {
+        const match = dJson.value.find(
+          (d) =>
+            String(d.driveType).toLowerCase() === "documentlibrary" &&
+            String(d.name || "").toLowerCase() === wantedLibrary.toLowerCase()
+        );
+        if (match) {
+          driveId = match.id;
+          steps.push({ step: "drive", ok: true, mode: "named", driveId, name: match.name });
+        } else {
+          steps.push({ step: "drive", ok: false, mode: "named-not-found", wantedLibrary, available: dJson.value.map(v => ({ id: v.id, name: v.name, type: v.driveType })) });
+        }
+      } else {
+        steps.push({ step: "drive", ok: false, mode: "list-failed", status: dRes.status, body: dJson });
+      }
     }
 
-    // Success — stream back to the browser
-    steps.push({ step: "file", status: "ok", statusCode: pdfRes.status, url: fileUrl });
-
-    // In debug mode, return diagnostics instead of streaming the PDF
-    if (debug) {
-      return _json({ ok: true, steps }, 200);
+    // Fallback: default library
+    if (!driveId) {
+      const defRes = await fetch(G(`/sites/${site.id}/drive?$select=id,name`), { headers: auth });
+      const defJson = await defRes.json().catch(() => ({}));
+      if (!defRes.ok || !defJson?.id) {
+        steps.push({ step: "defaultDrive", ok: false, status: defRes.status, body: defJson });
+        return debug ? bad(defRes.status, { ok: false, steps }) : bad(500, { ok: false, error: "Drive lookup failed" });
+      }
+      driveId = defJson.id;
+      steps.push({ step: "defaultDrive", ok: true, driveId, name: defJson.name });
     }
 
-    return new Response(pdfRes.body, {
+    // ---- 4) fetch file content (Graph encodes each segment)
+    const path = fileRaw.split("/").map(encodeURIComponent).join("/");
+    const fileRes = await fetch(G(`/drives/${driveId}/root:/${path}:/content`), { headers: auth });
+
+    if (!fileRes.ok) {
+      const text = await fileRes.text().catch(() => "");
+      steps.push({ step: "file", ok: false, status: fileRes.status, body: text });
+      return debug
+        ? bad(fileRes.status, { ok: false, steps })
+        : bad(fileRes.status, { ok: false, error: "File fetch failed" });
+    }
+
+    // ---- 5) stream back
+    return new Response(fileRes.body, {
       status: 200,
       headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${pathSegments[pathSegments.length - 1]}"`,
-        // helpful cache for PDFs; adjust as you like
-        "Cache-Control": "public, max-age=600",
+        "content-type": "application/pdf",
+        "content-disposition": `inline; filename="${decodeURIComponent(path.split("/").pop() || "file.pdf")}"`,
+        // allow <iframe src="/api/pdf?..."> to render
+        "cache-control": "no-store",
       },
     });
   } catch (e) {
-    steps.push({ step: "exception", status: "error", error: String(e) });
-    return _json({ ok: false, steps }, 500);
+    steps.push({ step: "exception", ok: false, error: String(e) });
+    return debug ? bad(500, { ok: false, steps }) : bad(500, { ok: false, error: "Server error" });
   }
-}
-
-/* ----------------- helpers ------------------ */
-function _json(obj, status = 200) {
-  return new Response(JSON.stringify(obj, null, 2), {
-    status,
-    headers: { "Content-Type": "application/json; charset=utf-8" },
-  });
 }
