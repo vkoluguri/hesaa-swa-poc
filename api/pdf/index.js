@@ -1,140 +1,200 @@
-// /api/pdf/index.js  (SWA, Node 18+)
-
-// Env needed (Application / client-credential app):
-//   SP_TENANT_ID        (tenant guid)
-//   SP_CLIENT_ID        (app id)
-//   SP_CLIENT_SECRET    (client secret)
-//   SP_SITE_URL         (e.g. https://{tenant}.sharepoint.com/sites/HESAAWebRequestsPoC)
+// Node 18+ (SWA functions)
+// Streams a PDF from SharePoint Online via Microsoft Graph (app-only).
+//
+// Required app settings:
+//   SP_TENANT_ID, SP_CLIENT_ID, SP_CLIENT_SECRET, SP_SITE_URL
 // Optional:
-//   SP_LIBRARY_NAME     (display name in Graph, usually "Documents")
+//   SP_LIBRARY_NAME   (e.g., "Shared Documents"; falls back to site's default drive)
+//
+// Usage (from browser):
+//   /api/pdf?file=StateHolidays.pdf
+//   /api/pdf?file=folder1/folder2/course%20completion.pdf
+//   add &debug=1 to see detailed steps as JSON (no PDF streaming)
 
-export async function onRequest(req, ctx) {
+export async function onRequest(req) {
   const steps = [];
-  const url = new URL(req.url);
-  const debug = url.searchParams.get('debug') === '1';
+  const debug = new URL(req.url).searchParams.get("debug") === "1";
+
+  const json = (obj, status = 200, extra = {}) =>
+    new Response(JSON.stringify(obj, null, 2), {
+      status,
+      headers: { "Content-Type": "application/json", ...extra },
+    });
 
   try {
-    // ---------- 0) Input validation ----------
-    const raw = (url.searchParams.get('file') || url.searchParams.get('doc') || '').trim();
-    if (!raw) return respond({ ok: false, error: 'file query required', steps }, 400, debug);
+    // ──────────────────────────────────────────────────────────────────────────────
+    // 1) Parse and validate input
+    // ──────────────────────────────────────────────────────────────────────────────
+    const url = new URL(req.url);
+    const fileRaw = (url.searchParams.get("file") || url.searchParams.get("doc") || "").trim();
 
-    // only pdf, no traversal, keep spaces and slashes
-    const safe = raw.replace(/^\/*/, ''); // strip leading slashes
-    if (!/\.pdf$/i.test(safe) || safe.includes('..')) {
-      return respond({ ok: false, error: 'invalid file name', steps }, 400, debug);
-    }
-    steps.push({ step: 'input', file: safe });
-
-    const tenant       = process.env.SP_TENANT_ID;
-    const clientId     = process.env.SP_CLIENT_ID;
-    const clientSecret = process.env.SP_CLIENT_SECRET;
-    const siteUrl      = process.env.SP_SITE_URL;
-    const libraryName  = process.env.SP_LIBRARY_NAME || 'Documents'; // Graph display name is usually "Documents"
-
-    if (!tenant || !clientId || !clientSecret || !siteUrl) {
-      return respond({ ok: false, error: 'missing environment variables', steps }, 500, debug);
+    if (!fileRaw) {
+      return json({ ok: false, error: "Missing ?file=..." }, 400);
     }
 
-    // ---------- 1) Token ----------
-    const tokRes = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    // Guard: only relative paths, no traversal, must end with .pdf
+    const okPath =
+      /^[\w\-./ %]+$/i.test(fileRaw) &&
+      !fileRaw.includes("..") &&
+      /\.pdf$/i.test(fileRaw);
+    if (!okPath) {
+      return json({ ok: false, error: "Invalid file path" }, 400);
+    }
+
+    const env = {
+      tenant: process.env.SP_TENANT_ID || "",
+      clientId: process.env.SP_CLIENT_ID || "",
+      clientSecret: process.env.SP_CLIENT_SECRET || "",
+      siteUrl: process.env.SP_SITE_URL || "",
+      libraryName: process.env.SP_LIBRARY_NAME || "", // may be blank
+    };
+
+    steps.push({ step: "input", fileRaw, env: { ...env, clientSecret: env.clientSecret ? "***" : "" } });
+
+    if (!env.tenant || !env.clientId || !env.clientSecret || !env.siteUrl) {
+      return json({ ok: false, error: "Missing required app settings", env: { ...env, clientSecret: "***" } }, 500);
+    }
+
+    // Basic sanity on SP_SITE_URL
+    if (!/^https:\/\/[^\/]+\.sharepoint\.com\/sites\/[^\/]+/i.test(env.siteUrl)) {
+      return json({ ok: false, error: "SP_SITE_URL must look like https://<tenant>.sharepoint.com/sites/<siteName>" }, 400);
+    }
+
+    const siteUri = new URL(env.siteUrl);
+    const host = siteUri.hostname; // e.g., vkolugurihesaa.sharepoint.com
+    const sitePath = siteUri.pathname.replace(/^\/+/, ""); // e.g., sites/HESAAWebRequestsPoC
+    const siteName = sitePath.replace(/^sites\//i, ""); // e.g., HESAAWebRequestsPoC
+
+    // ──────────────────────────────────────────────────────────────────────────────
+    // 2) Token
+    // ──────────────────────────────────────────────────────────────────────────────
+    const tokenRes = await fetch(`https://login.microsoftonline.com/${env.tenant}/oauth2/v2.0/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        scope: 'https://graph.microsoft.com/.default',
-        grant_type: 'client_credentials'
-      })
+        client_id: env.clientId,
+        client_secret: env.clientSecret,
+        scope: "https://graph.microsoft.com/.default",
+        grant_type: "client_credentials",
+      }),
     });
-    const tokJson = await tokRes.json().catch(() => ({}));
-    if (!tokRes.ok || !tokJson.access_token) {
-      steps.push({ step: 'token', status: 'error', statusCode: tokRes.status, body: tokJson });
-      return respond({ ok: false, error: 'token error', steps }, 500, debug);
+    const tokenJson = await tokenRes.json();
+    if (!tokenRes.ok) {
+      steps.push({ step: "token", status: "error", statusCode: tokenRes.status, body: tokenJson });
+      return json({ ok: false, steps }, 500);
     }
-    const token = tokJson.access_token;
-    steps.push({ step: 'token', status: 'ok' });
+    const token = tokenJson.access_token;
+    steps.push({ step: "token", status: "ok" });
 
-    // ---------- 2) Resolve site ----------
-    const u = new URL(siteUrl); // e.g. https://foo.sharepoint.com/sites/HESAAWebRequestsPoC
-    const hostname = u.hostname;                       // foo.sharepoint.com
-    let sitePath = u.pathname.replace(/^\/+/, '');     // sites/HESAAWebRequestsPoC
-    if (sitePath.toLowerCase().startsWith('sites/')) sitePath = sitePath.slice(6); // HESAAWebRequestsPoC
+    const gfetch = (u, init = {}) =>
+      fetch(u, {
+        ...init,
+        headers: { Authorization: `Bearer ${token}`, ...(init.headers || {}) },
+      });
 
-    const siteRes = await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${encodeURIComponent(hostname)}:/sites/${encodeURIComponent(sitePath)}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const siteJson = await siteRes.json().catch(() => ({}));
-    if (!siteRes.ok || !siteJson.id) {
-      steps.push({ step: 'site', status: 'error', statusCode: siteRes.status, body: siteJson });
-      return respond({ ok: false, error: 'site resolution failed', steps }, siteRes.status || 500, debug);
-    }
-    const siteId = siteJson.id;
-    steps.push({ step: 'site', status: 'ok', siteId });
-
-    // ---------- 3) Pick drive (library) ----------
-    const drivesRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drives`,
-      { headers: { Authorization: `Bearer ${token}` } });
-    const drivesJson = await drivesRes.json().catch(() => ({}));
-    if (!drivesRes.ok || !Array.isArray(drivesJson.value)) {
-      steps.push({ step: 'drives', status: 'error', statusCode: drivesRes.status, body: drivesJson });
-      return respond({ ok: false, error: 'drives lookup failed', steps }, drivesRes.status || 500, debug);
-    }
-
-    // Graph drive.displayName is `Documents` for the default library
-    let drive = drivesJson.value.find(d => (d.name || d.displayName) === libraryName)
-            || drivesJson.value.find(d => (d.name || d.displayName) === 'Documents')
-            || drivesJson.value.find(d => d.driveType === 'documentLibrary');
-    if (!drive) {
-      steps.push({ step: 'drives', status: 'error', available: drivesJson.value.map(d => d.name || d.displayName) });
-      return respond({ ok: false, error: 'library not found', steps }, 404, debug);
-    }
-    steps.push({ step: 'drive', status: 'ok', driveId: drive.id, driveName: drive.name || drive.displayName });
-
-    // ---------- 4) Fetch file content ----------
-    // safe has spaces etc.; we must segment-encode path
-    const encodedPath = safe.split('/').map(encodeURIComponent).join('/');
-    const fileUrl = `https://graph.microsoft.com/v1.0/drives/${drive.id}/root:/${encodedPath}:/content`;
-
-    const pdfRes = await fetch(fileUrl, { headers: { Authorization: `Bearer ${token}` } });
-    if (!pdfRes.ok) {
-      let errText = '';
-      try { errText = await pdfRes.text(); } catch { /* ignore */ }
-
-      // capture some headers when debugging
-      const hdrs = {};
-      for (const [k,v] of pdfRes.headers) hdrs[k] = v;
-
-      steps.push({ step: 'file', status: 'error', statusCode: pdfRes.status, body: errText, headers: hdrs, url: fileUrl });
-      return respond({ ok: false, error: 'file fetch failed', steps }, pdfRes.status, debug);
-    }
-
-    steps.push({ step: 'file', status: 'ok' });
-
-    // ---------- 5) Stream ----------
-    return new Response(pdfRes.body, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename="${encodeFilename(safe)}"`
+    // ──────────────────────────────────────────────────────────────────────────────
+    // 3) Resolve site (try modern getByPath, then legacy pattern)
+    // ──────────────────────────────────────────────────────────────────────────────
+    let site;
+    // Try getByPath (most reliable)
+    {
+      const u = `https://graph.microsoft.com/v1.0/sites/${encodeURIComponent(host)}/microsoft.graph.getByPath(path=${encodeURIComponent(
+        "/" + sitePath
+      )})?$select=id,displayName,webUrl`;
+      const r = await gfetch(u);
+      const j = await r.json();
+      if (r.ok && j?.id) {
+        site = j;
+        steps.push({ step: "site@getByPath", status: "ok", siteId: site.id, siteWebUrl: site.webUrl });
+      } else {
+        steps.push({ step: "site@getByPath", status: "miss", statusCode: r.status, body: j });
       }
-    });
+    }
+    // Fallback legacy
+    if (!site) {
+      const u = `https://graph.microsoft.com/v1.0/sites/${encodeURIComponent(host)}:/sites/${encodeURIComponent(
+        siteName
+      )}?$select=id,displayName,webUrl`;
+      const r = await gfetch(u);
+      const j = await r.json();
+      if (r.ok && j?.id) {
+        site = j;
+        steps.push({ step: "site@legacy", status: "ok", siteId: site.id, siteWebUrl: site.webUrl });
+      } else {
+        steps.push({ step: "site@legacy", status: "error", statusCode: r.status, body: j });
+        return json({ ok: false, steps }, 500);
+      }
+    }
 
-  } catch (e) {
-    steps.push({ step: 'exception', error: String(e?.message || e) });
-    return respond({ ok: false, error: 'exception', steps }, 500, true /* always show debug on exception */);
+    // ──────────────────────────────────────────────────────────────────────────────
+    // 4) Resolve drive (library)
+    // ──────────────────────────────────────────────────────────────────────────────
+    let driveId = "";
+    if (env.libraryName) {
+      const r = await gfetch(`https://graph.microsoft.com/v1.0/sites/${site.id}/drives?$select=id,name,driveType`);
+      const j = await r.json();
+      if (r.ok && Array.isArray(j.value)) {
+        const match =
+          j.value.find((d) => d.name?.toLowerCase() === env.libraryName.toLowerCase()) ||
+          j.value.find((d) => d.driveType === "documentLibrary"); // first doc lib
+        if (match) {
+          driveId = match.id;
+          steps.push({ step: "drive", status: "ok", driveId, picked: match.name });
+        } else {
+          steps.push({ step: "drive", status: "miss", available: j.value.map((d) => ({ id: d.id, name: d.name })) });
+        }
+      } else {
+        steps.push({ step: "drive", status: "miss", statusCode: r.status, body: j });
+      }
+    }
+
+    // Fallback to default site drive
+    if (!driveId) {
+      const r = await gfetch(`https://graph.microsoft.com/v1.0/sites/${site.id}/drive?$select=id,driveType,name`);
+      const j = await r.json();
+      if (r.ok && j?.id) {
+        driveId = j.id;
+        steps.push({ step: "drive@default", status: "ok", driveId, name: j.name, driveType: j.driveType });
+      } else {
+        steps.push({ step: "drive@default", status: "error", statusCode: r.status, body: j });
+        return json({ ok: false, steps }, 500);
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────────
+    // 5) Fetch file content (segment-encode the path)
+    // ──────────────────────────────────────────────────────────────────────────────
+    const encodedPath = fileRaw.split("/").map(encodeURIComponent).join("/");
+    const contentUrl = `https://graph.microsoft.com/v1.0/drives/${driveId}/root:/${encodedPath}:/content`;
+
+    const pdfRes = await gfetch(contentUrl);
+    if (!pdfRes.ok) {
+      const body = await safeReadText(pdfRes);
+      steps.push({ step: "file", status: "error", statusCode: pdfRes.status, body });
+      return json({ ok: false, steps }, pdfRes.status);
+    }
+
+    // If debug, do not stream the body; show where we would stream from
+    if (debug) {
+      steps.push({ step: "file", status: "ok", contentUrl });
+      return json({ ok: true, steps });
+    }
+
+    // Stream PDF to browser
+    const headers = new Headers(pdfRes.headers);
+    headers.set("Content-Type", "application/pdf");
+    headers.set("Content-Disposition", `inline; filename="${fileRaw.split("/").pop()}"`);
+    return new Response(pdfRes.body, { status: 200, headers });
+  } catch (err) {
+    steps.push({ step: "exception", error: String(err) });
+    return json({ ok: false, steps }, 500);
   }
+}
 
-  // helpers
-  function respond(obj, status, debugMode) {
-    if (!debugMode) return new Response(JSON.stringify({ ok: false, error: obj.error || 'error' }), {
-      status, headers: { 'Content-Type': 'application/json' }
-    });
-    return new Response(JSON.stringify(obj, null, 2), { status, headers: { 'Content-Type': 'application/json' } });
-  }
-
-  function encodeFilename(name) {
-    // suggest a clean filename for Content-Disposition
-    return name.split('/').pop().replace(/["\\]/g, '_');
+async function safeReadText(res) {
+  try {
+    return await res.text();
+  } catch {
+    return "<unreadable>";
   }
 }
