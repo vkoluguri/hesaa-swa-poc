@@ -206,6 +206,7 @@
       rowsEl.innerHTML = out.map(x => `
         <tr>
           <td>${x.Title || ''}</td>
+          <td>${x.Email || ''}</td>
           <td>${x.RequestType || ''}</td>
           <td>${x.Priority || ''}</td>
           <td>${fmtDate(x.RequestDate)}</td>
@@ -261,40 +262,56 @@
       setTimeout(()=>{ alertBox.className = 'notice sr-only'; alertBox.textContent=''; }, 5000);
     }
 
-    /* --- create (JSON only) --- */
-    form && form.addEventListener('submit', async e=>{
-      e.preventDefault();
-      if (formMsg) formMsg.textContent = 'Submitting…';
-      alertBox && (alertBox.className = 'notice sr-only');
+   /* --- create (JSON only) --- */
+form && form.addEventListener('submit', async e => {
+  e.preventDefault();
+  if (formMsg) formMsg.textContent = 'Submitting…';
+  alertBox && (alertBox.className = 'notice sr-only');
 
-      try{
-        const fd = new FormData(form);
-        // quick requireds
-        if(!fd.get('Title') || !fd.get('RequestType') || !fd.get('Priority')){
-          if (formMsg) formMsg.textContent = '';
-          showNotice('Please fill Title, Type, and Priority.', 'error');
-          return;
-        }
+  try {
+    const fd = new FormData(form);
 
-        // normalize checkbox to "true"/"false"
-        fd.set('RequestEndDate', fd.get('RequestEndDate') ? 'true' : 'false');
+    // basic client-side requireds (Title/Type/Priority)
+    if (!fd.get('Title') || !fd.get('RequestType') || !fd.get('Priority')) {
+      if (formMsg) formMsg.textContent = '';
+      showNotice('Please fill Title, Type, and Priority.', 'error');
+      return;
+    }
 
-        const obj = Object.fromEntries(fd.entries());
-        const res = await fetch(API.list, {
-          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(obj)
-        });
-        const json = await res.json().catch(()=>({ok:false, error:`HTTP ${res.status} ${res.statusText}`}));
-        if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+    // email validation
+    const email = (fd.get('Email') || '').trim();
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!emailOk) {
+      if (formMsg) formMsg.textContent = '';
+      showNotice('Please enter a valid Email address.', 'error');
+      return;
+    }
+    // overwrite trimmed email back into form data (nice-to-have)
+    fd.set('Email', email);
 
-        if (formMsg) formMsg.textContent = '';
-        showNotice('Request successfully created.', 'success');
-        form.reset();
-        await loadData();
-      }catch(err){
-        if (formMsg) formMsg.textContent = '';
-        showNotice('Failed: ' + String(err.message || err), 'error');
-      }
+    // normalize checkbox to "true"/"false"
+    fd.set('RequestEndDate', fd.get('RequestEndDate') ? 'true' : 'false');
+
+    // POST JSON
+    const obj = Object.fromEntries(fd.entries());
+    const res = await fetch(API.list, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(obj)
     });
+    const json = await res.json().catch(() => ({ ok: false, error: `HTTP ${res.status} ${res.statusText}` }));
+    if (!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+
+    if (formMsg) formMsg.textContent = '';
+    showNotice('Request successfully created.', 'success');
+    form.reset();
+    await loadData();
+  } catch (err) {
+    if (formMsg) formMsg.textContent = '';
+    showNotice('Failed: ' + String(err.message || err), 'error');
+  }
+});
+
 
     // first load
     loadData();
