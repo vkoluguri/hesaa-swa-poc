@@ -1,9 +1,36 @@
 <!-- /partials/pdf.html -->
+<!doctype html>
+<meta charset="utf-8" />
+<title id="pdfTitle">pdf</title>
+
+<style>
+  /* page must be allowed to fill the viewport */
+  html, body { height: 100%; margin: 0; }
+
+  /* your existing wrapper becomes a flex column that fills the screen */
+  .wrap {
+    min-height: 100dvh;           /* use 100vh if you prefer */
+    display: flex;
+    flex-direction: column;
+    padding: 0 16px;              /* optional, for some breathing room */
+  }
+
+  h1 { margin: 16px 0; }
+
+  /* the iframe expands to fill the remaining space */
+  #pdfFrame {
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 0;                /* important for some browsers */
+    border: 0;
+    border-radius: 12px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.08);
+  }
+</style>
+
 <main class="wrap">
-  <h1 id="pdfTitle" style="margin:16px 0;"></h1>
-  <iframe id="pdfFrame"
-          title="PDF viewer"
-          style="width:100%;height:80vh;border:0;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.08)"></iframe>
+  <h1 id="pdfTitle"></h1>
+  <iframe id="pdfFrame" title="PDF viewer"></iframe>
 </main>
 
 <script>
@@ -18,7 +45,7 @@
     document.getElementById('pdfTitle').textContent = title;
 
     let src = '/api/pdf?file=' + encodeURIComponent(file);
-    if (p.get('debug') === '1') src += '&debug=1';        // <-- forward debug
+    if (p.get('debug') === '1') src += '&debug=1';
     document.getElementById('pdfFrame').src = src;
   })();
 </script>
