@@ -1,6 +1,5 @@
 // api/requests/index.js
 
-// ----- helpers: token + graph -----
 async function getToken() {
   const params = new URLSearchParams({
     client_id: process.env.SP_CLIENT_ID,
@@ -30,7 +29,28 @@ async function graph(token, url, init = {}) {
   return r.status === 204 ? null : r.json();
 }
 
-// ----- helpers: email -----
+/* ---------- Ensure the "Email" column exists (once) ---------- */
+async function ensureEmailColumn(token, siteId, listId, log = () => {}) {
+  // Try to find an existing column named "Email"
+  const cols = await graph(token, `/sites/${siteId}/lists/${listId}/columns?$select=id,name`);
+  const exists = (cols.value || []).some(c => (c.name || '').toLowerCase() === 'email');
+  if (exists) return;
+
+  log('Creating Email column on the list...');
+  // Create a plain text column named "Email"
+  await graph(token, `/sites/${siteId}/lists/${listId}/columns`, {
+    method: "POST",
+    body: JSON.stringify({
+      name: "Email",
+      text: {},
+      enforceUniqueValues: false,
+      required: false,
+      hidden: false
+    })
+  });
+}
+
+/* ---------------- Email sending (best-effort) ----------------- */
 function escapeHtml(s = "") {
   return String(s).replace(/[&<>"']/g, c => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -38,7 +58,6 @@ function escapeHtml(s = "") {
 }
 
 async function sendMail({ token, fromUpn, to, subject, html, bcc = [] }) {
-  // normalize recipients
   const toArr = (Array.isArray(to) ? to : [to]).filter(Boolean);
   const bccArr = (Array.isArray(bcc) ? bcc : [bcc]).filter(Boolean);
   if (toArr.length === 0) throw new Error("sendMail: 'to' is required");
@@ -55,33 +74,38 @@ async function sendMail({ token, fromUpn, to, subject, html, bcc = [] }) {
     body.message.bccRecipients = bccArr.map(address => ({ emailAddress: { address } }));
   }
 
-  const url = `/users/${encodeURIComponent(fromUpn)}/sendMail`;
-  await graph(token, url, { method: "POST", body: JSON.stringify(body) });
+  await graph(token, `/users/${encodeURIComponent(fromUpn)}/sendMail`, {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
 }
 
-// ----- main handler -----
+/* ------------------------- Handler ---------------------------- */
 module.exports = async function (context, req) {
   try {
-    const siteUrl = process.env.SP_SITE_URL;                  // https://<tenant>.sharepoint.com/sites/HESAAWebRequestsPOC
+    const siteUrl  = process.env.SP_SITE_URL;                  // https://<tenant>.sharepoint.com/sites/HESAAWebRequestsPOC
     const listName = process.env.SP_LIST_NAME || "Web Requests";
-    const host = new URL(siteUrl).host;                       // <tenant>.sharepoint.com
-    const path = new URL(siteUrl).pathname;                   // /sites/HESAAWebRequestsPOC
+    const host = new URL(siteUrl).host;                        // <tenant>.sharepoint.com
+    const path = new URL(siteUrl).pathname;                    // /sites/HESAAWebRequestsPOC
 
     const token = await getToken();
 
-    // Resolve site and list IDs
-    const site = await graph(token, `/sites/${host}:${path}`);
+    // Resolve site & list
+    const site  = await graph(token, `/sites/${host}:${path}`);
     const siteId = site.id;
 
     const lists = await graph(token, `/sites/${siteId}/lists?$select=id,displayName`);
-    const list = lists.value.find(x => (x.displayName || "").toLowerCase() === listName.toLowerCase());
+    const list  = lists.value.find(x => (x.displayName || "").toLowerCase() === listName.toLowerCase());
     if (!list) throw new Error(`List not found: ${listName}`);
+
+    // Make sure the Email column exists
+    await ensureEmailColumn(token, siteId, list.id, (m)=>context.log(m));
 
     const method = (req.method || "GET").toUpperCase();
 
     if (method === "GET") {
-      const fields = "Id,Title,RequestDescription,RequestType,Priority,RequestDate,RequestEndDate,Created,Modified";
-      const items = await graph(token, `/sites/${siteId}/lists/${list.id}/items?expand=fields(select=${fields})`);
+      const fields = "Id,Title,Email,RequestDescription,RequestType,Priority,RequestDate,RequestEndDate,Created,Modified";
+      const items  = await graph(token, `/sites/${siteId}/lists/${list.id}/items?expand=fields(select=${fields})`);
       context.res = {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -94,6 +118,7 @@ module.exports = async function (context, req) {
       const b = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
       const fields = {
         Title: b.Title || b.RequestTitle || "Untitled",
+        Email: b.Email || b.RequesterEmail || b.RequestorEmail || "",
         RequestDescription: b.RequestDescription || "",
         RequestType: b.RequestType || "Inquiry",
         Priority: b.Priority || "Low",
@@ -101,43 +126,27 @@ module.exports = async function (context, req) {
         RequestEndDate: !!b.RequestEndDate
       };
 
-      // Create the SharePoint list item
-      const created = await graph(
-        token,
-        `/sites/${siteId}/lists/${list.id}/items`,
-        { method: "POST", body: JSON.stringify({ fields }) }
-      );
+      // Create the item
+      const created = await graph(token, `/sites/${siteId}/lists/${list.id}/items`, {
+        method: "POST",
+        body: JSON.stringify({ fields })
+      });
 
-      // ---- Email confirmation (best-effort) ----
+      // Send confirmation (best-effort)
       let emailResult = { sent: false };
       try {
-        const requesterEmail =
-          b.Email || b.RequesterEmail || b.RequestorEmail || b.Requester?.Email || null;
-
+        const requesterEmail = (fields.Email || "").trim();
         if (requesterEmail) {
-          const title = fields.Title;
+          const fromUpn = process.env.MAIL_SENDER_UPN || "webrequests@vkolugurihesaa.onmicrosoft.com";
+          const bcc = (process.env.MAIL_BCC || "")
+            .split(",").map(s => s.trim()).filter(Boolean);
           const html = `
             <p>Hi,</p>
-            <p>We received your request: <b>${escapeHtml(title)}</b>.</p>
+            <p>We received your request: <b>${escapeHtml(fields.Title)}</b>.</p>
             <p>Tracking ID: ${escapeHtml(created?.id?.toString?.() || "")}</p>
             <p>— HESAA Web Requests</p>
           `;
-
-          const fromUpn = process.env.MAIL_SENDER_UPN || "webrequests@vkolugurihesaa.onmicrosoft.com";
-          const bcc = (process.env.MAIL_BCC || "")
-            .split(",")
-            .map(s => s.trim())
-            .filter(Boolean);
-
-          await sendMail({
-            token,
-            fromUpn,
-            to: requesterEmail,
-            subject: "HESAA Request Received",
-            html,
-            bcc
-          });
-
+          await sendMail({ token, fromUpn, to: requesterEmail, subject: "HESAA Request Received", html, bcc });
           emailResult = { sent: true, to: requesterEmail };
         } else {
           emailResult = { sent: false, reason: "No requester email provided" };
@@ -146,7 +155,6 @@ module.exports = async function (context, req) {
         context.log("EMAIL ERROR", mailErr?.stack || String(mailErr));
         emailResult = { sent: false, error: String(mailErr) };
       }
-      // ------------------------------------------
 
       context.res = {
         status: 201,
