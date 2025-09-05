@@ -262,7 +262,7 @@
       setTimeout(()=>{ alertBox.className = 'notice sr-only'; alertBox.textContent=''; }, 5000);
     }
 
-   /* --- create (JSON only) --- */
+/* --- create (JSON only) --- */
 form && form.addEventListener('submit', async e => {
   e.preventDefault();
   if (formMsg) formMsg.textContent = 'Submitting…';
@@ -271,46 +271,60 @@ form && form.addEventListener('submit', async e => {
   try {
     const fd = new FormData(form);
 
-    // basic client-side requireds (Title/Type/Priority)
-    if (!fd.get('Title') || !fd.get('RequestType') || !fd.get('Priority')) {
+    // --- required fields ---
+    const title = (fd.get('Title') || '').trim();
+    const type = (fd.get('RequestType') || '').trim();
+    const priority = (fd.get('Priority') || '').trim();
+    const email = (fd.get('Email') || '').trim();
+
+    // validate basics
+    if (!title || !type || !priority) {
       if (formMsg) formMsg.textContent = '';
       showNotice('Please fill Title, Type, and Priority.', 'error');
       return;
     }
 
-    // email validation
-    const email = (fd.get('Email') || '').trim();
+    // validate email
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (!emailOk) {
       if (formMsg) formMsg.textContent = '';
       showNotice('Please enter a valid Email address.', 'error');
       return;
     }
-    // overwrite trimmed email back into form data (nice-to-have)
-    fd.set('Email', email);
 
-    // normalize checkbox to "true"/"false"
+    // normalize checkbox → string "true"/"false"
     fd.set('RequestEndDate', fd.get('RequestEndDate') ? 'true' : 'false');
+    fd.set('Email', email); // overwrite trimmed
 
-    // POST JSON
+    // convert FormData → plain object
     const obj = Object.fromEntries(fd.entries());
+
+    // POST JSON to API
     const res = await fetch(API.list, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(obj)
     });
-    const json = await res.json().catch(() => ({ ok: false, error: `HTTP ${res.status} ${res.statusText}` }));
+
+    const json = await res.json().catch(() => ({
+      ok: false,
+      error: `HTTP ${res.status} ${res.statusText}`
+    }));
+
     if (!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
 
+    // success
     if (formMsg) formMsg.textContent = '';
     showNotice('Request successfully created.', 'success');
     form.reset();
     await loadData();
+
   } catch (err) {
     if (formMsg) formMsg.textContent = '';
     showNotice('Failed: ' + String(err.message || err), 'error');
   }
 });
+
 
 
     // first load
