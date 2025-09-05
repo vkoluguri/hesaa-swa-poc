@@ -1,3 +1,6 @@
+// api/requests/index.js
+
+// ----- helpers: token + graph -----
 async function getToken() {
   const params = new URLSearchParams({
     client_id: process.env.SP_CLIENT_ID,
@@ -17,12 +20,46 @@ async function getToken() {
 async function graph(token, url, init = {}) {
   const r = await fetch(`https://graph.microsoft.com/v1.0${url}`, {
     ...init,
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(init.headers || {}) }
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(init.headers || {})
+    }
   });
   if (!r.ok) throw new Error(`Graph ${url} → ${r.status}: ${await r.text()}`);
   return r.status === 204 ? null : r.json();
 }
 
+// ----- helpers: email -----
+function escapeHtml(s = "") {
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+async function sendMail({ token, fromUpn, to, subject, html, bcc = [] }) {
+  // normalize recipients
+  const toArr = (Array.isArray(to) ? to : [to]).filter(Boolean);
+  const bccArr = (Array.isArray(bcc) ? bcc : [bcc]).filter(Boolean);
+  if (toArr.length === 0) throw new Error("sendMail: 'to' is required");
+
+  const body = {
+    message: {
+      subject: subject || "HESAA Request Received",
+      body: { contentType: "HTML", content: html || "<p>Thank you—your request was received.</p>" },
+      toRecipients: toArr.map(address => ({ emailAddress: { address } }))
+    },
+    saveToSentItems: false
+  };
+  if (bccArr.length) {
+    body.message.bccRecipients = bccArr.map(address => ({ emailAddress: { address } }));
+  }
+
+  const url = `/users/${encodeURIComponent(fromUpn)}/sendMail`;
+  await graph(token, url, { method: "POST", body: JSON.stringify(body) });
+}
+
+// ----- main handler -----
 module.exports = async function (context, req) {
   try {
     const siteUrl = process.env.SP_SITE_URL;                  // https://<tenant>.sharepoint.com/sites/HESAAWebRequestsPOC
@@ -40,15 +77,20 @@ module.exports = async function (context, req) {
     const list = lists.value.find(x => (x.displayName || "").toLowerCase() === listName.toLowerCase());
     if (!list) throw new Error(`List not found: ${listName}`);
 
-    if ((req.method || "GET").toUpperCase() === "GET") {
+    const method = (req.method || "GET").toUpperCase();
+
+    if (method === "GET") {
       const fields = "Id,Title,RequestDescription,RequestType,Priority,RequestDate,RequestEndDate,Created,Modified";
       const items = await graph(token, `/sites/${siteId}/lists/${list.id}/items?expand=fields(select=${fields})`);
-      context.res = { status: 200, headers: { "Content-Type": "application/json" },
-        body: { ok: true, count: items.value.length, items: items.value.map(i => i.fields) } };
+      context.res = {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+        body: { ok: true, count: items.value.length, items: items.value.map(i => i.fields) }
+      };
       return;
     }
 
-    if (req.method.toUpperCase() === "POST") {
+    if (method === "POST") {
       const b = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
       const fields = {
         Title: b.Title || b.RequestTitle || "Untitled",
@@ -58,15 +100,69 @@ module.exports = async function (context, req) {
         RequestDate: b.RequestDate || new Date().toISOString().slice(0,10),
         RequestEndDate: !!b.RequestEndDate
       };
-      const created = await graph(token, `/sites/${siteId}/lists/${list.id}/items`,
-        { method: "POST", body: JSON.stringify({ fields }) });
-      context.res = { status: 201, headers: { "Content-Type": "application/json" }, body: { ok: true, item: created } };
+
+      // Create the SharePoint list item
+      const created = await graph(
+        token,
+        `/sites/${siteId}/lists/${list.id}/items`,
+        { method: "POST", body: JSON.stringify({ fields }) }
+      );
+
+      // ---- Email confirmation (best-effort) ----
+      let emailResult = { sent: false };
+      try {
+        const requesterEmail =
+          b.Email || b.RequesterEmail || b.RequestorEmail || b.Requester?.Email || null;
+
+        if (requesterEmail) {
+          const title = fields.Title;
+          const html = `
+            <p>Hi,</p>
+            <p>We received your request: <b>${escapeHtml(title)}</b>.</p>
+            <p>Tracking ID: ${escapeHtml(created?.id?.toString?.() || "")}</p>
+            <p>— HESAA Web Requests</p>
+          `;
+
+          const fromUpn = process.env.MAIL_SENDER_UPN || "webrequests@vkolugurihesaa.onmicrosoft.com";
+          const bcc = (process.env.MAIL_BCC || "")
+            .split(",")
+            .map(s => s.trim())
+            .filter(Boolean);
+
+          await sendMail({
+            token,
+            fromUpn,
+            to: requesterEmail,
+            subject: "HESAA Request Received",
+            html,
+            bcc
+          });
+
+          emailResult = { sent: true, to: requesterEmail };
+        } else {
+          emailResult = { sent: false, reason: "No requester email provided" };
+        }
+      } catch (mailErr) {
+        context.log("EMAIL ERROR", mailErr?.stack || String(mailErr));
+        emailResult = { sent: false, error: String(mailErr) };
+      }
+      // ------------------------------------------
+
+      context.res = {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
+        body: { ok: true, item: created, email: emailResult }
+      };
       return;
     }
 
     context.res = { status: 405, body: { ok: false, error: "Method not allowed" } };
   } catch (err) {
     context.log(err.stack || String(err));
-    context.res = { status: 500, headers: { "Content-Type": "application/json" }, body: { ok: false, error: String(err) } };
+    context.res = {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+      body: { ok: false, error: String(err) }
+    };
   }
 };
