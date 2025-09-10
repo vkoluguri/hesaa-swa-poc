@@ -1,21 +1,57 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/assets/*", "/api/*", "/partials/*", "/favicon.ico"]
+    "exclude": [
+      "/assets/*",
+      "/api/*",
+      "/partials/*",
+      "/favicon.ico"
+    ]
   },
   "routes": [
-    { "route": "/aboutus",   "rewrite": "/aboutus.html"   },
-    { "route": "/contactus", "rewrite": "/contactus.html" },
-    { "route": "/students",  "rewrite": "/students.html"  },
-
-    /* NEW: redirect old .html URLs to clean URLs */
-    { "route": "/aboutus.html",   "redirect": "/aboutus",   "statusCode": 301 },
-    { "route": "/contactus.html", "redirect": "/contactus", "statusCode": 301 },
-    { "route": "/students.html",  "redirect": "/students",  "statusCode": 301 },
-
-    { "route": "/api/*", "allowedRoles": ["anonymous","authenticated"] }
+    {
+      "route": "/aboutus",
+      "rewrite": "/aboutus.html"
+    },
+    {
+      "route": "/aboutus.html",
+      "redirect": "/aboutus",
+      "statusCode": 301
+    },
+    {
+      "route": "/api/*",
+      "allowedRoles": [
+        "anonymous",
+        "authenticated"
+      ]
+    },
+    {
+      "route": "/contactus",
+      "rewrite": "/contactus.html"
+    },
+    {
+      "route": "/contactus.html",
+      "redirect": "/contactus",
+      "statusCode": 301
+    },
+    {
+      "route": "/index.html",
+      "redirect": "/",
+      "statusCode": 301
+    },
+    {
+      "route": "/students",
+      "rewrite": "/students.html"
+    },
+    {
+      "route": "/students.html",
+      "redirect": "/students",
+      "statusCode": 301
+    }
   ],
   "responseOverrides": {
-    "404": { "rewrite": "/index.html" }
+    "404": {
+      "rewrite": "/index.html"
+    }
   }
 }

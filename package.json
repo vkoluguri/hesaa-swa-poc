@@ -5,7 +5,9 @@
   "main": "serve-local.js",
   "scripts": {
     "routes": "node tools/generate-swa-routes.js",
-    "index": "node tools/build-content-index.js"
+    "index": "node tools/build-content-index.js",
+    "build": "npm run routes && npm run index",
+    "build:azure": "npm run build"
   },
   "repository": {
     "type": "git",
