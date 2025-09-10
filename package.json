@@ -7,9 +7,10 @@
     "node": ">=20.18.1"
   },
   "scripts": {
+    "home:build": "vite build --config spa/vite.config.ts",
     "routes": "node tools/generate-swa-routes.js",
     "index": "node tools/build-content-index.js",
-    "build": "npm run routes && npm run index",
+    "build": "npm run home:build && npm run routes && npm run index",
     "build:azure": "npm run build"
   },
   "repository": {
