@@ -2,7 +2,10 @@
   "name": "hesaa-swa-poc",
   "version": "1.0.0",
   "description": "HESAA SWA + SharePoint PoC",
-  "main": "serve-local.js",
+  "private": true,
+  "engines": {
+    "node": ">=20.18.1"
+  },
   "scripts": {
     "routes": "node tools/generate-swa-routes.js",
     "index": "node tools/build-content-index.js",
