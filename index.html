@@ -5,210 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>HESAA — Home</title>
 
-  <!-- Bootstrap 5 -->
+  <!-- Bootstrap 5 (kept for existing pages/components) -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Your global styles & scripts -->
   <link rel="stylesheet" href="/assets/layout.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-
   <script src="/assets/include.js" defer></script>
   <script src="/assets/site.js" defer></script>
+
+  <!-- Tailwind (CDN) for the new React homepage UI) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    /* Subtle brand palette for Tailwind utilities */
+    tailwind.config = {
+      theme: { extend: { colors: { brand: "#0e7236", brandDark:"#0c5d2c", nav:"#0b5e87", navDark:"#0a4e70" } } }
+    }
+  </script>
 </head>
-<body>
+<body class="bg-white text-gray-800">
+  <!-- Shared header -->
   <div data-include="/partials/header.html"></div>
+
+  <!-- (Optional) breadcrumb container you already had -->
   <div id="breadcrumb-container"></div>
 
+  <!-- =========================
+       MAIN: React homepage app
+       ========================= -->
   <main id="main" class="wrap">
+    <!-- React mounts here and renders the full homepage (hero, carousel, spotlight, quick links, news, etc.) -->
+    <div id="home-root"></div>
 
-    <!-- HERO -->
-    <section class="hero" aria-label="Featured">
-      <div class="hero-card">
-        <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
-          <div class="carousel-indicators">
-            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
-            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="3" aria-label="Slide 4"></button>
-          </div>
-
-          <div class="carousel-inner">
-            <div class="carousel-item active">
-              <img id="heroHeaderImg" class="d-block w-100" alt="Hero: students and success" />
-            </div>
-            <div class="carousel-item">
-              <img id="slide1" class="d-block w-100" alt="Financial aid resources" />
-            </div>
-            <div class="carousel-item">
-              <img id="slide2" class="d-block w-100" alt="Guidance and counseling" />
-            </div>
-            <div class="carousel-item">
-              <img id="slide3" class="d-block w-100" alt="Tools and portals" />
-            </div>
-          </div>
-
-          <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev" aria-label="Previous slide">
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-          </button>
-          <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next" aria-label="Next slide">
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Spotlight -->
-    <section class="my-6">
-      <h2 class="text-center mb-3">Spotlight</h2>
-      <div class="spot-grid">
-        <!-- Azure SWA -->
-        <a class="spot-card" href="https://portal.azure.com/" target="_blank" rel="noopener" aria-label="Azure Static Web Apps — latest build & deployment status">
-          <span class="spot-badge spot-azure" aria-hidden="true">
-            <img class="spot-ico" src="/assets/azure.svg" alt="" />
-          </span>
-          <div class="spot-body">
-            <strong>Azure SWA</strong>
-            <p class="kpi">Latest build &amp; deployment status.</p>
-          </div>
-        </a>
-
-        <!-- GitHub Actions -->
-        <a class="spot-card" href="https://github.com/" target="_blank" rel="noopener" aria-label="GitHub Actions — CI/CD workflow runs and logs">
-          <span class="spot-badge spot-github">
-            <svg class="spot-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M12 2C6.5 2 2 6.6 2 12.2c0 4.5 2.9 8.3 6.9 9.6.5.1.7-.2.7-.5v-2c-2.8.6-3.4-1.2-3.4-1.2-.4-1-1-1.3-1-1.3-.8-.6.1-.6.1-.6.9.1 1.4 1 1.4 1 .8 1.4 2.2 1 2.7.8.1-.6.3-1 .6-1.3-2.2-.2-4.6-1.1-4.6-4.9 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.8 1 .8-.2 1.7-.3 2.6-.3s1.8.1 2.6.3c2-1.3 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7.7.7 1 1.6 1 2.7 0 3.8-2.4 4.7-4.6 4.9.3.3.6.9.6 1.8v2.7c0 .3.2.6.7.5 4-1.3 6.9-5.1 6.9-9.6C22 6.6 17.5 2 12 2z"/>
-            </svg>
-          </span>
-          <div class="spot-body">
-            <strong>GitHub Actions</strong>
-            <p class="kpi">CI/CD workflow runs &amp; logs.</p>
-          </div>
-        </a>
-
-        <!-- SharePoint -->
-        <a class="spot-card" href="https://yoursharepointsite" target="_blank" rel="noopener" aria-label="Requests List — create and manage SharePoint items">
-          <span class="spot-badge spot-sp" aria-hidden="true">
-            <img class="spot-ico" src="/assets/MSP.svg" alt="" />
-          </span>
-          <div class="spot-body">
-            <strong>Requests List</strong>
-            <p class="kpi">Create &amp; manage SharePoint items.</p>
-          </div>
-        </a>
-      </div>
-    </section>
-
-    <!-- Quick links -->
-    <section class="my-5">
-      <h2 class="text-center mb-3">Quick links</h2>
-      <div class="ql">
-        <a class="ql-card" href="https://yoursharepointsite" target="_blank" rel="noopener">
-          <span class="ql-icon"><img class="ql-svg" src="/assets/MSP.svg" alt="" /></span>
-          <div><strong>Open SharePoint List</strong></div>
-        </a>
-
-        <a class="ql-card" href="https://admin.microsoft.com" target="_blank" rel="noopener">
-          <span class="ql-icon"><img class="ql-svg" src="/assets/microsoft.svg" alt="" /></span>
-          <div><strong>Microsoft 365 Admin</strong></div>
-        </a>
-
-        <a class="ql-card" href="https://portal.azure.com" target="_blank" rel="noopener">
-          <span class="ql-icon"><img class="ql-svg" src="/assets/ms-azure.svg" alt="" /></span>
-          <div><strong>Azure Portal</strong></div>
-        </a>
-      </div>
-    </section>
-
-    <!-- CREATE A REQUEST -->
-    <section id="create" aria-labelledby="create-title" class="my-4 card" style="margin-top:1.5rem">
-      <h2 id="create-title" class="section-title">Create a Request</h2>
-
-      <form id="reqForm" novalidate>
-        <div>
-          <label for="fTitle">Title *</label>
-          <input id="fTitle" name="Title" type="text" required />
-        </div>
-
-        <div>
-          <label for="fEmail">Email *</label>
-          <input id="fEmail" name="Email" type="email" required
-                 placeholder="name@hesaa.org"
-                 pattern="^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
-                 inputmode="email" />
-          <small class="hint">We’ll email a confirmation.</small>
-        </div>
-
-        <div>
-          <label for="fDesc">Description (Enhanced Rich Text supported)</label>
-          <textarea id="fDesc" name="RequestDescription" rows="5"
-            placeholder="You can paste formatted text from Word/Outlook"></textarea>
-        </div>
-
-        <div class="form-row">
-          <div>
-            <label for="fType">Type *</label>
-            <select id="fType" name="RequestType" required>
-              <option value="">Select…</option>
-              <option>Bug</option><option>Enhancement</option>
-              <option>Inquiry</option><option>Maintenance Message</option>
-            </select>
-          </div>
-          <div>
-            <label for="fPri">Priority *</label>
-            <select id="fPri" name="Priority" required>
-              <option value="">Select…</option>
-              <option>Low</option><option>Medium</option>
-              <option>High</option><option>Urgent</option>
-            </select>
-          </div>
-          <div style="display:flex;align-items:center;gap:.5rem">
-            <input id="fEnd" name="RequestEndDate" type="checkbox" />
-            <label for="fEnd">End Date?</label>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button class="btn btn-primary" type="submit">Submit</button>
-          <span id="formMsg" role="status" aria-live="polite" class="kpi"></span>
-        </div>
-      </form>
-
-      <div id="alert" class="notice sr-only" aria-live="assertive"></div>
-    </section>
-
-    <!-- REQUESTS -->
-    <section class="my-4 card" aria-labelledby="requests-title">
-      <h2 id="requests-title" class="section-title">Requests</h2>
-
-      <div class="form-row" style="justify-content:space-between;align-items:center">
-        <div class="kpi"><span id="resultCount">0</span> result(s)</div>
-        <input id="search" type="search" placeholder="Filter requests…" style="max-width:320px" />
-      </div>
-
-      <div class="table-wrap" style="margin-top:.5rem">
-        <table id="requestsTable">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Email</th> <!-- new -->
-              <th>Type</th>
-              <th>Priority</th>
-              <th>Date</th>
-              <th>End?</th>
-              <th>Created</th>
-              <th>Modified</th>
-              <th>Attachments</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody id="rows">
-            <tr><td colspan="10" class="kpi">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
+    <!-- 
+      NOTE:
+      The previous static homepage sections (HERO / Spotlight / Quick Links / Create Request form / Requests table)
+      have been removed because they now render from the React app that mounts in #home-root.
+      If you need any of those features on a separate page, we can create a dedicated route and port them over.
+    -->
   </main>
 
+  <!-- Shared footer -->
   <div data-include="/partials/footer.html"></div>
+
+  <!-- Bootstrap JS (kept for other pages/components that rely on it) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Load the compiled React homepage bundle (generated by: npm run build) -->
+  <script defer src="/assets/app/hesaa-homepage.iife.js"></script>
 </body>
 </html>
