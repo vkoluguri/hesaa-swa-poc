@@ -1,0 +1,46 @@
+{
+  "nav": {
+    "about": "Quiénes somos",
+    "students": "Estudiantes",
+    "parents": "Padres/Tutores",
+    "counselors": "Consejeros escolares",
+    "admins": "Administradores de ayuda financiera",
+    "notices": "Avisos públicos",
+    "login": "Iniciar sesión"
+  },
+  "gov": {
+    "njHome": "Inicio NJ",
+    "services": "Servicios de la A a la Z",
+    "depts": "Departamentos/Agencias",
+    "translate": "Traducir",
+    "faqs": "Preguntas frecuentes",
+    "searchPlaceholder": "Buscar…",
+    "search": "Buscar"
+  },
+  "home": {
+    "headline": "Ayuda financiera, préstamos y planificación universitaria de Nueva Jersey — todo en un solo lugar.",
+    "subhead": "Solicite ayuda estatal, explore becas, compare préstamos y regístrese en talleres.",
+    "apply": "Solicitar ayuda estatal",
+    "explore": "Explorar NJCLASS",
+    "spotlight": "Destacados de HESAA",
+    "quickLinks": "Enlaces rápidos",
+    "news": "Noticias",
+    "events": "Eventos",
+    "emergency": "Mensaje de emergencia"
+  },
+  "footer": {
+    "hesaa": "HESAA",
+    "grants": "Becas y ayudas",
+    "njclass": "NJCLASS",
+    "careers": "Empleos",
+    "privacy": "Política de privacidad",
+    "terms": "Términos del sitio",
+    "sitemap": "Mapa del sitio",
+    "deadlines": "Fechas límite de solicitud",
+    "applyNow": "Solicitar ahora",
+    "login": "Iniciar sesión",
+    "payment": "Realizar un pago",
+    "contact": "Contáctenos",
+    "copyright": "© 2025 Autoridad de Asistencia Estudiantil de Educación Superior"
+  }
+}
