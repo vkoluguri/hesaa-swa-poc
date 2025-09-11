@@ -1,11 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
+function assetFileNames(assetInfo: any) {
+  const name = assetInfo?.name || "";
+  if (name.endsWith(".css") || name === "style.css") return "hesaa-homepage.css";
+  return name;
+}
+
 export default defineConfig({
   plugins: [react()],
   root: "spa",
   define: {
-    // React and some libs expect process.env.* to exist.
     "process.env.NODE_ENV": JSON.stringify("production"),
     "process.env": {} as any
   },
@@ -13,6 +18,8 @@ export default defineConfig({
     target: "es2019",
     outDir: "../assets/app",
     emptyOutDir: true,
+    cssCodeSplit: true,      // <-- separate CSS file
+    assetsDir: ".",
     lib: {
       entry: "src/main.tsx",
       name: "HESAAHome",
@@ -20,7 +27,10 @@ export default defineConfig({
       formats: ["iife"]
     },
     rollupOptions: {
-      output: { inlineDynamicImports: true }
+      output: {
+        inlineDynamicImports: true,
+        assetFileNames
+      }
     }
   }
 });
