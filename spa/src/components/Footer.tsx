@@ -1,41 +1,51 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 export default function Footer() {
+  const { t } = useTranslation();
+
   return (
-    <footer className="mt-12 border-t border-gray-200 bg-gradient-to-b from-[#d6ecf7] to-[#63a8cc]/40">
-      <div className="mx-auto grid max-w-site gap-8 px-4 py-10 md:grid-cols-4">
+    <footer className="mt-12 bg-gradient-to-r from-slate-900 to-slate-800 text-white">
+      <div className="mx-auto max-w-6xl px-4 py-10 grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
-          <h3 className="mb-2 font-semibold">HESAA</h3>
-          <ul className="space-y-1 text-sm">
-            <li><a className="hover:underline" href="/Pages/Careers.aspx">Careers</a></li>
-            <li><a className="hover:underline" href="/Pages/PrivacyPolicy.aspx">Privacy Policy</a></li>
-            <li><a className="hover:underline" href="/Pages/TermsAndConditions.aspx">Website T &amp; C</a></li>
-            <li><a className="hover:underline" href="/Pages/Sitemap.aspx">Sitemap</a></li>
+          <h4 className="font-semibold text-lg mb-2">{t("footer.hesaa")}</h4>
+          <ul className="space-y-1 text-sm text-white/90">
+            <li><a className="hover:underline" href="#">{t("footer.careers")}</a></li>
+            <li><a className="hover:underline" href="#">{t("footer.privacy")}</a></li>
+            <li><a className="hover:underline" href="#">{t("footer.terms")}</a></li>
+            <li><a className="hover:underline" href="#">{t("footer.sitemap")}</a></li>
           </ul>
         </div>
-
         <div>
-          <h3 className="mb-2 font-semibold">Grants &amp; Scholarships</h3>
-          <ul className="space-y-1 text-sm">
-            <li><a className="hover:underline" href="/Pages/NJFAMSHome.aspx">NJFAMS Account</a></li>
-            <li><a className="hover:underline" href="/Pages/StateApplicationDeadlines.aspx">Application Deadlines</a></li>
+          <h4 className="font-semibold text-lg mb-2">{t("footer.grants")}</h4>
+          <ul className="space-y-1 text-sm text-white/90">
+            <li><a className="hover:underline" href="#">NJFAMS Account</a></li>
+            <li><a className="hover:underline" href="#">{t("footer.deadlines")}</a></li>
           </ul>
         </div>
-
         <div>
-          <h3 className="mb-2 font-semibold">NJCLASS</h3>
-          <ul className="space-y-1 text-sm">
-            <li><a className="hover:underline" href="/Pages/NJCLASSHome.aspx">Apply Now</a></li>
-            <li><a className="hover:underline" href="/Pages/NJCLASSLogin.aspx">Login</a></li>
-            <li><a className="hover:underline" href="/Pages/NJCLASSPayment.aspx">Make a Payment</a></li>
+          <h4 className="font-semibold text-lg mb-2">{t("footer.njclass")}</h4>
+          <ul className="space-y-1 text-sm text-white/90">
+            <li><a className="hover:underline" href="#">{t("footer.applyNow")}</a></li>
+            <li><a className="hover:underline" href="#">{t("footer.login")}</a></li>
+            <li><a className="hover:underline" href="#">{t("footer.payment")}</a></li>
           </ul>
         </div>
+        <div>
+          <h4 className="font-semibold text-lg mb-2">{t("footer.contact")}</h4>
+          <div className="flex items-center gap-4 text-2xl">
+            <a aria-label="Facebook" href="#" className="hover:text-blue-400"><i className="fab fa-facebook"></i></a>
+            <a aria-label="YouTube" href="#" className="hover:text-red-400"><i className="fab fa-youtube"></i></a>
+            <a aria-label="X" href="#" className="hover:text-slate-300"><i className="fab fa-x-twitter"></i></a>
+            <a aria-label="LinkedIn" href="#" className="hover:text-sky-300"><i className="fab fa-linkedin"></i></a>
+          </div>
+        </div>
+      </div>
 
-        <div className="flex items-start gap-4">
-          <img src="/assets/OPRA.jpg" alt="OPRA" className="h-10 w-auto" />
-          <p className="text-sm text-gray-600">
-            © 2025 Higher Education Student Assistance Authority
-          </p>
+      <div className="border-t border-white/10">
+        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+          <img src="/assets/OPRA.jpg" alt="OPRA" className="h-8 w-auto" />
+          <p className="text-sm text-white/80">{t("footer.copyright")}</p>
         </div>
       </div>
     </footer>

@@ -1,3 +1,4 @@
+import "../src/i18n";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import HomeApp from "./pages/HomeApp";

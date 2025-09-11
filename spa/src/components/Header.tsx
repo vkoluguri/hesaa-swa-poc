@@ -1,13 +1,18 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 
-/** Top-level menu with accessible submenus (keyboard + touch + mouse) */
-type MenuItem = {
-  label: string;
-  href?: string;
-  children?: { label: string; href: string; target?: string }[];
-};
+/* =========================================================================
+   Types
+===========================================================================*/
+type SubLink = { label: string; href: string; target?: string };
+type NavNode =
+  | { label: string; href: string; target?: string }                // leaf
+  | { label: string; children: SubLink[] };                          // parent
 
-const menu: MenuItem[] = [
+/* =========================================================================
+   NAV DATA (your full menu)
+===========================================================================*/
+const NAV_ITEMS: NavNode[] = [
   {
     label: "About Us",
     children: [
@@ -31,13 +36,14 @@ const menu: MenuItem[] = [
       { label: "Grants & Scholarships", href: "/Pages/NJGrantsHome.aspx" },
       { label: "8 Steps to Apply", href: "/Documents/8_steps_howToApply.pdf", target: "_blank" },
       { label: "NJ Dreamers", href: "/Pages/NJAlternativeApplication.aspx" },
-      { label: "Log into your NJFAMS", href: "https://njfams.hesaa.org", target: "_blank" },
+      { label: "Log into NJFAMS", href: "https://njfams.hesaa.org", target: "_blank" },
       { label: "Deadlines for Grants & Scholarships", href: "/Pages/StateApplicationDeadlines.aspx" },
       { label: "NJCLASS Family Loans", href: "/Pages/NJCLASSHome.aspx" },
       { label: "Loan Comparison Chart", href: "/Documents/NJCLASSComparisonChart.pdf", target: "_blank" },
       { label: "NJCLASS Forms", href: "/Pages/NJCLASSForms.aspx" },
       { label: "NJCLASS Login", href: "https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp", target: "_blank" },
       { label: "Loan Redemption Programs", href: "/Pages/LoanRedemptionPrograms.aspx" },
+      { label: "NJBEST College Savings Plan", href: "/pages/NJBESTHome.aspx", target: "_blank" },
       { label: "Affordable Care Act", href: "https://nj.gov/governor/getcoverednj/", target: "_blank" },
       { label: "Publications (Eng/Span)", href: "/Pages/HESAAPublications.aspx" }
     ]
@@ -107,136 +113,137 @@ const menu: MenuItem[] = [
   { label: "Login", href: "/Pages/LoginOptions.aspx" }
 ];
 
-const NJLinks = () => (
-  <div className="hidden md:flex items-center gap-4">
-    <img src="/assets/NJLogo_small.gif" alt="State of New Jersey" className="h-8 w-auto" />
-    <nav aria-label="State links" className="text-sm text-gray-600">
-      <a className="hover:text-nav" href="https://nj.gov" target="_blank" rel="noreferrer">NJ Home</a>
-      <span className="mx-2">|</span>
-      <a className="hover:text-nav" href="https://nj.gov/nj/services/" target="_blank" rel="noreferrer">Services A to Z</a>
-      <span className="mx-2">|</span>
-      <a className="hover:text-nav" href="https://nj.gov/nj/deptserv/" target="_blank" rel="noreferrer">Departments/Agencies</a>
-      <span className="mx-2">|</span>
-      <a className="hover:text-nav" href="https://translate.google.com" target="_blank" rel="noreferrer">Translate</a>
-      <span className="mx-2">|</span>
-      <a className="hover:text-nav" href="https://nj.gov/faqs/" target="_blank" rel="noreferrer">NJ Gov FAQs</a>
-    </nav>
-  </div>
+/* =========================================================================
+   Small helpers
+===========================================================================*/
+const NavLink: React.FC<React.PropsWithChildren<{ href?: string }>> = ({
+  href = "#",
+  children,
+}) => (
+  <a
+    href={href}
+    className="px-3 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50"
+  >
+    {children}
+  </a>
 );
 
-export default function Header() {
-  const [open, setOpen] = useState<number | null>(null);
-  const [mobile, setMobile] = useState(false);
-  const navRef = useRef<HTMLDivElement>(null);
-
-  // Close on outside click
-  useEffect(() => {
-    const onDoc = (e: MouseEvent) => {
-      if (!navRef.current?.contains(e.target as Node)) setOpen(null);
-    };
-    document.addEventListener("click", onDoc);
-    return () => document.removeEventListener("click", onDoc);
-  }, []);
-
+const MenuItem: React.FC<{ label: string; items?: SubLink[] }> = ({
+  label,
+  items = [],
+}) => {
+  const [open, setOpen] = useState(false);
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-200">
-      <div className="mx-auto flex max-w-site items-center justify-between gap-4 px-4 py-3">
-        <a href="/" className="flex items-center gap-3">
-          <img src="/assets/HESAALogo.png" alt="HESAA" className="h-10 w-auto" />
-        </a>
-
-        <NJLinks />
-
-        <button
-          className="md:hidden rounded border px-3 py-2 text-gray-700"
-          aria-expanded={mobile}
-          aria-controls="mobile-nav"
-          onClick={() => setMobile(v => !v)}
-        >
-          Menu
-        </button>
-      </div>
-
-      {/* Desktop nav */}
-      <div ref={navRef} className="hidden md:block">
-        <nav aria-label="Primary" className="mx-auto max-w-site px-2">
-          <ul className="flex gap-4">
-            {menu.map((m, i) => {
-              const has = !!m.children?.length;
-              return (
-                <li key={m.label} className="relative py-2">
-                  {has ? (
-                    <button
-                      className="nav-link px-3 py-2 rounded-md hover:bg-gray-50"
-                      aria-haspopup="true"
-                      aria-expanded={open === i}
-                      onClick={() => setOpen(open === i ? null : i)}
-                      onMouseEnter={() => setOpen(i)}
-                      onFocus={() => setOpen(i)}
-                    >
-                      {m.label}
-                    </button>
-                  ) : (
-                    <a className="nav-link px-3 py-2 rounded-md hover:bg-gray-50" href={m.href}>{m.label}</a>
-                  )}
-
-                  {has && open === i && (
-                    <div
-                      className="absolute left-0 mt-2 w-[320px] rounded-lg border border-gray-200 bg-white p-2 shadow-soft"
-                      onMouseLeave={() => setOpen(null)}
-                    >
-                      <ul>
-                        {m.children!.map(c => (
-                          <li key={c.label}>
-                            <a
-                              className="block rounded px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                              href={c.href}
-                              target={c.target}
-                              rel={c.target === "_blank" ? "noreferrer" : undefined}
-                            >
-                              {c.label}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-      </div>
-
-      {/* Mobile nav */}
-      <div id="mobile-nav" className={`md:hidden ${mobile ? "block" : "hidden"} border-t border-gray-200`}>
-        <nav aria-label="Primary mobile" className="px-4 py-3">
-          <ul className="space-y-2">
-            {menu.map((m) => (
-              <li key={m.label}>
-                {!m.children?.length ? (
-                  <a className="block rounded-md px-3 py-2 text-gray-700 hover:bg-gray-50" href={m.href}>{m.label}</a>
-                ) : (
-                  <details className="group">
-                    <summary className="cursor-pointer list-none rounded-md px-3 py-2 text-gray-700 hover:bg-gray-50">
-                      {m.label}
-                    </summary>
-                    <ul className="mt-1 space-y-1 pl-4">
-                      {m.children!.map(c => (
-                        <li key={c.label}>
-                          <a className="block rounded px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                             href={c.href} target={c.target} rel={c.target === "_blank" ? "noreferrer" : undefined}>
-                            {c.label}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
+    <div
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button className="px-4 py-2 rounded-md text-sm font-medium hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50">
+        {label} <span aria-hidden>▾</span>
+      </button>
+      {open && items.length > 0 && (
+        <div className="absolute left-0 mt-2 w-80 rounded-lg bg-white text-slate-800 shadow-xl ring-1 ring-black/5 z-30">
+          <ul className="py-2">
+            {items.map((it) => (
+              <li key={it.label}>
+                <a
+                  href={it.href}
+                  target={it.target}
+                  rel={it.target === "_blank" ? "noopener noreferrer" : undefined}
+                  className="block px-4 py-2 text-sm hover:bg-slate-100"
+                >
+                  {it.label}
+                </a>
               </li>
             ))}
           </ul>
-        </nav>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* =========================================================================
+   Header
+===========================================================================*/
+export default function Header() {
+  const { t, i18n } = useTranslation();
+  const [query, setQuery] = useState("");
+
+  const changeLang = () => {
+    i18n.changeLanguage(i18n.language === "en" ? "es" : "en");
+  };
+
+  return (
+    <header className="sticky top-0 z-40 text-white">
+      {/* NJ GOV LINKS BAR */}
+      <div className="bg-slate-700/90">
+        <div className="mx-auto max-w-7xl px-4 h-9 flex items-center justify-end gap-3 text-sm">
+          <img src="/assets/NJLogo_small.gif" alt="NJ" className="h-5 w-5" />
+          <NavLink href="https://nj.gov">{t("gov.njHome")}</NavLink>
+          <span aria-hidden>|</span>
+          <NavLink href="#">{t("gov.services")}</NavLink>
+          <span aria-hidden>|</span>
+          <NavLink href="#">{t("gov.depts")}</NavLink>
+          <span aria-hidden>|</span>
+          {/* Translate toggle */}
+          <button
+            onClick={changeLang}
+            className="px-2 py-1 rounded bg-white/10 hover:bg-white/20"
+          >
+            {t("gov.translate")} ({i18n.language.toUpperCase()})
+          </button>
+          <span aria-hidden>|</span>
+          <NavLink href="#">{t("gov.faqs")}</NavLink>
+
+          {/* Search */}
+          <form action="#" className="ml-3 flex items-center gap-2">
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("gov.searchPlaceholder")}
+              className="h-8 rounded-md px-3 text-slate-900 placeholder:text-slate-500"
+              aria-label="Site search"
+            />
+            <button
+              type="submit"
+              className="h-8 px-3 rounded-md bg-blue-500 hover:bg-blue-600"
+            >
+              {t("gov.search")}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* MAIN NAV */}
+      <div className="bg-[#0e7236] shadow-md">
+        <div className="mx-auto max-w-7xl px-4 h-16 flex items-center justify-between">
+          {/* Logo */}
+          <a href="/" className="flex items-center gap-2">
+            <img src="/assets/HESAALogo.png" alt="HESAA" className="h-10 w-auto" />
+          </a>
+
+          {/* Menu */}
+          <nav className="flex items-center gap-1 ml-4">
+            {NAV_ITEMS.map((item) =>
+              "children" in item ? (
+                <MenuItem key={item.label} label={item.label} items={item.children} />
+              ) : (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  target={item.target}
+                  rel={item.target === "_blank" ? "noopener noreferrer" : undefined}
+                  className="px-4 py-2 rounded-md text-sm font-medium hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50"
+                >
+                  {item.label}
+                </a>
+              )
+            )}
+          </nav>
+        </div>
       </div>
     </header>
   );
