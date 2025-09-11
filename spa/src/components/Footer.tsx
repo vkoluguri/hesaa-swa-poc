@@ -1,52 +1,53 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
+import { Facebook, Youtube, Linkedin, Twitter } from "lucide-react";
 
 export default function Footer() {
-  const { t } = useTranslation();
+  const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-12 bg-gradient-to-r from-slate-900 to-slate-800 text-white">
-      <div className="mx-auto max-w-6xl px-4 py-10 grid grid-cols-1 md:grid-cols-4 gap-8">
-        <div>
-          <h4 className="font-semibold text-lg mb-2">{t("footer.hesaa")}</h4>
-          <ul className="space-y-1 text-sm text-white/90">
-            <li><a className="hover:underline" href="#">{t("footer.careers")}</a></li>
-            <li><a className="hover:underline" href="#">{t("footer.privacy")}</a></li>
-            <li><a className="hover:underline" href="#">{t("footer.terms")}</a></li>
-            <li><a className="hover:underline" href="#">{t("footer.sitemap")}</a></li>
+    <footer className="w-full bg-gray-100 text-gray-800 border-top">
+      <div className="max-w-[1400px] mx-auto px-6 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <section>
+          <h3 className="text-lg font-semibold mb-3">HESAA</h3>
+          <ul className="space-y-2">
+            <li><a className="hover:text-blue-700" href="#">Careers</a></li>
+            <li><a className="hover:text-blue-700" href="#">Privacy Policy</a></li>
+            <li><a className="hover:text-blue-700" href="#">Website T &amp; C</a></li>
+            <li><a className="hover:text-blue-700" href="#">Sitemap</a></li>
           </ul>
-        </div>
-        <div>
-          <h4 className="font-semibold text-lg mb-2">{t("footer.grants")}</h4>
-          <ul className="space-y-1 text-sm text-white/90">
-            <li><a className="hover:underline" href="#">NJFAMS Account</a></li>
-            <li><a className="hover:underline" href="#">{t("footer.deadlines")}</a></li>
+        </section>
+
+        <section>
+          <h3 className="text-lg font-semibold mb-3">Grants &amp; Scholarships</h3>
+          <ul className="space-y-2">
+            <li><a className="hover:text-blue-700" href="#">NJFAMS Account</a></li>
+            <li><a className="hover:text-blue-700" href="#">Application Deadlines</a></li>
           </ul>
-        </div>
-        <div>
-          <h4 className="font-semibold text-lg mb-2">{t("footer.njclass")}</h4>
-          <ul className="space-y-1 text-sm text-white/90">
-            <li><a className="hover:underline" href="#">{t("footer.applyNow")}</a></li>
-            <li><a className="hover:underline" href="#">{t("footer.login")}</a></li>
-            <li><a className="hover:underline" href="#">{t("footer.payment")}</a></li>
+        </section>
+
+        <section>
+          <h3 className="text-lg font-semibold mb-3">NJCLASS</h3>
+          <ul className="space-y-2">
+            <li><a className="hover:text-blue-700" href="#">Apply Now</a></li>
+            <li><a className="hover:text-blue-700" href="#">Login</a></li>
+            <li><a className="hover:text-blue-700" href="#">Make a Payment</a></li>
           </ul>
-        </div>
-        <div>
-          <h4 className="font-semibold text-lg mb-2">{t("footer.contact")}</h4>
-          <div className="flex items-center gap-4 text-2xl">
-            <a aria-label="Facebook" href="#" className="hover:text-blue-400"><i className="fab fa-facebook"></i></a>
-            <a aria-label="YouTube" href="#" className="hover:text-red-400"><i className="fab fa-youtube"></i></a>
-            <a aria-label="X" href="#" className="hover:text-slate-300"><i className="fab fa-x-twitter"></i></a>
-            <a aria-label="LinkedIn" href="#" className="hover:text-sky-300"><i className="fab fa-linkedin"></i></a>
+        </section>
+
+        <section>
+          <h3 className="text-lg font-semibold mb-3">Contact Us</h3>
+          <div className="flex items-center gap-3 mb-4">
+            <a aria-label="Facebook" href="#"><Facebook /></a>
+            <a aria-label="YouTube" href="#"><Youtube /></a>
+            <a aria-label="X/Twitter" href="#"><Twitter /></a>
+            <a aria-label="LinkedIn" href="#"><Linkedin /></a>
           </div>
-        </div>
+          <img src="/assets/OPRA.jpg" alt="OPRA" className="h-8 w-auto" />
+        </section>
       </div>
 
-      <div className="border-t border-white/10">
-        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
-          <img src="/assets/OPRA.jpg" alt="OPRA" className="h-8 w-auto" />
-          <p className="text-sm text-white/80">{t("footer.copyright")}</p>
-        </div>
+      <div className="border-t text-center py-4 text-sm">
+        © {year} Higher Education Student Assistance Authority
       </div>
     </footer>
   );

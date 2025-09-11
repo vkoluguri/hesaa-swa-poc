@@ -1,18 +1,13 @@
-import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
+import React, { useEffect, useRef, useState } from "react";
+import { Globe, Search } from "lucide-react";
+import { mountGoogleTranslate } from "../utils/googleTranslate";
 
-/* =========================================================================
-   Types
-===========================================================================*/
-type SubLink = { label: string; href: string; target?: string };
-type NavNode =
-  | { label: string; href: string; target?: string }                // leaf
-  | { label: string; children: SubLink[] };                          // parent
+// Simple menu model
+type Item = { label: string; href?: string; target?: "_blank" };
+type Menu = { label: string; children?: Item[]; href?: string };
 
-/* =========================================================================
-   NAV DATA (your full menu)
-===========================================================================*/
-const NAV_ITEMS: NavNode[] = [
+const MENUS: Menu[] = [
+  { label: "Home", href: "/" },
   {
     label: "About Us",
     children: [
@@ -25,8 +20,8 @@ const NAV_ITEMS: NavNode[] = [
       { label: "Investor Relations", href: "/Pages/InvestorRelations.aspx" },
       { label: "Public Information", href: "/Pages/PublicInformation.aspx" },
       { label: "World Trade Center Scholarship Board", href: "/Pages/wtcboardmeetings.aspx" },
-      { label: "Employer Resources", href: "/Pages/EmployerResources.aspx" }
-    ]
+      { label: "Employer Resources", href: "/Pages/EmployerResources.aspx" },
+    ],
   },
   {
     label: "Students",
@@ -36,17 +31,16 @@ const NAV_ITEMS: NavNode[] = [
       { label: "Grants & Scholarships", href: "/Pages/NJGrantsHome.aspx" },
       { label: "8 Steps to Apply", href: "/Documents/8_steps_howToApply.pdf", target: "_blank" },
       { label: "NJ Dreamers", href: "/Pages/NJAlternativeApplication.aspx" },
-      { label: "Log into NJFAMS", href: "https://njfams.hesaa.org", target: "_blank" },
+      { label: "Log into your NJFAMS", href: "https://njfams.hesaa.org", target: "_blank" },
       { label: "Deadlines for Grants & Scholarships", href: "/Pages/StateApplicationDeadlines.aspx" },
       { label: "NJCLASS Family Loans", href: "/Pages/NJCLASSHome.aspx" },
       { label: "Loan Comparison Chart", href: "/Documents/NJCLASSComparisonChart.pdf", target: "_blank" },
       { label: "NJCLASS Forms", href: "/Pages/NJCLASSForms.aspx" },
       { label: "NJCLASS Login", href: "https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp", target: "_blank" },
       { label: "Loan Redemption Programs", href: "/Pages/LoanRedemptionPrograms.aspx" },
-      { label: "NJBEST College Savings Plan", href: "/pages/NJBESTHome.aspx", target: "_blank" },
       { label: "Affordable Care Act", href: "https://nj.gov/governor/getcoverednj/", target: "_blank" },
-      { label: "Publications (Eng/Span)", href: "/Pages/HESAAPublications.aspx" }
-    ]
+      { label: "Publications (English/Spanish)", href: "/Pages/HESAAPublications.aspx" },
+    ],
   },
   {
     label: "Parents/Guardians",
@@ -65,8 +59,8 @@ const NAV_ITEMS: NavNode[] = [
       { label: "Loan Redemption Programs", href: "/Pages/LoanRedemptionPrograms.aspx" },
       { label: "NJBEST College Savings Plan", href: "/pages/NJBESTHome.aspx", target: "_blank" },
       { label: "Affordable Care Act", href: "https://nj.gov/governor/getcoverednj/", target: "_blank" },
-      { label: "Publications (Eng/Span)", href: "/Pages/HESAAPublications.aspx" }
-    ]
+      { label: "Publications (Eng/Span)", href: "/Pages/HESAAPublications.aspx" },
+    ],
   },
   {
     label: "School Counselors",
@@ -80,8 +74,8 @@ const NAV_ITEMS: NavNode[] = [
       { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx" },
       { label: "Grants & Scholarships", href: "/Pages/NJGrantsHome.aspx" },
       { label: "Deadlines for Grants & Scholarships", href: "/Pages/StateApplicationDeadlines.aspx" },
-      { label: "Publications (Eng/Span)", href: "/Pages/HESAAPublications.aspx" }
-    ]
+      { label: "Publications (Eng/Span)", href: "/Pages/HESAAPublications.aspx" },
+    ],
   },
   {
     label: "Financial Aid Administrators",
@@ -97,8 +91,8 @@ const NAV_ITEMS: NavNode[] = [
       { label: "NJCLASS Family Loans", href: "/Pages/NJCLASSHome.aspx" },
       { label: "HESAA University", href: "/Pages/HESAAUHome.aspx" },
       { label: "Real Money 101", href: "/Pages/RealMoneyRegistrationIntro.aspx" },
-      { label: "Publications (Eng/Span)", href: "/Pages/HESAAPublications.aspx" }
-    ]
+      { label: "Publications (Eng/Span)", href: "/Pages/HESAAPublications.aspx" },
+    ],
   },
   {
     label: "Public Notices",
@@ -107,142 +101,148 @@ const NAV_ITEMS: NavNode[] = [
       { label: "Procurements", href: "/Pages/Procurements.aspx" },
       { label: "Rulemaking", href: "/Pages/NoticeofRulemaking.aspx" },
       { label: "OPRA", href: "/Pages/OpenPublicRecordsAct.aspx" },
-      { label: "Public Information", href: "/Pages/PublicInformation.aspx" }
-    ]
+      { label: "Public Information", href: "/Pages/PublicInformation.aspx" },
+    ],
   },
-  { label: "Login", href: "/Pages/LoginOptions.aspx" }
+  { label: "Login", href: "/Pages/LoginOptions.aspx" },
 ];
 
-/* =========================================================================
-   Small helpers
-===========================================================================*/
-const NavLink: React.FC<React.PropsWithChildren<{ href?: string }>> = ({
-  href = "#",
-  children,
-}) => (
-  <a
-    href={href}
-    className="px-3 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50"
-  >
-    {children}
-  </a>
-);
-
-const MenuItem: React.FC<{ label: string; items?: SubLink[] }> = ({
-  label,
-  items = [],
-}) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div
-      className="relative"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
-      <button className="px-4 py-2 rounded-md text-sm font-medium hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50">
-        {label} <span aria-hidden>▾</span>
-      </button>
-      {open && items.length > 0 && (
-        <div className="absolute left-0 mt-2 w-80 rounded-lg bg-white text-slate-800 shadow-xl ring-1 ring-black/5 z-30">
-          <ul className="py-2">
-            {items.map((it) => (
-              <li key={it.label}>
-                <a
-                  href={it.href}
-                  target={it.target}
-                  rel={it.target === "_blank" ? "noopener noreferrer" : undefined}
-                  className="block px-4 py-2 text-sm hover:bg-slate-100"
-                >
-                  {it.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-};
-
-/* =========================================================================
-   Header
-===========================================================================*/
 export default function Header() {
-  const { t, i18n } = useTranslation();
-  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState<number | null>(null);
+  const [showTranslate, setShowTranslate] = useState(false);
+  const translateRef = useRef<HTMLDivElement>(null);
 
-  const changeLang = () => {
-    i18n.changeLanguage(i18n.language === "en" ? "es" : "en");
-  };
+  useEffect(() => {
+    if (showTranslate) mountGoogleTranslate();
+  }, [showTranslate]);
+
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (!translateRef.current) return;
+      if (!translateRef.current.contains(e.target as Node)) setShowTranslate(false);
+    }
+    document.addEventListener("click", onDoc);
+    return () => document.removeEventListener("click", onDoc);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-40 text-white">
-      {/* NJ GOV LINKS BAR */}
-      <div className="bg-slate-700/90">
-        <div className="mx-auto max-w-7xl px-4 h-9 flex items-center justify-end gap-3 text-sm">
-          <img src="/assets/NJLogo_small.gif" alt="NJ" className="h-5 w-5" />
-          <NavLink href="https://nj.gov">{t("gov.njHome")}</NavLink>
-          <span aria-hidden>|</span>
-          <NavLink href="#">{t("gov.services")}</NavLink>
-          <span aria-hidden>|</span>
-          <NavLink href="#">{t("gov.depts")}</NavLink>
-          <span aria-hidden>|</span>
-          {/* Translate toggle */}
-          <button
-            onClick={changeLang}
-            className="px-2 py-1 rounded bg-white/10 hover:bg-white/20"
-          >
-            {t("gov.translate")} ({i18n.language.toUpperCase()})
-          </button>
-          <span aria-hidden>|</span>
-          <NavLink href="#">{t("gov.faqs")}</NavLink>
+    <header className="w-full text-gray-900">
+      {/* Gov strip */}
+      <div className="flex items-center justify-between px-6 py-2 bg-white border-b">
+        <div className="flex items-center gap-3">
+          <img src="/assets/NJLogo_small.gif" alt="NJ Seal" className="h-6 w-6" />
+          <nav className="hidden md:flex gap-4 text-sm">
+            <span className="text-gray-700">Governor Philip D. Murphy</span>
+            <span className="text-gray-700">•</span>
+            <span className="text-gray-700">Lt. Governor Tahesha L. Way</span>
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-4 text-sm">
+          <a className="hover:text-blue-700 text-blue-600" href="https://nj.gov" target="_blank" rel="noreferrer">NJ Home</a>
+          <a className="hover:text-blue-700 text-blue-600" href="https://nj.gov/nj/services/" target="_blank" rel="noreferrer">Services A to Z</a>
+          <a className="hover:text-blue-700 text-blue-600" href="https://nj.gov/nj/deptserv/" target="_blank" rel="noreferrer">Departments/Agencies</a>
+
+          {/* Translate CTA */}
+          <div className="relative" ref={translateRef}>
+            <button
+              onClick={() => setShowTranslate((s) => !s)}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded border hover:bg-gray-100"
+              aria-haspopup="true"
+              aria-expanded={showTranslate}
+              title="Translate this page"
+            >
+              <Globe size={16} /> <span>Translate</span>
+            </button>
+            {showTranslate && (
+              <div
+                id="gt-container"
+                className="absolute right-0 z-30 mt-2 w-56 rounded-md border bg-white p-2 shadow-lg"
+              />
+            )}
+          </div>
+
+          <a className="hover:text-blue-700 text-blue-600" href="https://nj.gov/faqs/" target="_blank" rel="noreferrer">NJ Gov FAQs</a>
 
           {/* Search */}
-          <form action="#" className="ml-3 flex items-center gap-2">
+          <label className="flex items-center gap-1 border rounded px-2 py-1">
+            <Search size={16} />
             <input
+              className="outline-none text-sm"
+              placeholder="Search..."
+              aria-label="Search"
               type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("gov.searchPlaceholder")}
-              className="h-8 rounded-md px-3 text-slate-900 placeholder:text-slate-500"
-              aria-label="Site search"
             />
-            <button
-              type="submit"
-              className="h-8 px-3 rounded-md bg-blue-500 hover:bg-blue-600"
-            >
-              {t("gov.search")}
-            </button>
-          </form>
+          </label>
         </div>
       </div>
 
-      {/* MAIN NAV */}
-      <div className="bg-[#0e7236] shadow-md">
-        <div className="mx-auto max-w-7xl px-4 h-16 flex items-center justify-between">
-          {/* Logo */}
-          <a href="/" className="flex items-center gap-2">
-            <img src="/assets/HESAALogo.png" alt="HESAA" className="h-10 w-auto" />
+      {/* Emergency / temporary banner (toggle display via JS when needed) */}
+      <div id="emergency-banner" className="hidden bg-red-600 text-white text-center py-2">
+        Important notice goes here…
+      </div>
+
+      {/* Main nav */}
+      <div className="sticky top-0 z-20 bg-gray-100/90 backdrop-blur">
+        <div className="max-w-[1400px] mx-auto flex items-center px-6 py-3">
+          <a href="/" className="mr-6 shrink-0">
+            <img src="/assets/HESAALogo.png" className="h-9 w-auto" alt="HESAA" />
           </a>
 
-          {/* Menu */}
-          <nav className="flex items-center gap-1 ml-4">
-            {NAV_ITEMS.map((item) =>
-              "children" in item ? (
-                <MenuItem key={item.label} label={item.label} items={item.children} />
-              ) : (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  target={item.target}
-                  rel={item.target === "_blank" ? "noopener noreferrer" : undefined}
-                  className="px-4 py-2 rounded-md text-sm font-medium hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50"
-                >
-                  {item.label}
-                </a>
-              )
-            )}
-          </nav>
+          <ul className="flex flex-wrap gap-4 font-medium">
+            {MENUS.map((m, idx) => (
+              <li
+                key={m.label}
+                className="relative"
+                onMouseEnter={() => setOpen(idx)}
+                onMouseLeave={() => setOpen((o) => (o === idx ? null : o))}
+              >
+                {m.href ? (
+                  <a
+                    className="px-3 py-2 rounded hover:bg-white hover:shadow-sm transition"
+                    href={m.href}
+                  >
+                    {m.label}
+                  </a>
+                ) : (
+                  <button
+                    className="px-3 py-2 rounded hover:bg-white hover:shadow-sm transition"
+                    aria-haspopup="true"
+                    aria-expanded={open === idx}
+                  >
+                    {m.label}
+                  </button>
+                )}
+
+                {/* Dropdown */}
+                {m.children && (
+                  <div
+                    className={`absolute left-0 mt-2 w-[320px] rounded-lg border bg-white p-2 shadow-xl transition ${
+                      open === idx
+                        ? "pointer-events-auto opacity-100 translate-y-0"
+                        : "pointer-events-none opacity-0 -translate-y-1"
+                    }`}
+                  >
+                    <ul className="max-h-[60vh] overflow-auto">
+                      {m.children.map((c) => (
+                        <li key={c.label}>
+                          <a
+                            className="flex items-start justify-between gap-2 rounded px-3 py-2 hover:bg-gray-50"
+                            href={c.href}
+                            target={c.target}
+                          >
+                            <span className="text-left">{c.label}</span>
+                            <span className="text-gray-300">›</span>
+                          </a>
+                          <hr className="border-gray-100" />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </header>
