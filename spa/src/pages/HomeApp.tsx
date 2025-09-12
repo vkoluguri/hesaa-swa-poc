@@ -1,4 +1,3 @@
-// Frame only (Header + Footer + container)
 import React from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -6,12 +5,14 @@ import HomeContent from "./HomeContent";
 
 export default function HomeApp() {
   return (
-    <div className="min-h-dvh flex flex-col bg-white">
+    <>
       <Header />
-      <main id="main-content" className="flex-1 w-full">
-        <HomeContent />
+      {/* small gap so page content/breadcrumb never crowds the nav */}
+      <main className="mt-4 md:mt-6">
+        {/* Home page: no breadcrumb */}
+        <HomeContent showBreadcrumb={false} />
       </main>
       <Footer />
-    </div>
+    </>
   );
 }
