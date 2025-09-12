@@ -1,9 +1,7 @@
 import React from "react";
-import ReactDOM from "react-dom/client";
+import { createRoot } from "react-dom/client";
+import "./styles/tailwind.css";
 import HomeApp from "./pages/HomeApp";
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <HomeApp />
-  </React.StrictMode>
-);
+const root = createRoot(document.getElementById("root")!);
+root.render(<HomeApp />);

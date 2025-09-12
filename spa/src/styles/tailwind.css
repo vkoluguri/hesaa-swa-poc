@@ -1,5 +1,5 @@
 /* Tailwind v4 */
 @import "tailwindcss";
 
-/* tiny fallback so Vite always emits a CSS file in IIFE lib builds */
+/* A minimal rule so Vite always emits a CSS asset in IIFE builds */
 :root { --tw-ready: 1; }

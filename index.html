@@ -1,25 +1,52 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>HESAA — Home</title>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HESAA — Home</title>
 
-    <!-- Favicon -->
-    <link rel="icon" href="/assets/HESAAFAVICON.ico" />
+  <!-- Favicon -->
+  <link rel="icon" href="/assets/HESAAFAVICON.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/assets/HESAALogo.png" />
 
-    <!-- Tailwind (compiled) -->
-    <link rel="stylesheet" href="/assets/app/hesaa-homepage.css" />
+  <!-- Tailwind (compiled) -->
+  <link rel="stylesheet" href="/assets/app/hesaa-homepage.css" />
 
-    <!-- Remove the Google top banner bar when translating -->
-    <style>
-      .goog-te-banner-frame{display:none!important}
-      body{top:0!important}
-    </style>
-  </head>
-  <body class="bg-white">
-    <div id="root"></div>
-    <!-- React bundle built by Vite -->
-    <script src="/assets/app/hesaa-homepage.iife.js"></script>
-  </body>
+  <!-- (Optional) your legacy page css still used by non-SPA pages -->
+  <link rel="stylesheet" href="/assets/layout.css" />
+
+  <!-- Google fonts (nice headings) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+
+  <!-- SPA bundle (IIFE built by Vite) -->
+  <script defer src="/assets/app/hesaa-homepage.iife.js"></script>
+
+  <!-- Keep these if other static pages need them -->
+  <script src="/assets/include.js" defer></script>
+  <script src="/assets/site.js" defer></script>
+
+  <style>
+    /* Small helpers so the top bar/menus feel crisp on full width */
+    :root{
+      --brand:#0a3d91;        /* brand primary */
+      --brand-2:#0f62fe;      /* action blue */
+      --ink:#0b1220;          /* dark text */
+      --muted:#5b6472;        /* secondary text */
+      --bg:#ffffff;           /* page */
+      --soft:#f4f7fb;         /* soft surface */
+      --card:#ffffff;         /* card */
+    }
+    body{font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif}
+    .font-display{font-family:"DM Serif Display", Georgia, serif}
+  </style>
+</head>
+<body class="bg-[var(--bg)] text-[var(--ink)]">
+  <!-- SPA will render here -->
+  <div id="root"></div>
+
+  <!-- Optional: keep footer include for other pages that still use partials -->
+  <div data-include="/partials/footer.html" class="hidden"></div>
+</body>
 </html>
