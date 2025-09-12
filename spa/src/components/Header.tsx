@@ -1,57 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ChevronDown, Globe, Search } from "lucide-react";
+import { Menu, Search, Globe, ChevronDown, ChevronRight } from "lucide-react";
 
-/* ---------- Google Translate (script + init) ---------- */
-function useGoogleTranslate() {
-  const [loaded, setLoaded] = useState(false);
+/* ===================== NAV DATA ===================== */
+type NavLeaf = { label: string; href: string; target?: "_blank" };
+type NavNode = { label: string; href?: string; children?: NavLeaf[] };
 
-  useEffect(() => {
-    // Avoid duplicate loads
-    if ((window as any).__gt_loaded) return;
-
-    (window as any).googleTranslateElementInit = function () {
-      // Create the widget in our container
-      // vertical layout gives us a nice compact list
-      // @ts-ignore
-      new google.translate.TranslateElement(
-        {
-          pageLanguage: "en",
-          layout: (window as any).google.translate.TranslateElement.InlineLayout.VERTICAL,
-          autoDisplay: false,
-        },
-        "google_translate_element"
-      );
-      (window as any).__gt_loaded = true;
-      setLoaded(true);
-
-      // Remove "Powered by Google" text nodes
-      const observer = new MutationObserver(() => {
-        const el = document.querySelector("#google_translate_element .goog-te-gadget");
-        if (!el) return;
-        [...el.childNodes].forEach((n) => {
-          if (n.nodeType === Node.TEXT_NODE) n.parentNode?.removeChild(n);
-        });
-      });
-      observer.observe(document.getElementById("google_translate_element")!, {
-        childList: true,
-        subtree: true,
-      });
-    };
-
-    const s = document.createElement("script");
-    s.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-    s.async = true;
-    s.onerror = () => setLoaded(false);
-    document.head.appendChild(s);
-  }, []);
-
-  return loaded;
-}
-
-/* ---------- Menu data ---------- */
-
-type MenuItem = { label: string; href?: string; target?: "_blank"; children?: MenuItem[] };
-const NAV: MenuItem[] = [
+const NAV: NavNode[] = [
   { label: "Home", href: "/" },
   {
     label: "About Us",
@@ -64,9 +18,9 @@ const NAV: MenuItem[] = [
       { label: "Loan Redemption Programs", href: "/Pages/LoanRedemptionPrograms.aspx" },
       { label: "Investor Relations", href: "/Pages/InvestorRelations.aspx" },
       { label: "Public Information", href: "/Pages/PublicInformation.aspx" },
-      { label: "WTC Scholarship Board", href: "/Pages/wtcboardmeetings.aspx" },
-      { label: "Employer Resources", href: "/Pages/EmployerResources.aspx" }
-    ]
+      { label: "World Trade Center Scholarship Board", href: "/Pages/wtcboardmeetings.aspx" },
+      { label: "Employer Resources", href: "/Pages/EmployerResources.aspx" },
+    ],
   },
   {
     label: "Students",
@@ -74,7 +28,6 @@ const NAV: MenuItem[] = [
       { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx" },
       { label: "Garden State Guarantee", href: "/Pages/gsg.aspx" },
       { label: "Grants & Scholarships", href: "/Pages/NJGrantsHome.aspx" },
-      { label: "8 Steps to Apply", href: "/Documents/8_steps_howToApply.pdf", target: "_blank" },
       { label: "NJ Dreamers", href: "/Pages/NJAlternativeApplication.aspx" },
       { label: "Log into your NJFAMS", href: "https://njfams.hesaa.org", target: "_blank" },
       { label: "Deadlines for Grants & Scholarships", href: "/Pages/StateApplicationDeadlines.aspx" },
@@ -84,8 +37,8 @@ const NAV: MenuItem[] = [
       { label: "NJCLASS Login", href: "https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp", target: "_blank" },
       { label: "Loan Redemption Programs", href: "/Pages/LoanRedemptionPrograms.aspx" },
       { label: "Affordable Care Act", href: "https://nj.gov/governor/getcoverednj/", target: "_blank" },
-      { label: "Publications (Eng/Span)", href: "/Pages/HESAAPublications.aspx" }
-    ]
+      { label: "Publications (English/Spanish)", href: "/Pages/HESAAPublications.aspx" },
+    ],
   },
   {
     label: "Parents/Guardians",
@@ -93,7 +46,6 @@ const NAV: MenuItem[] = [
       { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx" },
       { label: "Garden State Guarantee", href: "/Pages/gsg.aspx" },
       { label: "Grants & Scholarships", href: "/Pages/NJGrantsHome.aspx" },
-      { label: "8 Steps to Apply", href: "/Documents/8_steps_howToApply.pdf", target: "_blank" },
       { label: "NJ Dreamers", href: "/Pages/NJAlternativeApplication.aspx" },
       { label: "Log into NJFAMS", href: "https://njfams.hesaa.org", target: "_blank" },
       { label: "Deadlines for Grants & Scholarships", href: "/Pages/StateApplicationDeadlines.aspx" },
@@ -104,8 +56,8 @@ const NAV: MenuItem[] = [
       { label: "Loan Redemption Programs", href: "/Pages/LoanRedemptionPrograms.aspx" },
       { label: "NJBEST College Savings Plan", href: "/pages/NJBESTHome.aspx", target: "_blank" },
       { label: "Affordable Care Act", href: "https://nj.gov/governor/getcoverednj/", target: "_blank" },
-      { label: "Publications (Eng/Span)", href: "/Pages/HESAAPublications.aspx" }
-    ]
+      { label: "Publications (English/Spanish)", href: "/Pages/HESAAPublications.aspx" },
+    ],
   },
   {
     label: "School Counselors",
@@ -119,8 +71,8 @@ const NAV: MenuItem[] = [
       { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx" },
       { label: "Grants & Scholarships", href: "/Pages/NJGrantsHome.aspx" },
       { label: "Deadlines for Grants & Scholarships", href: "/Pages/StateApplicationDeadlines.aspx" },
-      { label: "Publications (Eng/Span)", href: "/Pages/HESAAPublications.aspx" }
-    ]
+      { label: "Publications (English/Spanish)", href: "/Pages/HESAAPublications.aspx" },
+    ],
   },
   {
     label: "Financial Aid Administrators",
@@ -129,176 +81,334 @@ const NAV: MenuItem[] = [
       { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx" },
       { label: "Garden State Guarantee", href: "/Pages/gsg.aspx" },
       { label: "Grants & Scholarships", href: "/Pages/NJGrantsHome.aspx" },
-      { label: "8 Steps to Apply", href: "/Documents/8_steps_howToApply.pdf", target: "_blank" },
       { label: "NJ Dreamers", href: "/Pages/NJAlternativeApplication.aspx" },
       { label: "Log into NJFAMS", href: "https://njfams.hesaa.org", target: "_blank" },
       { label: "Deadlines for Grants & Scholarships", href: "/Pages/StateApplicationDeadlines.aspx" },
       { label: "NJCLASS Family Loans", href: "/Pages/NJCLASSHome.aspx" },
       { label: "HESAA University", href: "/Pages/HESAAUHome.aspx" },
       { label: "Real Money 101", href: "/Pages/RealMoneyRegistrationIntro.aspx" },
-      { label: "Publications (Eng/Span)", href: "/Pages/HESAAPublications.aspx" }
-    ]
+      { label: "Publications (English/Spanish)", href: "/Pages/HESAAPublications.aspx" },
+    ],
   },
   {
     label: "Public Notices",
     children: [
-      { label: "Enabling Legislation & Regulations", href: "/Pages/StatutesRegulations.aspx" },
+      { label: "Enabling Legislation and Regulations", href: "/Pages/StatutesRegulations.aspx" },
       { label: "Procurements", href: "/Pages/Procurements.aspx" },
       { label: "Rulemaking", href: "/Pages/NoticeofRulemaking.aspx" },
       { label: "OPRA", href: "/Pages/OpenPublicRecordsAct.aspx" },
-      { label: "Public Information", href: "/Pages/PublicInformation.aspx" }
-    ]
+      { label: "Public Information", href: "/Pages/PublicInformation.aspx" },
+    ],
   },
   { label: "Login", href: "/Pages/LoginOptions.aspx" },
 ];
 
-/* ---------- Components ---------- */
+/* ===================== PALETTE HELPERS ===================== */
+const brand = {
+  bg: "bg-slate-50",
+  bar: "bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70",
+  line: "border-b border-slate-200",
+  link:
+    "text-blue-700 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+};
 
-function GovTopBar() {
-  const loaded = useGoogleTranslate();
-  const [open, setOpen] = useState(false);
-  const ddRef = useRef<HTMLDivElement>(null);
+/* ===================== HEADER ===================== */
+export default function Header() {
+  const [open, setOpen] = useState(false); // mobile menu
+  const [translateOpen, setTranslateOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // close on outside click
+  // Google Translate: define callback + inject script once
   useEffect(() => {
-    function onDoc(e: MouseEvent) {
-      if (!ddRef.current) return;
-      if (!ddRef.current.contains(e.target as Node)) setOpen(false);
+    // callback Google calls after its script loads
+    window.googleTranslateElementInit = () => {
+      if (window.google?.translate) {
+        // eslint-disable-next-line no-new
+        new window.google.translate.TranslateElement(
+          {
+            pageLanguage: "en",
+            layout: window.google.translate.TranslateElement.InlineLayout.VERTICAL,
+            autoDisplay: false,
+          },
+          "gt-container"
+        );
+      }
+    };
+
+    // inject the script if not present
+    const id = "google-translate-script";
+    if (!document.getElementById(id)) {
+      const s = document.createElement("script");
+      s.id = id;
+      s.src =
+        "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+      s.async = true;
+      document.head.appendChild(s);
     }
+  }, []);
+
+  // Close translate when clicking outside
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setTranslateOpen(false);
+      }
+    };
     document.addEventListener("click", onDoc);
     return () => document.removeEventListener("click", onDoc);
   }, []);
 
   return (
-    <div className="w-full bg-white border-b border-slate-200">
-      <div className="mx-auto w-full max-w-[1400px] px-4 py-2 flex items-center gap-3">
-        {/* logo left */}
-        <a href="/" className="flex items-center gap-2">
-          <img src="/assets/HESAALogo.png" alt="HESAA" className="h-8 w-auto" />
-        </a>
+    <header className={`w-full sticky top-0 z-40 ${brand.bar} ${brand.line}`}>
+      {/* Top NJ links row (right aligned, hidden on mobile) */}
+      <div className="max-w-[120rem] mx-auto px-4">
+        <div className="hidden md:flex items-center justify-end gap-6 py-2 text-sm text-blue-700">
+          {/* NJ Crest (decorative) */}
+          <img
+            src="/assets/NULogo_small.gif"
+            alt=""
+            aria-hidden="true"
+            className="h-6 w-auto opacity-80"
+          />
+          <div className="font-medium">
+            <a href="https://nj.gov/governor/" className={brand.link}>
+              Governor Philip D. Murphy
+            </a>{" "}
+            •{" "}
+            <a href="https://nj.gov/governor/" className={brand.link}>
+              Lt. Governor Tahesha L. Way
+            </a>
+          </div>
 
-        {/* centered gov leaders (matches old site tone) */}
-        <div className="mx-auto text-xs sm:text-sm text-[var(--muted)]">
-          <span className="font-medium text-[var(--ink)]">Governor Philip D. Murphy</span>
-          <span className="mx-1">•</span>
-          <span className="font-medium text-[var(--ink)]">Lt. Governor Tahesha L. Way</span>
+          <nav aria-label="NJ links" className="flex items-center gap-4">
+            <a href="https://nj.gov" className={brand.link}>
+              NJ Home
+            </a>
+            <a href="https://nj.gov/services/" className={brand.link}>
+              Services A to Z
+            </a>
+            <a href="https://nj.gov/nj/deptserv/" className={brand.link}>
+              Departments/Agencies
+            </a>
+
+            {/* Translate trigger */}
+            <div ref={dropdownRef} className="relative">
+              <button
+                type="button"
+                aria-expanded={translateOpen}
+                aria-controls="translate-dropdown"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTranslateOpen((v) => !v);
+                }}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-[6px] text-slate-800 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              >
+                <Globe className="size-4" aria-hidden="true" />
+                <span>Translate</span>
+                <ChevronDown className="size-4" aria-hidden="true" />
+              </button>
+
+              {/* Dropdown (z-50 to float over menu) */}
+              <div
+                id="translate-dropdown"
+                className={`absolute right-0 mt-2 w-[380px] rounded-md border border-slate-200 bg-white p-3 shadow-lg z-50 ${
+                  translateOpen ? "block" : "hidden"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Select Language
+                  </span>
+                  <button
+                    className="text-sm text-blue-700 hover:underline"
+                    onClick={() => setTranslateOpen(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+                <div id="gt-container" className="max-h-[420px] overflow-auto"></div>
+              </div>
+            </div>
+
+            <a href="https://nj.gov/faqs" className={brand.link}>
+              NJ Gov FAQs
+            </a>
+
+            {/* Search (desktop) */}
+            <label className="relative ml-4">
+              <span className="sr-only">Search</span>
+              <input
+                type="search"
+                placeholder="Search..."
+                className="w-56 rounded-full border border-slate-300 py-1.5 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
+              />
+              <Search
+                className="absolute left-2.5 top-1.5 size-4 text-slate-400"
+                aria-hidden="true"
+              />
+            </label>
+          </nav>
         </div>
+      </div>
 
-        {/* right: NJ links + translate + search */}
-        <nav className="hidden lg:flex items-center gap-4 text-sm">
-          <a href="https://nj.gov" className="hover:text-[var(--brand)]">NJ Home</a>
-          <a href="https://nj.gov/nj/services/" className="hover:text-[var(--brand)]">Services A to Z</a>
-          <a href="https://nj.gov/nj/departments/" className="hover:text-[var(--brand)]">Departments/Agencies</a>
+      {/* Main nav bar */}
+      <div className={`w-full ${brand.bg} ${brand.line}`}>
+        <div className="max-w-[120rem] mx-auto px-4">
+          <div className="flex items-center gap-4 py-3">
+            {/* Left: Logo (always visible) */}
+            <a href="/" className="shrink-0">
+              <img
+                src="/assets/HESAALogo.png"
+                alt="Higher Education Student Assistance Authority"
+                className="h-10 w-auto"
+              />
+            </a>
 
-          {/* Translate */}
-          <div className="relative" ref={ddRef}>
+            {/* Hamburger (mobile) */}
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 hover:bg-slate-50"
-              aria-haspopup="true" aria-expanded={open}
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              aria-controls="primary-nav"
+              className="ml-auto md:hidden inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-slate-800 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
             >
-              <Globe size={16} /> <span>Translate</span> <ChevronDown size={16} />
+              <Menu className="size-5" aria-hidden="true" />
+              <span className="text-sm">Menu</span>
             </button>
-            <div
-              id="translateDropdown"
-              className={`absolute right-0 mt-2 w-[380px] max-h-[520px] overflow-hidden rounded-md border border-slate-200 bg-white shadow-xl ${open ? "block" : "hidden"}`}
-              onClick={(e) => e.stopPropagation()}
+
+            {/* Primary nav (desktop) */}
+            <nav
+              id="primary-nav"
+              aria-label="Primary"
+              className="hidden md:flex items-stretch gap-2 ml-4"
             >
-              <div className="flex items-center justify-between px-3 py-2 border-b">
-                <span className="text-sm font-medium">Select Language</span>
-                <button className="text-xs px-2 py-1 rounded hover:bg-slate-100" onClick={() => setOpen(false)}>CLOSE</button>
+              {NAV.map((item) => (
+                <NavItem key={item.label} item={item} />
+              ))}
+            </nav>
+          </div>
+
+          {/* Mobile panel: nav + translate + search (gov links hidden) */}
+          <div className={`md:hidden ${open ? "block" : "hidden"}`}>
+            <div className="border-t border-slate-200 py-3 space-y-2">
+              {NAV.map((item) => (
+                <MobileItem key={item.label} item={item} />
+              ))}
+
+              <div className="mt-3 border-t border-slate-200 pt-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-slate-700 flex items-center gap-2">
+                    <Globe className="size-4" /> Translate
+                  </span>
+                  <button
+                    onClick={() => setTranslateOpen(true)}
+                    className="text-blue-700 hover:underline"
+                  >
+                    Open
+                  </button>
+                </div>
+                <label className="relative mt-3 block">
+                  <span className="sr-only">Search</span>
+                  <input
+                    type="search"
+                    placeholder="Search..."
+                    className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
+                  />
+                  <Search
+                    className="absolute left-2.5 top-2.5 size-4 text-slate-400"
+                    aria-hidden="true"
+                  />
+                </label>
               </div>
-              <div id="google_translate_element" className="p-3 text-sm"></div>
             </div>
           </div>
-
-          {/* Search */}
-          <form action="/search" className="relative">
-            <input
-              className="w-64 rounded-full border border-slate-300 pl-9 pr-3 py-1.5 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand-2)]"
-              placeholder="Search…" name="q" />
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          </form>
-        </nav>
+        </div>
       </div>
-    </div>
+    </header>
   );
 }
 
-function NavBar() {
-  // small delay so the submenu doesn't disappear while moving the cursor
-  const timers = useRef<Record<number, any>>({});
-
+/* ===================== DESKTOP NAV ITEM ===================== */
+function NavItem({ item }: { item: NavNode }) {
+  const hasChildren = !!item.children?.length;
   return (
-    <div className="w-full bg-[#eef3ff] border-b border-slate-200">
-      <div className="mx-auto w-full max-w-[1400px] px-4">
-        <ul className="flex items-stretch gap-2">
-          {NAV.map((item, idx) => {
-            const hasKids = !!item.children?.length;
-            return (
-              <li key={idx} className="relative"
-                  onMouseEnter={() => {
-                    clearTimeout(timers.current[idx]);
-                    const el = document.getElementById(`menu-${idx}`);
-                    if (el) el.classList.remove("hidden");
-                  }}
-                  onMouseLeave={() => {
-                    timers.current[idx] = setTimeout(() => {
-                      const el = document.getElementById(`menu-${idx}`);
-                      if (el) el.classList.add("hidden");
-                    }, 120);
-                  }}>
+    <div className="relative group">
+      <a
+        href={item.href || "#"}
+        className="px-4 py-2 rounded-md text-slate-900 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+        aria-haspopup={hasChildren ? "true" : undefined}
+        aria-expanded="false"
+      >
+        <span className="font-medium">{item.label}</span>
+        {hasChildren && <ChevronDown className="inline size-4 ml-1" aria-hidden="true" />}
+      </a>
+
+      {hasChildren && (
+        <div
+          className="absolute left-0 top-[calc(100%+2px)] hidden group-hover:block"
+          role="menu"
+        >
+          <ul className="min-w-[22rem] rounded-md border border-slate-200 bg-white p-2 shadow-xl">
+            {item.children!.map((c) => (
+              <li key={c.label} className="relative">
                 <a
-                  href={item.href ?? "#"}
-                  target={item.target}
-                  className={`px-4 py-3 inline-flex items-center gap-1 font-medium text-[var(--ink)] hover:text-[var(--brand)] ${item.label==="Home" || item.label==="Login" ? "font-semibold" : ""}`}
+                  href={c.href}
+                  target={c.target}
+                  className="flex items-center justify-between gap-3 rounded-md px-3 py-2 text-[.95rem] text-slate-800 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                  role="menuitem"
                 >
-                  {item.label} {hasKids && <ChevronDown size={16} className="text-slate-500" />}
+                  <span>{c.label}</span>
+                  {/* subtle chevron for items users expect to be “deeper” */}
+                  {/(NJFAMS|Forms|Login|Deadlines|Dreamers)/i.test(c.label) && (
+                    <ChevronRight className="size-4 text-slate-400" aria-hidden="true" />
+                  )}
                 </a>
-
-                {/* submenu */}
-                {hasKids && (
-                  <div id={`menu-${idx}`} className="hidden absolute left-0 top-full z-30 min-w-[320px] rounded-md border border-slate-200 bg-white shadow-xl">
-                    <div className="grid grid-cols-1 gap-0 py-2">
-                      {item.children!.map((c, i) => (
-                        <a key={i}
-                           href={c.href}
-                           target={c.target}
-                           className="px-4 py-2 text-sm hover:bg-slate-50"
-                        >
-                          {c.label}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </li>
-            );
-          })}
-        </ul>
-      </div>
-    </div>
-  );
-}
-
-export default function Header() {
-  // hidden emergency ribbon; toggle with JS when needed
-  const [showAlert] = useState(false);
-
-  return (
-    <header className="w-full">
-      <GovTopBar />
-
-      {showAlert && (
-        <div className="w-full bg-amber-50 border-y border-amber-200">
-          <div className="mx-auto w-full max-w-[1400px] px-4 py-2 text-amber-900">
-            <strong className="mr-2">Important:</strong> Emergency or temporary message goes here.
-          </div>
+            ))}
+          </ul>
         </div>
       )}
+    </div>
+  );
+}
 
-      <NavBar />
-    </header>
+/* ===================== MOBILE NAV ITEM ===================== */
+function MobileItem({ item }: { item: NavNode }) {
+  const [open, setOpen] = useState(false);
+  const hasChildren = !!item.children?.length;
+  return (
+    <div className="px-1">
+      <button
+        className="w-full flex items-center justify-between rounded-md px-3 py-2 text-left hover:bg-slate-100"
+        onClick={() =>
+          hasChildren ? setOpen((v) => !v) : (window.location.href = item.href || "#")
+        }
+        aria-expanded={open}
+      >
+        <span className="font-medium">{item.label}</span>
+        {hasChildren && (
+          <ChevronDown
+            className={`size-4 transition-transform ${open ? "rotate-180" : ""}`}
+            aria-hidden="true"
+          />
+        )}
+      </button>
+
+      {hasChildren && open && (
+        <ul className="ml-2 mt-1 space-y-1">
+          {item.children!.map((c) => (
+            <li key={c.label}>
+              <a
+                href={c.href}
+                target={c.target}
+                className="block rounded-md px-3 py-2 text-[.95rem] text-slate-700 hover:bg-slate-100"
+              >
+                {c.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
