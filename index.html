@@ -16,25 +16,15 @@
     <link rel="stylesheet" href="/assets/app/hesaa-homepage.css?v=2" />
   </head>
   <body class="antialiased bg-white text-slate-900">
-    <!-- container for our React app -->
-<div id="root"></div>
+  <!-- Compiled Tailwind CSS -->
+  <link rel="stylesheet" href="/assets/app/hesaa-homepage.css" />
 
-<!-- React UMDs MUST load before the IIFE bundle -->
-<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <div id="root"></div>
 
-<!-- Guard: if React failed to load, log and bail (prevents cryptic errors) -->
-<script>
-  if (!window.React || !window.ReactDOM) {
-    console.error("React UMD failed to load. Check network/CSP.");
-  }
-</script>
+  <!-- Your compiled homepage app (IIFE) -->
+  <script src="/assets/app/hesaa-homepage.iife.js?v=2" defer></script>
 
-<!-- Our compiled app (IIFE) -->
-<script src="/assets/app/hesaa-homepage.iife.js?v=1" defer></script>
-
-<!-- Google Translate (callback is defined in Header.tsx) -->
-<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
-
-  </body>
+  <!-- Google Translate loader (callback is created by Header.tsx) -->
+  <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
+</body>
 </html>

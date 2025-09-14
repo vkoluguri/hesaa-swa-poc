@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// keep css name stable
 function assetFileNames(assetInfo: any) {
   const name = assetInfo?.name || "";
   if (name.endsWith(".css") || name === "style.css") return "hesaa-homepage.css";
@@ -28,16 +27,10 @@ export default defineConfig({
       formats: ["iife"],
     },
     rollupOptions: {
-      // IMPORTANT: tell Rollup these come from window.*
-      external: ["react", "react-dom", "react-dom/client"],
+      // IMPORTANT: do NOT externalize react/react-dom. Bundle them.
       output: {
         inlineDynamicImports: true,
         assetFileNames,
-        globals: {
-          react: "React",
-          "react-dom": "ReactDOM",
-          "react-dom/client": "ReactDOM", // createRoot lives here, same global
-        },
       },
     },
   },
