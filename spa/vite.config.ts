@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 // Build a single IIFE bundle we can load from /assets/app in index.html.
-// We do NOT externalize React — it's bundled to avoid any CDN/CORS/order issues.
+// React + ReactDOM are bundled inside (no CDN).
 export default defineConfig({
   plugins: [react()],
   root: "spa",
@@ -21,7 +21,10 @@ export default defineConfig({
     rollupOptions: {
       output: {
         inlineDynamicImports: true,
-        // keep original asset filenames; our CSS is linked from index.html
+        intro: `;(function (w) {
+          w.process = w.process || { env: { NODE_ENV: "production" } };
+          w.global = w.global || w;
+        })(window);`,
       },
     },
   },
