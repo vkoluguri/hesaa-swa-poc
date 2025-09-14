@@ -4,6 +4,17 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   root: "spa",
+
+  // Replace process.env.* at build time (prevents “process is not defined”)
+  define: {
+    "process.env.NODE_ENV": JSON.stringify("production"),
+    "process.env": {}, // keep harmless
+  },
+
+  optimizeDeps: {
+    include: ["react", "react-dom", "react-dom/client"],
+  },
+
   build: {
     target: "es2019",
     outDir: "../assets/app",
@@ -17,18 +28,19 @@ export default defineConfig({
       formats: ["iife"],
     },
     rollupOptions: {
-      // externalize React so the IIFE expects the globals provided by the UMDs we load in index.html
+      // We’re loading UMD builds in index.html, so mark these as externals
       external: ["react", "react-dom", "react-dom/client"],
       output: {
         inlineDynamicImports: true,
+        // Map externals → UMD globals
         globals: {
           react: "React",
           "react-dom": "ReactDOM",
-          // IMPORTANT: react-dom/client -> ReactDOM (UMD has createRoot on ReactDOM)
+          // UMD doesn’t export a separate client object — createRoot is on ReactDOM
           "react-dom/client": "ReactDOM",
         },
         assetFileNames: (assetInfo) => {
-          const name = assetInfo?.name || "";
+          const name = assetInfo.name || "";
           if (name.endsWith(".css") || name === "style.css") return "hesaa-homepage.css";
           return name;
         },
