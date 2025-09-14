@@ -1,16 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  Menu,
-  Search,
-  Globe,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+import { Menu, Search, Globe, ChevronDown, ChevronRight } from "lucide-react";
 
-/* =========================
-   NAV DATA (supports sub-groups)
-   ========================= */
-
+/* ---------- Nav types/data (supports grouped submenus) ---------- */
 type NavLeaf = { label: string; href: string; target?: "_blank" };
 type NavGroup = { label: string; href?: string; children?: NavLeaf[] };
 type NavNode = { label: string; href?: string; children?: (NavLeaf | NavGroup)[] };
@@ -137,7 +128,6 @@ const NAV: NavNode[] = [
   { label: "Login", href: "/Pages/LoginOptions.aspx" },
 ];
 
-/* === a11y/contrast + theme === */
 const brand = {
   bar: "bg-[#fafafa]/95 backdrop-blur supports-[backdrop-filter]:bg-[#fafafa]/80",
   line: "border-b border-slate-200",
@@ -145,29 +135,12 @@ const brand = {
     "text-blue-700 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded",
 };
 
-/* =========
-   Types for global (Translate)
-   ========= */
-// Install Google Translate widget (assign callback once)
-useEffect(() => {
-  if (!window.googleTranslateElementInit) {
-    window.googleTranslateElementInit = () => {
-      if (window.google?.translate) {
-        // eslint-disable-next-line no-new
-        new window.google.translate.TranslateElement(
-          {
-            pageLanguage: "en",
-            layout: window.google.translate.TranslateElement.InlineLayout.VERTICAL,
-            autoDisplay: false,
-          },
-          "gt-container"
-        );
-      }
-    };
-  }
-}, []);
+/* ---------- helpers ---------- */
+function isGroup(node: NavLeaf | NavGroup): node is NavGroup {
+  return (node as NavGroup).children !== undefined;
+}
 
-
+/* ---------- component ---------- */
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [translateOpen, setTranslateOpen] = useState(false);
@@ -175,13 +148,12 @@ export default function Header() {
 
   // Init Google Translate widget
   useEffect(() => {
-    window.googleTranslateElementInit = () => {
-      if (window.google?.translate) {
-        // eslint-disable-next-line no-new
-        new window.google.translate.TranslateElement(
+    (window as any).googleTranslateElementInit = () => {
+      if ((window as any).google?.translate) {
+        new (window as any).google.translate.TranslateElement(
           {
             pageLanguage: "en",
-            layout: window.google.translate.TranslateElement.InlineLayout.VERTICAL,
+            layout: (window as any).google.translate.TranslateElement.InlineLayout.VERTICAL,
             autoDisplay: false,
           },
           "gt-container"
@@ -203,41 +175,24 @@ export default function Header() {
 
   return (
     <header className={`w-full sticky top-0 z-40 ${brand.bar} ${brand.line}`}>
-      {/* TOP ROW: Logo left, NJ links + Translate + Search right */}
+      {/* Top row: logo left, NJ links + translate + search right (hide on mobile) */}
       <div className="max-w-[120rem] mx-auto px-4">
         <div className="flex items-center justify-between py-2">
-          {/* Left: HESAA logo */}
           <a href="/" className="inline-flex items-center gap-2" aria-label="HESAA Home">
-            <img
-              src="/assets/HESAALogo.png"
-              alt="Higher Education Student Assistance Authority"
-              className="h-10 w-auto"
-            />
+            <img src="/assets/HESAALogo.png" alt="HESAA Logo" className="h-10 w-auto" />
           </a>
 
-          {/* Right: NJ links + Translate + Search (hide on small) */}
           <div className="hidden md:flex items-center gap-4">
-            <img
-              src="/assets/NJLogo_small.gif"
-              alt=""
-              aria-hidden="true"
-              className="h-6 w-auto opacity-80"
-            />
+            <img src="/assets/NJLogo_small.gif" alt="" aria-hidden="true" className="h-6 w-auto opacity-80" />
             <div className="text-sm">
-              <a href="https://nj.gov/governor/" className={brand.link}>
-                Governor Philip D. Murphy
-              </a>{" "}
-              •{" "}
-              <a href="https://nj.gov/governor/" className={brand.link}>
-                Lt. Governor Tahesha L. Way
-              </a>
+              <a href="https://nj.gov/governor/" className={brand.link}>Governor Philip D. Murphy</a> •{" "}
+              <a href="https://nj.gov/governor/" className={brand.link}>Lt. Governor Tahesha L. Way</a>
             </div>
-
             <a href="https://nj.gov" className={brand.link}>NJ Home</a>
             <a href="https://nj.gov/services/" className={brand.link}>Services A to Z</a>
             <a href="https://nj.gov/nj/deptserv/" className={brand.link}>Departments/Agencies</a>
 
-            {/* Translate trigger */}
+            {/* Translate dropdown */}
             <div ref={dropdownRef} className="relative">
               <button
                 type="button"
@@ -253,41 +208,24 @@ export default function Header() {
                 <span>Translate</span>
                 <ChevronDown className="size-4" aria-hidden="true" />
               </button>
-
-              {/* Popover with disclaimer style */}
               <div
                 id="translate-dropdown"
                 className={`absolute right-0 mt-2 w-[420px] rounded-md border border-slate-200 bg-white p-3 shadow-xl z-50 ${
                   translateOpen ? "block" : "hidden"
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-slate-700">Select Language</span>
-                  <button
-                    className="text-sm text-blue-700 hover:underline"
-                    onClick={() => setTranslateOpen(false)}
-                  >
-                    Close
-                  </button>
-                </div>
                 <div id="gt-container" className="max-h-[420px] overflow-auto"></div>
                 <div className="mt-3 text-[12px] text-slate-600 leading-snug">
-                  The State of NJ site may contain optional links, information, services and/or content from
-                  other websites operated by third parties that are provided as a convenience, such as Google™
-                  Translate. Google™ Translate is an online service for which the user pays nothing to obtain a
-                  purported language translation. The user is on notice that neither the State of NJ site nor its
-                  operators review any of the services, information and/or content from anything that may be
-                  linked to the State of NJ site for any reason. To the extent Google™ Translate caches and
-                  presents older versions of the State of NJ site content, that is beyond the control of the State
-                  of NJ site and its operators who accept no responsibility or liability for the outdated
-                  translation.
+                  Google™ Translate is provided as a convenience. The State of NJ and HESAA
+                  are not responsible for the translation content or any cached/older versions
+                  shown by Google.
                 </div>
               </div>
             </div>
 
             <a href="https://nj.gov/faqs" className={brand.link}>NJ Gov FAQs</a>
 
-            <label className="relative ml-2">
+            <label className="relative ml-1">
               <span className="sr-only">Search</span>
               <input
                 type="search"
@@ -312,7 +250,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* MAIN NAV BAR */}
+      {/* Main nav bar */}
       <div className={`w-full ${brand.line}`}>
         <div className="max-w-[120rem] mx-auto px-4">
           <nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-3">
@@ -322,20 +260,17 @@ export default function Header() {
           </nav>
         </div>
 
-        {/* MOBILE PANEL */}
+        {/* Mobile panel: nav + translate + search */}
         <div id="mobile-panel" className={`md:hidden ${menuOpen ? "block" : "hidden"}`}>
           <div className="px-4 pb-4 space-y-2">
-            {/* Logo + divider */}
             <div className="pt-2 pb-3 flex items-center justify-between">
               <img src="/assets/HESAALogo.png" alt="HESAA" className="h-8 w-auto" />
               <span className="sr-only">HESAA</span>
             </div>
             <div className="border-t border-slate-200" />
-
             {NAV.map((item) => (
               <MobileItem key={item.label} item={item} />
             ))}
-
             <div className="mt-3 border-t border-slate-200 pt-3">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-slate-700 flex items-center gap-2">
@@ -362,12 +297,7 @@ export default function Header() {
   );
 }
 
-/* ============ Desktop Nav ============ */
-
-function isGroup(node: NavLeaf | NavGroup): node is NavGroup {
-  return (node as NavGroup).children !== undefined;
-}
-
+/* ---------- Desktop Nav item with grouped submenu ---------- */
 function NavItem({ item }: { item: NavNode }) {
   const hasChildren = !!item.children?.length;
   return (
@@ -388,12 +318,10 @@ function NavItem({ item }: { item: NavNode }) {
             {item.children!.map((child) =>
               isGroup(child) ? (
                 <li key={child.label} className="relative">
-                  {/* group row */}
                   <div className="flex items-center justify-between rounded-md px-3 py-2 bg-slate-50 text-slate-900 font-medium">
                     <span>{child.label}</span>
                     <ChevronRight className="size-4 text-slate-400" aria-hidden />
                   </div>
-                  {/* inner list */}
                   <ul className="mt-1 ml-3 border-l border-slate-200 pl-3">
                     {child.children!.map((leaf) => (
                       <li key={leaf.label}>
@@ -428,8 +356,7 @@ function NavItem({ item }: { item: NavNode }) {
   );
 }
 
-/* ============ Mobile Nav ============ */
-
+/* ---------- Mobile accordion item ---------- */
 function MobileItem({ item }: { item: NavNode }) {
   const [open, setOpen] = useState(false);
   const hasChildren = !!item.children?.length;

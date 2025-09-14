@@ -1,23 +1,30 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Home | New Jersey Student Financial Aid | HESAA</title>
-
-    <link rel="icon" href="/assets/HESAAFAVICON.ico" sizes="any" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>HESAA</title>
+       <link rel="icon" href="/assets/HESAAFAVICON.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/assets/HESAALogo.png" />
     <meta name="theme-color" content="#0a2c5f" />
-
-    <!-- compiled Tailwind -->
+    <!-- Tailwind output (PostCSS CLI) -->
     <link rel="stylesheet" href="/assets/app/hesaa-homepage.css" />
   </head>
-  <body class="antialiased bg-white text-slate-900">
-    <div id="root"></div>
 
-    <!-- Your app — React is bundled inside this file -->
-    <script src="/assets/app/hesaa-homepage.iife.js?v=1" defer></script>
+  <body class="antialiased">
+    <!-- React root -->
+    <div id="hesaa-homepage-root"></div>
 
-    <!-- Google Translate loader (unchanged) -->
-    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
+    <!-- Google Translate (callback is provided by Header component) -->
+    <script
+      src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+      defer
+    ></script>
+
+    <!-- Your compiled React IIFE -->
+    <script src="/assets/app/hesaa-homepage.iife.js" defer></script>
   </body>
 </html>
