@@ -1,22 +1,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-const isExternal = (id: string) =>
-  id === "react" ||
-  id === "react-dom" ||
-  id === "react-dom/client" ||
-  id.startsWith("react/jsx-runtime");
-
 export default defineConfig({
+  plugins: [react()],
   root: "spa",
-  plugins: [react({ jsxRuntime: "classic" })],
-  define: {
-    "process.env.NODE_ENV": JSON.stringify("production"),
-    "process.env": {} as any,
-  },
-  optimizeDeps: {
-    include: ["react", "react-dom", "react-dom/client"],
-  },
   build: {
     target: "es2019",
     outDir: "../assets/app",
@@ -30,19 +17,19 @@ export default defineConfig({
       formats: ["iife"],
     },
     rollupOptions: {
-      external: isExternal,
+      // Externalize ONLY react & react-dom/client. (We map client -> ReactDOM global.)
+      external: ["react", "react-dom/client"],
       output: {
         inlineDynamicImports: true,
         globals: {
           react: "React",
-          "react-dom": "ReactDOM",
-          "react-dom/client": "ReactDOM",   // UMD exposes createRoot on ReactDOM
-          "react/jsx-runtime": "React",      // guarded by jsxRuntime: 'classic'
+          "react-dom/client": "ReactDOM",
         },
-        assetFileNames: (info) => {
-          const n = info.name || "";
-          if (n.endsWith(".css") || n === "style.css") return "hesaa-homepage.css";
-          return n;
+        // keep file names stable if you customize them:
+        assetFileNames: (assetInfo) => {
+          const name = assetInfo?.name || "";
+          if (name.endsWith(".css") || name === "style.css") return "hesaa-homepage.css";
+          return name;
         },
       },
     },
