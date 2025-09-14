@@ -14,21 +14,19 @@
 <body class="antialiased bg-white text-slate-900">
   <div id="root"></div>
 
-  <!-- React UMD (local copies) -->
-  <script src="/assets/vendor/react.production.min.js"></script>
-  <script src="/assets/vendor/react-dom.production.min.js"></script>
+<!-- React UMD (one copy only) -->
+<script src="/assets/vendor/react.production.min.js"></script>
+<script src="/assets/vendor/react-dom.production.min.js"></script>
 
-  <!-- SHIM: prevent “process is not defined” in the IIFE -->
-  <script>
-    window.process = window.process || { env: { NODE_ENV: "production" } };
-  </script>
+<!-- Shim so any lingering process.env checks are safe -->
+<script>window.process = window.process || { env: { NODE_ENV: "production" } };</script>
 
-  <!-- Your compiled app (leave this as is, can keep `?v=...`) -->
-  <script src="/assets/app/hesaa-homepage.iife.js?v=1"></script>
+<!-- Your app IIFE (must come after React UMD) -->
+<script src="/assets/app/hesaa-homepage.iife.js?v=1"></script>
 
-  <!-- Google Translate (ok to defer) -->
-  <script
-    src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+<!-- OK to defer Google Translate -->
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
+
     defer>
   </script>
 </body>
