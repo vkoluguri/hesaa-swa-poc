@@ -2,36 +2,42 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Home | New Jersey Student Financial Aid | HESAA</title>
 
-    <!-- Favicon / PWA bits -->
     <link rel="icon" href="/assets/HESAAFAVICON.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/assets/HESAALogo.png" />
     <meta name="theme-color" content="#0a2c5f" />
 
-    <!-- Tailwind build -->
     <link rel="stylesheet" href="/assets/app/hesaa-homepage.css" />
   </head>
   <body class="antialiased bg-white text-slate-900">
-    <!-- Vite/React mount -->
     <div id="root"></div>
 
-    <!-- Minimal shim to satisfy libs that peek at process.env -->
+    <!-- tiny shim some libs expect -->
+    <script>window.process = window.process || { env: { NODE_ENV: "production" } };</script>
+
+    <!-- 1) React UMDs: NO defer -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script>
-      window.process = window.process || { env: { NODE_ENV: "production" } };
+      // expose client API as a global for the external map
+      window.ReactDOMClient = { createRoot: ReactDOM.createRoot };
     </script>
 
-    <!-- Your compiled app (BUNDLES React inside) -->
-    <script src="/assets/app/hesaa-homepage.iife.js?v=4" defer></script>
+    <!-- 2) Sanity guard so we fail loudly if UMDs didn't load -->
+    <script>
+      if (!window.React || !window.ReactDOM || !window.ReactDOMClient) {
+        document.body.innerHTML =
+          "<pre style='padding:1rem;color:#b91c1c'>React UMDs failed to load. Check network/CSP.</pre>";
+        throw new Error("React UMDs not available");
+      }
+    </script>
+
+    <!-- 3) Your bundled app IIFE: DEFER so it runs after UMDs -->
+    <script src="/assets/app/hesaa-homepage.iife.js?v=5" defer></script>
 
     <!-- Google Translate loader (callback is created by Header.tsx) -->
-    <script
-      src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
-      defer
-    ></script>
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
   </body>
 </html>
