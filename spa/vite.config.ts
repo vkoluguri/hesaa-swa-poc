@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
+// keep CSS file name stable
 function assetFileNames(assetInfo: any) {
   const name = assetInfo?.name || "";
   if (name.endsWith(".css") || name === "style.css") return "hesaa-homepage.css";
@@ -8,6 +9,7 @@ function assetFileNames(assetInfo: any) {
 }
 
 export default defineConfig({
+  root: "spa",                         // <-- put us back in /spa
   plugins: [react()],
   optimizeDeps: {
     include: ["react", "react-dom", "react-dom/client"],
@@ -22,20 +24,20 @@ export default defineConfig({
     cssCodeSplit: true,
     assetsDir: ".",
     lib: {
-      entry: "src/main.tsx",
+      entry: "src/main.tsx",          // resolved from root:"spa"
       name: "HESAAHome",
       fileName: () => "hesaa-homepage.iife.js",
       formats: ["iife"],
     },
     rollupOptions: {
-      // Inline everything (no externals)
+      // inline everything (no externals so hooks aren’t null)
       external: () => false,
       output: {
         inlineDynamicImports: true,
         assetFileNames,
         globals: {},
       },
-      treeshake: true,   // ✅ moved here
+      treeshake: true,
     },
   },
 });
