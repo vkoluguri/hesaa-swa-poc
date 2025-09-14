@@ -19,13 +19,19 @@
   <body class="antialiased bg-white text-slate-900">
     <!-- Vite/React mount -->
     <div id="root"></div>
-<!-- React UMD (must be before the homepage IIFE) -->
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- React UMD (must execute BEFORE our IIFE) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 
-    <!-- SPA IIFE bundle (built by Vite) -->
-    <script src="/assets/app/hesaa-homepage.iife.js" defer></script>
+  <!-- Sanity guard: if React failed to load, warn and bail (prevents cryptic null/useEffect error) -->
+  <script>
+    if (!window.React || !window.ReactDOM) {
+      console.error("React UMD failed to load. Check network/CSP.");
+    }
+  </script>
 
+  <!-- Your compiled homepage app (IIFE) -->
+  <script src="/assets/app/hesaa-homepage.iife.js?v=1" defer></script>
 <!-- Google Translate loader (callback is created by Header.tsx) -->
 <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
 
