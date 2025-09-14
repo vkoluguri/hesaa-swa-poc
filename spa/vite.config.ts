@@ -9,10 +9,11 @@ function assetFileNames(assetInfo: any) {
 
 export default defineConfig({
   plugins: [react()],
-  root: "spa",
-  define: {
-    "process.env.NODE_ENV": JSON.stringify("production"),
-    "process.env": {} as any,
+  optimizeDeps: {
+    include: ["react", "react-dom", "react-dom/client"],
+  },
+  ssr: {
+    noExternal: ["react", "react-dom", "react-dom/client", "react/jsx-runtime"],
   },
   build: {
     target: "es2019",
@@ -27,13 +28,14 @@ export default defineConfig({
       formats: ["iife"],
     },
     rollupOptions: {
-      // ✅ DO NOT externalize anything; bundle react & react-dom into the IIFE
-      external: [],
+      // Inline everything (no externals)
+      external: () => false,
       output: {
         inlineDynamicImports: true,
         assetFileNames,
-        globals: {}, // not used now, but keeps Rollup happy
+        globals: {},
       },
+      treeshake: true,   // ✅ moved here
     },
   },
 });
