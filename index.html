@@ -8,25 +8,30 @@
     />
     <title>Home | New Jersey Student Financial Aid | HESAA</title>
 
-    <!-- Favicons -->
+    <!-- Favicon / PWA bits -->
     <link rel="icon" href="/assets/HESAAFAVICON.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/assets/HESAALogo.png" />
+    <meta name="theme-color" content="#0a2c5f" />
 
-    <!-- Tailwind (compiled) -->
-    <link rel="stylesheet" href="/assets/app/hesaa-homepage.css?v=2" />
+    <!-- Tailwind build -->
+    <link rel="stylesheet" href="/assets/app/hesaa-homepage.css" />
   </head>
   <body class="antialiased bg-white text-slate-900">
- <link rel="stylesheet" href="/assets/app/hesaa-homepage.css" />
-<div id="root"></div>
-<script>
-  window.process = window.process || { env: { NODE_ENV: "production" } };
-</script>
+    <!-- Vite/React mount -->
+    <div id="root"></div>
 
-<!-- keep this: your built app -->
-<script src="/assets/app/hesaa-homepage.iife.js?v=1" defer></script>
+    <!-- Minimal shim to satisfy libs that peek at process.env -->
+    <script>
+      window.process = window.process || { env: { NODE_ENV: "production" } };
+    </script>
 
-<!-- keep this: Google Translate loader -->
-<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
+    <!-- Your compiled app (BUNDLES React inside) -->
+    <script src="/assets/app/hesaa-homepage.iife.js?v=4" defer></script>
 
-</body>
+    <!-- Google Translate loader (callback is created by Header.tsx) -->
+    <script
+      src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+      defer
+    ></script>
+  </body>
 </html>
