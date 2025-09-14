@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-/** keep css name stable */
+// keep css name stable
 function assetFileNames(assetInfo: any) {
   const name = assetInfo?.name || "";
   if (name.endsWith(".css") || name === "style.css") return "hesaa-homepage.css";
@@ -12,9 +12,8 @@ export default defineConfig({
   plugins: [react()],
   root: "spa",
   define: {
-    // avoid “process is not defined” in prod
     "process.env.NODE_ENV": JSON.stringify("production"),
-    "process.env": {} as any
+    "process.env": {} as any,
   },
   build: {
     target: "es2019",
@@ -26,19 +25,20 @@ export default defineConfig({
       entry: "src/main.tsx",
       name: "HESAAHome",
       fileName: () => "hesaa-homepage.iife.js",
-      formats: ["iife"]
+      formats: ["iife"],
     },
     rollupOptions: {
-      // ✅ tell Rollup/Vite “React is provided by the page”
-      external: ["react", "react-dom"],
+      // IMPORTANT: tell Rollup these come from window.*
+      external: ["react", "react-dom", "react-dom/client"],
       output: {
+        inlineDynamicImports: true,
+        assetFileNames,
         globals: {
           react: "React",
-          "react-dom": "ReactDOM"
+          "react-dom": "ReactDOM",
+          "react-dom/client": "ReactDOM", // createRoot lives here, same global
         },
-        inlineDynamicImports: true,
-        assetFileNames
-      }
-    }
-  }
+      },
+    },
+  },
 });
