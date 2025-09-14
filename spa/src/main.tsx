@@ -1,13 +1,7 @@
 import React from "react";
-import ReactDOM from "react-dom/client";
-import Header from "./components/Header";
+import { createRoot } from "react-dom/client";
+import "./styles/tailwind.css"; // keeps dev DX; final CSS is emitted by your build:css step
+import HomeApp from "./pages/HomeApp";
 
-// Mount into #hesaa-homepage-root (defined in index.html)
-const rootEl = document.getElementById("hesaa-homepage-root");
-if (rootEl) {
-  ReactDOM.createRoot(rootEl).render(
-    <React.StrictMode>
-      <Header />
-    </React.StrictMode>
-  );
-}
+const root = createRoot(document.getElementById("root")!);
+root.render(<HomeApp />);
