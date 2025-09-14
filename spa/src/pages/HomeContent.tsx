@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { ArrowRight, ExternalLink, CalendarDays, Newspaper } from "lucide-react";
 
-/* Simple full-width carousel with arrows + dots */
+/* ========= Types ========= */
+export type HomeContentProps = {
+  showBreadcrumb?: boolean; // optional, defaults to false
+};
+
+/* ========= Carousel Data ========= */
 const slides = [
   { src: "/assets/Grants-Scholarships-Banner2.jpg", alt: "Grants & Scholarships" },
   { src: "/assets/call_center_banner.jpg", alt: "Call Center" },
@@ -9,6 +14,7 @@ const slides = [
   { src: "/assets/emailAlert_webBanner.jpg", alt: "Email Alerts" },
 ];
 
+/* ========= Quick Links ========= */
 const quickLinks = [
   { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx", color: "bg-slate-600" },
   { label: "NJ Grants and Scholarships", href: "/Pages/NJGrantsHome.aspx", color: "bg-red-700" },
@@ -18,8 +24,10 @@ const quickLinks = [
   { label: "Employer Resources", href: "/Pages/EmployerResources.aspx", color: "bg-emerald-800" },
 ];
 
-export default function HomeContent() {
+/* ========= Component ========= */
+export default function HomeContent({ showBreadcrumb = false }: HomeContentProps) {
   const [idx, setIdx] = useState(0);
+
   useEffect(() => {
     const t = setInterval(() => setIdx((p) => (p + 1) % slides.length), 5000);
     return () => clearInterval(t);
@@ -27,6 +35,18 @@ export default function HomeContent() {
 
   return (
     <main className="w-full">
+      {/* optional breadcrumb */}
+      {showBreadcrumb && (
+        <nav aria-label="Breadcrumb" className="mb-4 md:mb-6">
+          {/* TODO: replace with real breadcrumb trail */}
+          <ol className="flex text-sm text-slate-600 space-x-2">
+            <li><a href="/" className="hover:underline">Home</a></li>
+            <li>/</li>
+            <li className="text-slate-900">Current Page</li>
+          </ol>
+        </nav>
+      )}
+
       {/* Carousel full width */}
       <section aria-label="Promotions" className="w-full">
         <div className="relative w-full">
@@ -168,6 +188,7 @@ export default function HomeContent() {
   );
 }
 
+/* ========= SpotlightCard ========= */
 function SpotlightCard({ img, alt, href }: { img: string; alt: string; href: string }) {
   return (
     <article className="rounded-xl bg-white shadow hover:shadow-md transition">

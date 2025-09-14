@@ -1,7 +1,7 @@
-// spa/vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
+/** keep css name stable */
 function assetFileNames(assetInfo: any) {
   const name = assetInfo?.name || "";
   if (name.endsWith(".css") || name === "style.css") return "hesaa-homepage.css";
@@ -12,6 +12,7 @@ export default defineConfig({
   plugins: [react()],
   root: "spa",
   define: {
+    // avoid “process is not defined” in prod
     "process.env.NODE_ENV": JSON.stringify("production"),
     "process.env": {} as any
   },
@@ -28,15 +29,15 @@ export default defineConfig({
       formats: ["iife"]
     },
     rollupOptions: {
-      // 👇 tell the IIFE to use global React/ReactDOM that we load from CDN
+      // ✅ tell Rollup/Vite “React is provided by the page”
       external: ["react", "react-dom"],
       output: {
         globals: {
           react: "React",
-          "react-dom": "ReactDOM",
+          "react-dom": "ReactDOM"
         },
         inlineDynamicImports: true,
-        assetFileNames,
+        assetFileNames
       }
     }
   }
