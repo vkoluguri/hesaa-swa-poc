@@ -4,6 +4,15 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   root: "spa",
+
+  // make sure “process.env.NODE_ENV” and “process” are safe at runtime
+  define: {
+    "process.env.NODE_ENV": JSON.stringify("production"),
+    // a tiny runtime shim just in case something reads process at run-time
+    process: { env: { NODE_ENV: "production" } } as any,
+    global: "window",
+  },
+
   build: {
     target: "es2019",
     outDir: "../assets/app",
@@ -17,19 +26,15 @@ export default defineConfig({
       formats: ["iife"],
     },
     rollupOptions: {
-      // Externalize ONLY react & react-dom/client. (We map client -> ReactDOM global.)
-      external: ["react", "react-dom/client"],
+      // ✅ DO NOT externalize React – bundle everything into the IIFE
+      external: [],
       output: {
         inlineDynamicImports: true,
-        globals: {
-          react: "React",
-          "react-dom/client": "ReactDOM",
-        },
-        // keep file names stable if you customize them:
-        assetFileNames: (assetInfo) => {
-          const name = assetInfo?.name || "";
-          if (name.endsWith(".css") || name === "style.css") return "hesaa-homepage.css";
-          return name;
+        // keep your CSS name stable
+        assetFileNames(assetInfo) {
+          const n = assetInfo?.name || "";
+          if (n.endsWith(".css") || n === "style.css") return "hesaa-homepage.css";
+          return n;
         },
       },
     },

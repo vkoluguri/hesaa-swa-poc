@@ -2,34 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Home | New Jersey Student Financial Aid | HESAA</title>
-
-    <!-- Tailwind/CSS -->
+    <link rel="icon" href="/assets/HESAAFAVICON.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/assets/HESAALogo.png" />
+    <meta name="theme-color" content="#0a2c5f" />
     <link rel="stylesheet" href="/assets/app/hesaa-homepage.css" />
   </head>
   <body class="antialiased bg-white text-slate-900">
     <div id="root"></div>
 
-    <!-- ✅ React UMD MUST load first. No type=module, no defer. -->
-    <script src="/assets/vendor/react.production.min.js"></script>
-    <script src="/assets/vendor/react-dom.production.min.js"></script>
+    <!-- ✅ Only your bundled IIFE -->
+    <script src="/assets/app/hesaa-homepage.iife.js?v=4" defer></script>
 
-    <!-- ✅ process shim for any process.env checks -->
-    <script>
-      window.process = window.process || { env: { NODE_ENV: "production" } };
-    </script>
-
-    <!-- ✅ Your compiled IIFE; let it run after React is present -->
-    <script src="/assets/app/hesaa-homepage.iife.js?v=3"></script>
-
-    <!-- Optional: Google Translate loader AFTER your app -->
-    <script
-      src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
-      defer
-    ></script>
+    <!-- Optional: Google translate loader -->
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
   </body>
 </html>
