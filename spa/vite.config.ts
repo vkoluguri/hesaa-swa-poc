@@ -27,10 +27,12 @@ export default defineConfig({
       formats: ["iife"],
     },
     rollupOptions: {
-      // IMPORTANT: do NOT externalize react/react-dom. Bundle them.
+      // ✅ DO NOT externalize anything; bundle react & react-dom into the IIFE
+      external: [],
       output: {
         inlineDynamicImports: true,
         assetFileNames,
+        globals: {}, // not used now, but keeps Rollup happy
       },
     },
   },
