@@ -5,12 +5,10 @@ export default defineConfig({
   root: "spa",
   plugins: [
     react({
-      // use classic so we don't need react/jsx-runtime as a global
       jsxRuntime: "classic",
     }),
   ],
   define: {
-    // prevent "process is not defined" when React or libs check env
     "process.env.NODE_ENV": JSON.stringify("production"),
     process: { env: { NODE_ENV: "production" } } as any,
     global: "window",
@@ -28,8 +26,8 @@ export default defineConfig({
       formats: ["iife"],
     },
     rollupOptions: {
-      // ❌ DO NOT externalize react / react-dom – bundle everything
-      external: [],
+      // VERY IMPORTANT: DO NOT externalize react or react-dom
+      external: [],              // <— keep this line
       output: {
         inlineDynamicImports: true,
         assetFileNames(assetInfo) {
