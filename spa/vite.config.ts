@@ -11,7 +11,7 @@ export default defineConfig({
   root: "spa",
   plugins: [react({ jsxRuntime: "classic" })],
   define: {
-    "process.env": {},
+    "process.env": {}, // avoid 'process is not defined'
     "process.env.NODE_ENV": JSON.stringify("production"),
   },
   build: {
@@ -20,17 +20,20 @@ export default defineConfig({
     emptyOutDir: true,
     cssCodeSplit: true,
     assetsDir: ".",
+
+    // ✅ lib build resolves entry relative to "root"
+    lib: {
+      entry: "src/main.tsx",
+      name: "HESAAHome",
+      fileName: () => "hesaa-homepage.iife.js",
+      formats: ["iife"],
+    },
+
     rollupOptions: {
-      input: "src/main.tsx",                 // relative to root "spa"
-      external: [
-        "react",
-        "react-dom",
-        "react-dom/client",
-      ],
+      // ✅ externalize react UMDs; our index.html provides globals
+      external: ["react", "react-dom", "react-dom/client"],
       output: {
-        format: "iife",
         inlineDynamicImports: true,
-        entryFileNames: "hesaa-homepage.iife.js",
         assetFileNames,
         globals: {
           react: "React",
