@@ -9,9 +9,8 @@ function assetFileNames(assetInfo: any) {
 
 export default defineConfig({
   root: "spa",
-  plugins: [react()],
+  plugins: [react({ jsxRuntime: "classic" })],
   define: {
-    // prevent “process is not defined” and enable prod branches
     "process.env": {},
     "process.env.NODE_ENV": JSON.stringify("production"),
   },
@@ -21,16 +20,23 @@ export default defineConfig({
     emptyOutDir: true,
     cssCodeSplit: true,
     assetsDir: ".",
-
-    // ⬇️ IMPORTANT: build as a normal app, not lib mode
     rollupOptions: {
-      input: "spa/src/main.tsx",
-      external: [],             // do not externalize anything
+      input: "src/main.tsx",                 // relative to root "spa"
+      external: [
+        "react",
+        "react-dom",
+        "react-dom/client",
+      ],
       output: {
         format: "iife",
         inlineDynamicImports: true,
         entryFileNames: "hesaa-homepage.iife.js",
         assetFileNames,
+        globals: {
+          react: "React",
+          "react-dom": "ReactDOM",
+          "react-dom/client": "ReactDOMClient",
+        },
       },
     },
   },
