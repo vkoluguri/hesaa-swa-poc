@@ -9,19 +9,18 @@
     <link rel="apple-touch-icon" href="/assets/HESAALogo.png" />
     <meta name="theme-color" content="#0a2c5f" />
 
-    <!-- Compiled Tailwind/CSS -->
     <link rel="stylesheet" href="/assets/app/hesaa-homepage.css" />
   </head>
   <body class="antialiased bg-white text-slate-900">
     <div id="root"></div>
 
-    <!-- Minimal process shim so React runtime never complains -->
+    <!-- tiny shim so React doesn’t look for node’s process -->
     <script>window.process = window.process || { env: { NODE_ENV: "production" } };</script>
 
-    <!-- Your IIFE bundle (contains React, ReactDOM, your app) -->
-    <script src="/assets/app/hesaa-homepage.iife.js?v=6" defer></script>
+    <!-- single-file bundle (now includes React + ReactDOM) -->
+    <script src="/assets/app/hesaa-homepage.iife.js?v=7" defer></script>
 
-    <!-- Google Translate loader (callback is created by Header.tsx) -->
+    <!-- Google Translate loader (Header defines the callback) -->
     <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
   </body>
 </html>

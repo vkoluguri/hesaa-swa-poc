@@ -11,7 +11,7 @@ export default defineConfig({
   root: "spa",
   plugins: [react()],
   define: {
-    // so React can strip dev branches and so runtime doesn't throw
+    // prevent “process is not defined” and enable prod branches
     "process.env": {},
     "process.env.NODE_ENV": JSON.stringify("production"),
   },
@@ -21,17 +21,15 @@ export default defineConfig({
     emptyOutDir: true,
     cssCodeSplit: true,
     assetsDir: ".",
-    lib: {
-      entry: "src/main.tsx",
-      name: "HESAAHome",
-      fileName: () => "hesaa-homepage.iife.js",
-      formats: ["iife"], // single file
-    },
+
+    // ⬇️ IMPORTANT: build as a normal app, not lib mode
     rollupOptions: {
-      // IMPORTANT: do NOT externalize react/* — we want it bundled
-      external: [],
+      input: "spa/src/main.tsx",
+      external: [],             // do not externalize anything
       output: {
+        format: "iife",
         inlineDynamicImports: true,
+        entryFileNames: "hesaa-homepage.iife.js",
         assetFileNames,
       },
     },
