@@ -18,6 +18,9 @@
   <body class="antialiased bg-white text-slate-900">
  <link rel="stylesheet" href="/assets/app/hesaa-homepage.css" />
 <div id="root"></div>
+<script>
+  window.process = window.process || { env: { NODE_ENV: "production" } };
+</script>
 
 <!-- keep this: your built app -->
 <script src="/assets/app/hesaa-homepage.iife.js?v=1" defer></script>
