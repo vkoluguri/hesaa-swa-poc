@@ -1,19 +1,139 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Menu, Search, Globe, ChevronDown, ChevronRight } from "lucide-react";
+import { Menu, Search, Globe, ChevronDown, ChevronRight, X } from "lucide-react";
 
-/* =========================
-   NAV DATA (with grouped children)
-   ========================= */
+/** ──────────────────────────────────────────────
+ *  Types (nav)
+ *  ───────────────────────────────────────────── */
 type NavLeaf = { label: string; href: string; target?: "_blank" };
 type NavGroup = { label: string; children: NavLeaf[] };
 type NavNode = { label: string; href?: string; children?: (NavLeaf | NavGroup)[] };
 
-function isGroup(x: NavLeaf | NavGroup): x is NavGroup {
-  return (x as NavGroup).children !== undefined;
+/** ──────────────────────────────────────────────
+ *  Manageable Emergency / Maintenance banner
+ *  - If you set window.HESAA_BANNER = {message, tone}
+ *    it will appear until closed.
+ *  - tone: "info" | "warning" | "danger"
+ *  ───────────────────────────────────────────── */
+function EmergencyBanner() {
+  const [banner, setBanner] = useState<null | { message: string; tone?: "info" | "warning" | "danger" }>(
+    () => (window as any).HESAA_BANNER ?? null
+  );
+  if (!banner || !banner.message?.trim()) return null;
+
+  const colors =
+    banner.tone === "danger"
+      ? "bg-rose-50 border-rose-200 text-rose-800"
+      : banner.tone === "warning"
+      ? "bg-amber-50 border-amber-200 text-amber-900"
+      : "bg-blue-50 border-blue-200 text-blue-800";
+
+  return (
+    <div role="status" aria-live="polite" className={`w-full border-b ${colors}`}>
+      <div className="max-w-[120rem] mx-auto px-4 py-2 flex items-start gap-3">
+        <strong className="mt-0.5">Notice:</strong>
+        <div className="flex-1 text-sm leading-snug">{banner.message}</div>
+        <button
+          aria-label="Dismiss notice"
+          className="shrink-0 rounded p-1 hover:bg-white/60"
+          onClick={() => setBanner(null)}
+        >
+          <X className="size-4" />
+        </button>
+      </div>
+    </div>
+  );
 }
 
+/** ──────────────────────────────────────────────
+ *  Google Translate popover
+ *  - one safe global callback
+ *  - dropdown visible, then disclaimer
+ *  ───────────────────────────────────────────── */
+function TranslateButton() {
+  const [open, setOpen] = useState(false);
+  const popRef = useRef<HTMLDivElement>(null);
+
+  // One-time global callback expected by the loader
+  useEffect(() => {
+    if (!(window as any).googleTranslateElementInit) {
+      (window as any).googleTranslateElementInit = () => {
+        if ((window as any).google?.translate) {
+          // eslint-disable-next-line no-new
+          new (window as any).google.translate.TranslateElement(
+            {
+              pageLanguage: "en",
+              layout: (window as any).google.translate.TranslateElement.InlineLayout.VERTICAL,
+              autoDisplay: false,
+            },
+            "gt-widget"
+          );
+        }
+      };
+    }
+  }, []);
+
+  // Outside click
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (!popRef.current) return;
+      if (!popRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("click", onDoc);
+    return () => document.removeEventListener("click", onDoc);
+  }, []);
+
+  return (
+    <div className="relative" ref={popRef}>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-[6px] text-slate-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+      >
+        <Globe className="size-4" aria-hidden="true" /> Translate <ChevronDown className="size-4" />
+      </button>
+
+      <div
+        className={`absolute right-0 mt-2 w-[420px] rounded-md border border-slate-200 bg-white shadow-xl z-50 ${
+          open ? "block" : "hidden"
+        }`}
+      >
+        <div className="flex items-center justify-between px-3 pt-3">
+          <span className="text-sm font-medium text-slate-700">Close</span>
+          <button className="text-sm text-blue-700 hover:underline" onClick={() => setOpen(false)}>
+            Close
+          </button>
+        </div>
+
+        <div className="px-3 pt-2">
+          {/* The dropdown will render here */}
+          <div id="gt-widget" className="mb-3" />
+          <div className="text-[12px] text-slate-600 leading-snug mb-3">
+            The State of NJ site may contain optional links, information, services and/or content from other websites
+            operated by third parties that are provided as a convenience, such as Google™ Translate. Google™ Translate
+            is an online service for which the user pays nothing to obtain a purported language translation. The user is
+            on notice that neither the State of NJ site nor its operators review any of the services, information and/or
+            content from anything that may be linked to the State of NJ site for any reason. To the extent Google™
+            Translate caches and presents older versions of the State of NJ site content, that is beyond the control of
+            the State of NJ site and its operators who accept no responsibility or liability for the outdated
+            translation.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** ──────────────────────────────────────────────
+ *  Navigation data
+ *  - NJCLASS sub-group under “NJCLASS Family Loans” (no duplicate level)
+ *  ───────────────────────────────────────────── */
 const NAV: NavNode[] = [
   { label: "Home", href: "/" },
+
   {
     label: "About Us",
     children: [
@@ -29,6 +149,7 @@ const NAV: NavNode[] = [
       { label: "Employer Resources", href: "/Pages/EmployerResources.aspx" },
     ],
   },
+
   {
     label: "Students",
     children: [
@@ -60,6 +181,7 @@ const NAV: NavNode[] = [
       { label: "Publications (English/Spanish)", href: "/Pages/HESAAPublications.aspx" },
     ],
   },
+
   {
     label: "Parents/Guardians",
     children: [
@@ -86,12 +208,12 @@ const NAV: NavNode[] = [
           },
         ],
       },
-      { label: "Loan Redemption Programs", href: "/Pages/LoanRedemptionPrograms.aspx" },
       { label: "NJBEST College Savings Plan", href: "/pages/NJBESTHome.aspx", target: "_blank" },
       { label: "Affordable Care Act", href: "https://nj.gov/governor/getcoverednj/", target: "_blank" },
       { label: "Publications (English/Spanish)", href: "/Pages/HESAAPublications.aspx" },
     ],
   },
+
   {
     label: "School Counselors",
     children: [
@@ -109,6 +231,7 @@ const NAV: NavNode[] = [
       { label: "Publications (English/Spanish)", href: "/Pages/HESAAPublications.aspx" },
     ],
   },
+
   {
     label: "Financial Aid Administrators",
     children: [
@@ -133,6 +256,7 @@ const NAV: NavNode[] = [
       { label: "Publications (English/Spanish)", href: "/Pages/HESAAPublications.aspx" },
     ],
   },
+
   {
     label: "Public Notices",
     children: [
@@ -143,254 +267,26 @@ const NAV: NavNode[] = [
       { label: "Public Information", href: "/Pages/PublicInformation.aspx" },
     ],
   },
+
   { label: "Login", href: "/Pages/LoginOptions.aspx" },
 ];
 
-/* ========== theme ========== */
+/** ──────────────────────────────────────────────
+ *  Styles
+ *  ───────────────────────────────────────────── */
 const brand = {
-  bar: "bg-[#fafafa]/95 backdrop-blur supports-[backdrop-filter]:bg-[#fafafa]/80",
+  bar: "bg-[#fafafacc]", // menu row only
   line: "border-b border-slate-200",
-  link:
-    "text-blue-700 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded",
+  link: "text-blue-700 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded",
 };
 
-/* ========== Google Translate init (no duplicate globals) ========== */
-function ensureGoogleTranslateInit(containerId = "gt-container") {
-  const w = window as any;
-  if (!w.googleTranslateElementInit) {
-    w.googleTranslateElementInit = () => {
-      if (w.google?.translate) {
-        // eslint-disable-next-line no-new
-        new w.google.translate.TranslateElement(
-          {
-            pageLanguage: "en",
-            layout: w.google.translate.TranslateElement.InlineLayout.VERTICAL,
-            autoDisplay: false,
-          },
-          containerId
-        );
-      }
-    };
-  }
+/** Helpers */
+function isGroup(node: NavLeaf | NavGroup): node is NavGroup {
+  return (node as NavGroup).children !== undefined;
 }
 
-/* =========================
-   Header
-   ========================= */
-export default function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [translateOpen, setTranslateOpen] = useState(false);
-  const ddRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    ensureGoogleTranslateInit("gt-container");
-  }, []);
-
-  // close Translate on outside click
-  useEffect(() => {
-    const onDoc = (e: MouseEvent) => {
-      if (ddRef.current && !ddRef.current.contains(e.target as Node)) {
-        setTranslateOpen(false);
-      }
-    };
-    document.addEventListener("click", onDoc);
-    return () => document.removeEventListener("click", onDoc);
-  }, []);
-
-  return (
-    <header className={`w-full sticky top-0 z-40 ${brand.bar} ${brand.line}`}>
-      {/* TOP ROW: Logo left, NJ links + Translate + Search right */}
-      <div className="max-w-[120rem] mx-auto px-4">
-        <div className="flex items-center justify-between py-2">
-          {/* Logo (exact requested size) */}
-          <a href="/" className="inline-flex items-center" aria-label="HESAA Home">
-            <img
-              src="/assets/HESAALogo.png"
-              alt="Higher Education Student Assistance Authority"
-              width={254}
-              height={112}
-              className="w-[254px] h-[112px]"
-            />
-          </a>
-
-          {/* Right side (desktop) — single line, no wrap */}
-          <div className="hidden md:flex items-center gap-4 flex-nowrap">
-            <img
-              src="/assets/NJLogo_small.gif"
-              alt=""
-              aria-hidden="true"
-              className="h-6 w-auto opacity-80"
-            />
-            <div className="text-sm whitespace-nowrap">
-              <a href="https://nj.gov/governor/" className={brand.link}>
-                Governor Philip D. Murphy
-              </a>{" "}
-              •{" "}
-              <a href="https://nj.gov/governor/" className={brand.link}>
-                Lt. Governor Tahesha L. Way
-              </a>
-            </div>
-
-            <a href="https://nj.gov" className={`${brand.link} whitespace-nowrap`}>NJ Home</a>
-            <a href="https://nj.gov/services/" className={`${brand.link} whitespace-nowrap`}>Services A to Z</a>
-            <a href="https://nj.gov/nj/deptserv/" className={`${brand.link} whitespace-nowrap`}>Departments/Agencies</a>
-
-            {/* Translate trigger + popover */}
-            <div ref={ddRef} className="relative">
-              <button
-                type="button"
-                aria-expanded={translateOpen}
-                aria-controls="translate-dropdown"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setTranslateOpen((v) => !v);
-                }}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-[6px] text-slate-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-              >
-                <Globe className="size-4" aria-hidden="true" />
-                <span>Translate</span>
-                <ChevronDown className="size-4" aria-hidden="true" />
-              </button>
-
-              {/* Desktop popover with full disclaimer */}
-              <div
-                id="translate-dropdown"
-                className={`absolute right-0 mt-2 w-[520px] rounded-md border border-slate-200 bg-white p-3 shadow-xl z-50 ${
-                  translateOpen ? "block" : "hidden"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-slate-700">Select Language</span>
-                  <button
-                    className="text-sm text-blue-700 hover:underline"
-                    onClick={() => setTranslateOpen(false)}
-                  >
-                    Close
-                  </button>
-                </div>
-                {/* The Google language list can be tall; let it scroll */}
-                <div id="gt-container" className="max-h-[420px] overflow-auto"></div>
-
-                <div className="mt-3 text-[12px] text-slate-600 leading-snug">
-                  The State of NJ site may contain optional links, information, services and/or content from
-                  other websites operated by third parties that are provided as a convenience, such as Google™
-                  Translate. Google™ Translate is an online service for which the user pays nothing to obtain a
-                  purported language translation. The user is on notice that neither the State of NJ site nor its
-                  operators review any of the services, information and/or content from anything that may be
-                  linked to the State of NJ site for any reason. To the extent Google™ Translate caches and
-                  presents older versions of the State of NJ site content, that is beyond the control of the State
-                  of NJ site and its operators who accept no responsibility or liability for the outdated
-                  translation.
-                </div>
-              </div>
-            </div>
-
-            <a href="https://nj.gov/faqs" className={`${brand.link} whitespace-nowrap`}>NJ Gov FAQs</a>
-
-            {/* Search */}
-            <label className="relative ml-2">
-              <span className="sr-only">Search</span>
-              <input
-                type="search"
-                placeholder="Search..."
-                className="w-60 rounded-full border border-slate-300 py-1.5 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
-              />
-              <Search className="absolute left-2.5 top-1.5 size-4 text-slate-400" aria-hidden="true" />
-            </label>
-          </div>
-
-          {/* Mobile hamburger */}
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-expanded={menuOpen}
-            aria-controls="mobile-panel"
-            className="md:hidden inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-          >
-            <Menu className="size-5" aria-hidden />
-            <span className="text-sm">Menu</span>
-          </button>
-        </div>
-      </div>
-
-      {/* MAIN NAV BAR */}
-      <div className={`w-full ${brand.line}`}>
-        <div className="max-w-[120rem] mx-auto px-4">
-          <nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-3">
-            {NAV.map((item) => (
-              <DesktopItem key={item.label} item={item} />
-            ))}
-          </nav>
-        </div>
-
-        {/* MOBILE PANEL */}
-        <div id="mobile-panel" className={`md:hidden ${menuOpen ? "block" : "hidden"}`}>
-          <div className="px-4 pb-4 space-y-2">
-            <div className="pt-2 pb-3 flex items-center justify-between">
-              <img src="/assets/HESAALogo.png" alt="HESAA" className="h-8 w-auto" />
-              <span className="sr-only">HESAA</span>
-            </div>
-            <div className="border-t border-slate-200" />
-
-            {NAV.map((item) => (
-              <MobileItem key={item.label} item={item} />
-            ))}
-
-            {/* Mobile translate as full-screen sheet */}
-            <div className="mt-3 border-t border-slate-200 pt-3">
-              <button
-                onClick={() => setTranslateOpen(true)}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-slate-800"
-              >
-                <Globe className="size-4" />
-                <span>Translate</span>
-              </button>
-
-              {translateOpen && (
-                <div className="fixed inset-0 z-50 bg-black/30" onClick={() => setTranslateOpen(false)}>
-                  <div
-                    className="absolute inset-x-0 bottom-0 bg-white rounded-t-xl p-4"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-slate-700">Select Language</span>
-                      <button className="text-sm text-blue-700 hover:underline" onClick={() => setTranslateOpen(false)}>
-                        Close
-                      </button>
-                    </div>
-                    <div id="gt-container" className="max-h-[50vh] overflow-auto"></div>
-                    <div className="mt-3 text-[12px] text-slate-600 leading-snug">
-                      The State of NJ site may contain optional links, information, services and/or content from
-                      other websites operated by third parties that are provided as a convenience, such as Google™
-                      Translate. Google™ Translate is an online service for which the user pays nothing to obtain a
-                      purported language translation.
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Mobile search */}
-            <label className="relative mt-3 block">
-              <span className="sr-only">Search</span>
-              <input
-                type="search"
-                placeholder="Search..."
-                className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
-              />
-              <Search className="absolute left-2.5 top-2.5 size-4 text-slate-400" aria-hidden="true" />
-            </label>
-          </div>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-/* =========================
-   Desktop top-level item with fly-out for groups
-   ========================= */
-function DesktopItem({ item }: { item: NavNode }) {
+/** Desktop nav */
+function NavItem({ item }: { item: NavNode }) {
   const hasChildren = !!item.children?.length;
   return (
     <div className="relative group">
@@ -409,16 +305,15 @@ function DesktopItem({ item }: { item: NavNode }) {
           <ul className="min-w-[26rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl">
             {item.children!.map((child) =>
               isGroup(child) ? (
-                // GROUP row that opens a FLY-OUT to the right
-                <li key={child.label} className="relative group/sub">
-                  <div className="flex items-center justify-between rounded-md px-3 py-2 bg-slate-50 text-slate-900 font-medium hover:bg-slate-100">
+                <li key={child.label} className="relative">
+                  <div className="flex items-center justify-between rounded-md px-3 py-2 bg-slate-50 text-slate-900 font-medium">
                     <span>{child.label}</span>
                     <ChevronRight className="size-4 text-slate-400" aria-hidden />
                   </div>
 
-                  {/* fly-out panel (right side) */}
-                  <ul className="absolute top-0 left-full ml-2 hidden group-hover/sub:block rounded-md border border-slate-200 bg-white p-2 shadow-2xl min-w-[20rem]">
-                    {child.children.map((leaf) => (
+                  {/* Fly-out panel to the right */}
+                  <ul className="absolute left-full top-0 ml-2 min-w-[20rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl hidden group-hover:block">
+                    {child.children!.map((leaf) => (
                       <li key={leaf.label}>
                         <a
                           href={leaf.href}
@@ -430,6 +325,8 @@ function DesktopItem({ item }: { item: NavNode }) {
                       </li>
                     ))}
                   </ul>
+
+                  <hr className="my-2 border-slate-200" />
                 </li>
               ) : (
                 <li key={child.label}>
@@ -450,9 +347,7 @@ function DesktopItem({ item }: { item: NavNode }) {
   );
 }
 
-/* =========================
-   Mobile accordion with nested groups
-   ========================= */
+/** Mobile nav */
 function MobileItem({ item }: { item: NavNode }) {
   const [open, setOpen] = useState(false);
   const hasChildren = !!item.children?.length;
@@ -465,9 +360,7 @@ function MobileItem({ item }: { item: NavNode }) {
         aria-expanded={open}
       >
         <span className="font-medium">{item.label}</span>
-        {hasChildren && (
-          <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
-        )}
+        {hasChildren && <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />}
       </button>
 
       {hasChildren && open && (
@@ -477,7 +370,7 @@ function MobileItem({ item }: { item: NavNode }) {
               <li key={child.label} className="bg-slate-50 rounded-md">
                 <div className="px-3 py-2 font-medium">{child.label}</div>
                 <ul className="ml-2 mb-2 border-l border-slate-200 pl-3">
-                  {child.children.map((leaf) => (
+                  {child.children!.map((leaf) => (
                     <li key={leaf.label}>
                       <a
                         href={leaf.href}
@@ -505,5 +398,136 @@ function MobileItem({ item }: { item: NavNode }) {
         </ul>
       )}
     </div>
+  );
+}
+
+/** ──────────────────────────────────────────────
+ *  Header (two rows, not sticky)
+ *  ───────────────────────────────────────────── */
+export default function Header() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Lock body scroll when mobile panel open
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
+
+  return (
+    <header className="w-full">
+      <EmergencyBanner />
+
+      {/* Top row: logo left, NJ links + search right (white background) */}
+      <div className="w-full border-b border-slate-200 bg-white">
+        <div className="max-w-[120rem] mx-auto px-4">
+          <div className="flex items-center justify-between py-2">
+            {/* Logo — exact asset + size */}
+            <a href="/" className="inline-flex items-center" aria-label="HESAA Home">
+              <img
+                src="/assets/logo.gif"
+                alt="Higher Education Student Assistance Authority"
+                width={254}
+                height={112}
+                className="w-[254px] h-[112px]"
+              />
+            </a>
+
+            {/* Right: NJ links & search (stack like old site) */}
+            <div className="hidden md:flex flex-col items-end gap-2">
+              <div className="flex items-center gap-2 text-slate-800">
+                <img src="/assets/NJLogo_small.gif" alt="" className="h-6 w-auto opacity-80" />
+                <a href="https://nj.gov/governor/" className="font-semibold text-blue-700 hover:text-blue-900">
+                  Governor Philip D. Murphy
+                </a>
+                <span className="mx-1">•</span>
+                <a href="https://nj.gov/governor/" className="font-semibold text-blue-700 hover:text-blue-900">
+                  Lt. Governor Tahesha L. Way
+                </a>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <a href="https://nj.gov" className={brand.link}>
+                  NJ Home
+                </a>
+                <a href="https://nj.gov/services/" className={brand.link}>
+                  Services A to Z
+                </a>
+                <a href="https://nj.gov/nj/deptserv/" className={brand.link}>
+                  Departments/Agencies
+                </a>
+
+                <TranslateButton />
+
+                <a href="https://nj.gov/faqs" className={brand.link}>
+                  NJ Gov FAQs
+                </a>
+
+                <label className="relative ml-2">
+                  <span className="sr-only">Search</span>
+                  <input
+                    type="search"
+                    placeholder="Search..."
+                    className="w-60 rounded-full border border-slate-300 py-1.5 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
+                  />
+                  <Search className="absolute left-2.5 top-1.5 size-4 text-slate-400" aria-hidden="true" />
+                </label>
+              </div>
+            </div>
+
+            {/* Hamburger (mobile) */}
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-panel"
+              className="md:hidden inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            >
+              <Menu className="size-5" aria-hidden />
+              <span className="text-sm">Menu</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Menu row */}
+      <div className={`w-full ${brand.line} ${brand.bar}`}>
+        <div className="max-w-[120rem] mx-auto px-4">
+          <nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-3">
+            {NAV.map((item) => (
+              <NavItem key={item.label} item={item} />
+            ))}
+          </nav>
+        </div>
+
+        {/* MOBILE PANEL (fixed overlay; background doesn’t scroll) */}
+        <div
+          id="mobile-panel"
+          className={`md:hidden fixed inset-0 z-50 bg-white overflow-auto transition-opacity ${
+            menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
+          aria-hidden={!menuOpen}
+        >
+          <div className="max-w-[120rem] mx-auto px-4">
+            <div className="flex items-center justify-between py-3 border-b border-slate-200">
+              <img src="/assets/logo.gif" alt="HESAA" className="h-10 w-auto" />
+              <button
+                className="rounded-lg border border-slate-300 px-3 py-2 text-slate-800"
+                onClick={() => setMenuOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="py-2">
+              {NAV.map((item) => (
+                <MobileItem key={item.label} item={item} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
   );
 }
