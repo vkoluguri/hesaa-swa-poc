@@ -1,174 +1,207 @@
-import React from "react";
-import { ExternalLink, Newspaper, Calendar } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { ArrowRight, ExternalLink, CalendarDays, Newspaper } from "lucide-react";
 
-/** Make prop optional & default to true for non-home pages */
-type HomeContentProps = {
-  showBreadcrumb?: boolean;
-};
-
-const spotlightCards = [
-  {
-    img: "/assets/NJCLASSSpotlight.jpg",
-    alt: "NJCLASS Academic Year 2025–2026 Options Now Available",
-    href: "/Pages/NJCLASSHome.aspx",
-  },
-  {
-    img: "/assets/SPOTLIGHTTall-Fill-It-Out.jpg",
-    alt: "Complete your 2025–2026 Financial Aid Application today!",
-    href: "/Pages/financialaidhub.aspx",
-  },
+/** ====== Carousel (full width, arrows + dots, responsive) ====== */
+type Slide = { src: string; alt: string; href?: string };
+const SLIDES: Slide[] = [
+  { src: "/assets/Grants-Scholarships-Banner2.jpg", alt: "Grants & Scholarships" },
+  { src: "/assets/call_center_banner.jpg", alt: "Call Center" },
+  { src: "/assets/BackToSchool_NJBEST.jpg", alt: "NJBEST" },
+  { src: "/assets/emailAlert_webBanner.jpg", alt: "Email Alerts" },
 ];
 
-const quickLinks = [
-  { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx" },
-  { label: "NJ Grants and Scholarships", href: "/Pages/NJGrantsHome.aspx" },
-  { label: "NJCLASS Family Loans", href: "/Pages/NJCLASSHome.aspx" },
-  { label: "NJBEST", href: "/pages/NJBESTHome.aspx", target: "_blank" as const },
-  { label: "Loan Redemption Programs", href: "/Pages/LoanRedemptionPrograms.aspx" },
-  { label: "Employer Resources", href: "/Pages/EmployerResources.aspx" },
-];
+function useInterval(cb: () => void, delay: number | null) {
+  const saved = useRef(cb);
+  useEffect(() => void (saved.current = cb), [cb]);
+  useEffect(() => {
+    if (delay === null) return;
+    const id = setInterval(() => saved.current(), delay);
+    return () => clearInterval(id);
+  }, [delay]);
+}
 
-const news = [
-  { date: "Aug 14, 2025", title: "RFP Depository Banking Services", href: "#" },
-  { date: "Jul 18, 2025", title: "HESAA Board Meeting Notice", href: "#" },
-  { date: "Jul 16, 2025", title: "WTC Scholarship Fund Board Meeting", href: "#" },
-  { date: "Jun 14, 2025", title: "NJBEST 529 & Financial Aid in NJ", href: "#" },
-];
+function Carousel() {
+  const [i, setI] = useState(0);
+  const go = (n: number) => setI((p) => (p + n + SLIDES.length) % SLIDES.length);
+  useInterval(() => go(1), 5000);
 
-const events = [
-  { month: "Sep", day: "15", title: "FA Application Deadline for Renewal Students", href: "#" },
-  { month: "Oct", day: "02", title: "School Counselor Workshop", href: "#" },
-  { month: "Oct", day: "20", title: "Financial Aid Session — Newark", href: "#" },
-];
-
-export default function HomeContent({ showBreadcrumb = true }: HomeContentProps) {
   return (
-    <div className="w-full">
-      {/* Breadcrumb (hidden on home when prop=false) */}
-      {showBreadcrumb && (
-        <nav aria-label="Breadcrumb" className="max-w-[120rem] mx-auto px-4 mb-4">
-          <ol className="flex items-center gap-2 text-sm text-slate-600">
-            <li><a className="hover:underline" href="/">Home</a></li>
-            <li aria-hidden="true">/</li>
-            <li className="text-slate-900 font-medium">Page</li>
-          </ol>
-        </nav>
-      )}
-
-      {/* Carousel (full-width edge-to-edge container) */}
-      <section className="w-full">
-        <div className="max-w-[120rem] mx-auto px-0 md:px-4">
-          <div className="relative overflow-hidden rounded-xl md:rounded-2xl shadow ring-1 ring-slate-200">
-            {/* your existing carousel component/markup lives here;
-                keeping placeholder to avoid changing behavior */}
-            <img
-              src="/assets/BackToSchool_NJBEST.jpg"
-              alt="Carousel slide"
-              className="block w-full h-[260px] md:h-[420px] object-cover"
-            />
-            {/* arrows & dots are already wired in your CSS/JS bundle */}
-          </div>
+    <section aria-label="Promotions" className="w-full">
+      <div className="relative w-full overflow-hidden">
+        <div className="flex transition-transform duration-700" style={{ transform: `translateX(-${i * 100}%)` }}>
+          {SLIDES.map((s) => (
+            <div key={s.src} className="w-full shrink-0">
+              {s.href ? (
+                <a href={s.href} className="block">
+                  <img
+                    src={s.src}
+                    alt={s.alt}
+                    className="w-full h-[52vw] max-h-[520px] md:h-[28rem] object-cover"
+                  />
+                </a>
+              ) : (
+                <img
+                  src={s.src}
+                  alt={s.alt}
+                  className="w-full h-[52vw] max-h-[520px] md:h-[28rem] object-cover"
+                />
+              )}
+            </div>
+          ))}
         </div>
-      </section>
 
-      {/* Spacer between sections */}
-      <div className="h-8 md:h-10" />
+        {/* arrows */}
+        <button
+          aria-label="Previous slide"
+          onClick={() => go(-1)}
+          className="absolute left-3 top-1/2 -translate-y-1/2 z-10 rounded-full bg-white/80 hover:bg-white shadow p-2"
+        >
+          ‹
+        </button>
+        <button
+          aria-label="Next slide"
+          onClick={() => go(1)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 z-10 rounded-full bg-white/80 hover:bg-white shadow p-2"
+        >
+          ›
+        </button>
 
-      {/* Spotlight + Quick Links (60/40 on lg+) */}
-      <section className="max-w-[120rem] mx-auto px-4">
-        <div className="grid lg:grid-cols-5 gap-6">
-          {/* Left (2) + Middle (1) = 3 of 5 (≈60%) */}
-          <div className="lg:col-span-3">
-            <h2 className="text-2xl md:text-3xl font-serif text-slate-900 text-center mb-4">
+        {/* dots */}
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-3 flex gap-2">
+          {SLIDES.map((_, idx) => (
+            <button
+              key={idx}
+              aria-label={`Go to slide ${idx + 1}`}
+              onClick={() => setI(idx)}
+              className={`h-2.5 w-2.5 rounded-full ${
+                i === idx ? "bg-white shadow ring-1 ring-black/10" : "bg-white/60 hover:bg-white"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** ====== Quick Links (keep your exact URLs, just styled) ====== */
+const quickLinks = [
+  { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx", color: "bg-slate-600" },
+  { label: "NJ Grants & Scholarships", href: "/Pages/NJGrantsHome.aspx", color: "bg-red-700" },
+  { label: "NJCLASS Family Loans", href: "/Pages/NJCLASSHome.aspx", color: "bg-cyan-800" },
+  { label: "NJBEST", href: "/pages/NJBESTHome.aspx", color: "bg-cyan-700" },
+  { label: "Loan Redemption Programs", href: "/Pages/LoanRedemptionPrograms.aspx", color: "bg-red-700" },
+  { label: "Employer Resources", href: "/Pages/EmployerResources.aspx", color: "bg-emerald-800" },
+];
+
+export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb?: boolean }) {
+  return (
+    <main className="w-full">
+      {/* (Breadcrumb intentionally hidden on homepage unless you pass showBreadcrumb=true) */}
+      {showBreadcrumb ? (
+        <div className="max-w-[120rem] mx-auto px-4 text-sm text-slate-500 mt-2">Home</div>
+      ) : null}
+
+      {/* Full-width carousel */}
+      <Carousel />
+
+      {/* spacing from header */}
+      <div className="h-6" />
+
+      {/* Spotlight + Quick Links (2/3 + 1/3) */}
+      <section aria-labelledby="spotlight-title" className="max-w-[120rem] mx-auto px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <h2 id="spotlight-title" className="text-2xl md:text-3xl font-medium text-slate-900 text-center mb-4">
               HESAA Spotlight
             </h2>
 
             <div className="grid sm:grid-cols-2 gap-6">
-              {spotlightCards.map((c) => (
-                <article
-                  key={c.alt}
-                  className="rounded-xl shadow-lg ring-1 ring-slate-200 bg-white overflow-hidden"
-                >
-                  <img
-                    src={c.img}
-                    alt={c.alt}
-                    className="w-full aspect-[16/11] object-cover"
-                  />
-                  <div className="p-4">
-                    <a
-                      href={c.href}
-                      className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-white text-sm font-medium hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-                    >
-                      Learn more <ExternalLink className="size-4" aria-hidden="true" />
-                    </a>
-                  </div>
-                </article>
-              ))}
+              <SpotlightCard
+                img="/assets/NJCLASSSpotlight.jpg"
+                alt="NJCLASS Spotlight"
+                href="/Pages/NJCLASSHome.aspx"
+              />
+              <SpotlightCard
+                img="/assets/SPOTLIGHTTall-Fill-It-Out.jpg"
+                alt="Complete your Financial Aid Application"
+                href="/Pages/financialaidhub.aspx"
+              />
             </div>
           </div>
 
-          {/* Right column (≈40%): Quick Links */}
-          <aside className="lg:col-span-2">
-            <h2 className="text-2xl md:text-3xl font-serif text-slate-900 text-center mb-4">
-              Quick Links
-            </h2>
-
-            <div className="grid sm:grid-cols-1 gap-3">
+          <aside className="lg:col-span-1">
+            <h2 className="text-2xl md:text-3xl font-medium text-slate-900 text-center mb-4">Quick Links</h2>
+            <ul className="grid sm:grid-cols-1 gap-3">
               {quickLinks.map((q) => (
-                <a
-                  key={q.label}
-                  href={q.href}
-                  target={q.target}
-                  className="flex items-center justify-between rounded-xl bg-white ring-1 ring-slate-200 px-4 py-3 shadow hover:shadow-md transition-shadow"
-                >
-                  <span className="font-medium">{q.label}</span>
-                  <ExternalLink className="size-4 text-slate-500" aria-hidden="true" />
-                </a>
+                <li key={q.label}>
+                  <a
+                    href={q.href}
+                    className={`group ${q.color} text-white w-full inline-flex items-center justify-between rounded-lg px-4 py-3 shadow hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-600`}
+                  >
+                    <span className="font-semibold">{q.label}</span>
+                    <ExternalLink className="size-4 opacity-90 group-hover:translate-x-0.5 transition-transform" />
+                  </a>
+                </li>
               ))}
-            </div>
+            </ul>
           </aside>
         </div>
       </section>
 
-      {/* Spacer */}
-      <div className="h-10 md:h-12" />
-
-      {/* News + Events with soft background */}
-      <section className="w-full bg-slate-50/70 py-10">
+      {/* News + Events */}
+      <section className="mt-12 py-10 bg-slate-50/80">
         <div className="max-w-[120rem] mx-auto px-4 grid lg:grid-cols-2 gap-8">
-          {/* News */}
           <div>
-            <h2 className="flex items-center gap-3 text-2xl md:text-3xl font-serif text-slate-900 mb-4">
-              <Newspaper className="size-6 md:size-7" aria-hidden="true" />
-              Recent News
-            </h2>
+            <h3 className="flex items-center gap-2 text-2xl md:text-3xl font-medium text-slate-900 mb-4">
+              <Newspaper className="size-6" /> Recent News
+            </h3>
             <ul className="space-y-3">
-              {news.map((n) => (
-                <li key={n.title} className="rounded-xl bg-white ring-1 ring-slate-200 px-4 py-3 shadow">
-                  <div className="text-xs text-slate-500 mb-1">{n.date}</div>
-                  <a href={n.href} className="font-medium text-slate-900 hover:underline">
-                    {n.title}
-                  </a>
-                </li>
-              ))}
+              {[
+                { date: "Aug 14, 2025", title: "RFP Depository Banking Services", href: "#" },
+                { date: "Jul 18, 2025", title: "HESAA Board Meeting Notice", href: "#" },
+                { date: "Jul 16, 2025", title: "WTC Scholarship Fund Board Meeting", href: "#" },
+                { date: "Jun 14, 2025", title: "NJBEST 529 & Financial Aid in NJ", href: "#" },
+              ].map((n) => {
+                const [mon, day] = n.date.replace(",", "").split(" ");
+                return (
+                  <li key={n.title}>
+                    <a
+                      href={n.href}
+                      className="flex items-center gap-4 rounded-xl bg-white px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition"
+                    >
+                      <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
+                        <div className="text-base font-bold">{mon}</div>
+                        <div className="text-xs opacity-90">{day}</div>
+                      </div>
+                      <div className="font-medium text-slate-900">{n.title}</div>
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 
-          {/* Events */}
           <div>
-            <h2 className="flex items-center gap-3 text-2xl md:text-3xl font-serif text-slate-900 mb-4">
-              <Calendar className="size-6 md:size-7" aria-hidden="true" />
-              Events
-            </h2>
+            <h3 className="flex items-center gap-2 text-2xl md:text-3xl font-medium text-slate-900 mb-4">
+              <CalendarDays className="size-6" /> Events
+            </h3>
             <ul className="space-y-3">
-              {events.map((e) => (
-                <li key={e.title} className="rounded-xl bg-white ring-1 ring-slate-200 px-4 py-3 shadow flex items-center gap-4">
-                  <div className="shrink-0 rounded-lg bg-blue-800 text-white w-14 text-center py-2 leading-tight">
-                    <div className="text-base font-bold">{e.month}</div>
-                    <div className="text-lg font-extrabold -mt-0.5">{e.day}</div>
-                  </div>
-                  <a href={e.href} className="font-medium text-slate-900 hover:underline">
-                    {e.title}
+              {[
+                { m: "Sep", d: "15", title: "FA Application Deadline for Renewal Students", href: "#" },
+                { m: "Oct", d: "02", title: "School Counselor Workshop", href: "#" },
+                { m: "Oct", d: "20", title: "Financial Aid Session — Newark", href: "#" },
+              ].map((e) => (
+                <li key={e.title}>
+                  <a
+                    href={e.href}
+                    className="flex items-center gap-4 rounded-xl bg-white px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition"
+                  >
+                    <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
+                      <div className="text-base font-bold">{e.m}</div>
+                      <div className="text-xs opacity-90">{e.d}</div>
+                    </div>
+                    <div className="font-medium text-slate-900">{e.title}</div>
                   </a>
                 </li>
               ))}
@@ -176,6 +209,25 @@ export default function HomeContent({ showBreadcrumb = true }: HomeContentProps)
           </div>
         </div>
       </section>
-    </div>
+    </main>
+  );
+}
+
+function SpotlightCard({ img, alt, href }: { img: string; alt: string; href: string }) {
+  return (
+    <article className="rounded-xl bg-white shadow hover:shadow-md transition">
+      {/* fixed aspect ratio to avoid “tall/awkward zoom” */}
+      <div className="w-full aspect-[16/9] overflow-hidden">
+        <img src={img} alt={alt} className="w-full h-full object-cover" />
+      </div>
+      <div className="p-4">
+        <a
+          href={href}
+          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+        >
+          Learn more <ArrowRight className="size-4" />
+        </a>
+      </div>
+    </article>
   );
 }
