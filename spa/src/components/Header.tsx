@@ -2,14 +2,16 @@ import React, { useEffect, useRef, useState } from "react";
 import { Menu, Search, Globe, ChevronDown, ChevronRight } from "lucide-react";
 
 /* =========================
-   NAV DATA (supports sub-groups)
+   NAV DATA (with grouped children)
    ========================= */
 type NavLeaf = { label: string; href: string; target?: "_blank" };
 type NavGroup = { label: string; children: NavLeaf[] };
 type NavNode = { label: string; href?: string; children?: (NavLeaf | NavGroup)[] };
 
-/* NOTE: keep your existing links; only structure “grouped” items so
-   they render as nested under the parent with a chevron. */
+function isGroup(x: NavLeaf | NavGroup): x is NavGroup {
+  return (x as NavGroup).children !== undefined;
+}
+
 const NAV: NavNode[] = [
   { label: "Home", href: "/" },
   {
@@ -46,7 +48,11 @@ const NAV: NavNode[] = [
         children: [
           { label: "Loan Comparison Chart", href: "/Documents/NJCLASSComparisonChart.pdf", target: "_blank" },
           { label: "NJCLASS Forms", href: "/Pages/NJCLASSForms.aspx" },
-          { label: "NJCLASS Login", href: "https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp", target: "_blank" },
+          {
+            label: "NJCLASS Login",
+            href: "https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp",
+            target: "_blank",
+          },
         ],
       },
       { label: "Loan Redemption Programs", href: "/Pages/LoanRedemptionPrograms.aspx" },
@@ -73,7 +79,11 @@ const NAV: NavNode[] = [
         children: [
           { label: "Loan Comparison Chart", href: "/Documents/NJCLASSComparisonChart.pdf", target: "_blank" },
           { label: "NJCLASS Forms", href: "/Pages/NJCLASSForms.aspx" },
-          { label: "NJCLASS Login", href: "https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp", target: "_blank" },
+          {
+            label: "NJCLASS Login",
+            href: "https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp",
+            target: "_blank",
+          },
         ],
       },
       { label: "Loan Redemption Programs", href: "/Pages/LoanRedemptionPrograms.aspx" },
@@ -102,7 +112,11 @@ const NAV: NavNode[] = [
   {
     label: "Financial Aid Administrators",
     children: [
-      { label: "E-Administrator Login", href: "https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeFinAidAdmin.jsp", target: "_blank" },
+      {
+        label: "E-Administrator Login",
+        href: "https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeFinAidAdmin.jsp",
+        target: "_blank",
+      },
       { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx" },
       { label: "Garden State Guarantee", href: "/Pages/gsg.aspx" },
       {
@@ -132,46 +146,50 @@ const NAV: NavNode[] = [
   { label: "Login", href: "/Pages/LoginOptions.aspx" },
 ];
 
-/* === palette / a11y === */
+/* ========== theme ========== */
 const brand = {
   bar: "bg-[#fafafa]/95 backdrop-blur supports-[backdrop-filter]:bg-[#fafafa]/80",
   line: "border-b border-slate-200",
   link:
-    "text-blue-700 hover:text-blue-900 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+    "text-blue-700 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded",
 };
 
-function isGroup(x: NavLeaf | NavGroup): x is NavGroup {
-  return (x as NavGroup).children !== undefined;
+/* ========== Google Translate init (no duplicate globals) ========== */
+function ensureGoogleTranslateInit(containerId = "gt-container") {
+  const w = window as any;
+  if (!w.googleTranslateElementInit) {
+    w.googleTranslateElementInit = () => {
+      if (w.google?.translate) {
+        // eslint-disable-next-line no-new
+        new w.google.translate.TranslateElement(
+          {
+            pageLanguage: "en",
+            layout: w.google.translate.TranslateElement.InlineLayout.VERTICAL,
+            autoDisplay: false,
+          },
+          containerId
+        );
+      }
+    };
+  }
 }
 
+/* =========================
+   Header
+   ========================= */
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [translateOpen, setTranslateOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const ddRef = useRef<HTMLDivElement>(null);
 
-  // Register global callback used by the script tag in index.html
   useEffect(() => {
-    if (!window.googleTranslateElementInit) {
-      window.googleTranslateElementInit = () => {
-        if (window.google?.translate) {
-          // eslint-disable-next-line no-new
-          new window.google.translate.TranslateElement(
-            {
-              pageLanguage: "en",
-              layout: window.google.translate.TranslateElement.InlineLayout.VERTICAL,
-              autoDisplay: false,
-            },
-            "gt-container"
-          );
-        }
-      };
-    }
+    ensureGoogleTranslateInit("gt-container");
   }, []);
 
-  // close translate popover on outside click
+  // close Translate on outside click
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (ddRef.current && !ddRef.current.contains(e.target as Node)) {
         setTranslateOpen(false);
       }
     };
@@ -181,27 +199,29 @@ export default function Header() {
 
   return (
     <header className={`w-full sticky top-0 z-40 ${brand.bar} ${brand.line}`}>
-      {/* TOP ROW: Logo left, NJ links + translate + search right */}
+      {/* TOP ROW: Logo left, NJ links + Translate + Search right */}
       <div className="max-w-[120rem] mx-auto px-4">
         <div className="flex items-center justify-between py-2">
-          {/* Logo (left) */}
-          <a href="/" className="inline-flex items-center gap-2" aria-label="HESAA Home">
+          {/* Logo (exact requested size) */}
+          <a href="/" className="inline-flex items-center" aria-label="HESAA Home">
             <img
               src="/assets/HESAALogo.png"
               alt="Higher Education Student Assistance Authority"
-              className="h-10 w-auto"
+              width={254}
+              height={112}
+              className="w-[254px] h-[112px]"
             />
           </a>
 
-          {/* Gov links + Translate + Search (right, hidden on small) */}
-          <div className="hidden md:flex items-center gap-4">
+          {/* Right side (desktop) — single line, no wrap */}
+          <div className="hidden md:flex items-center gap-4 flex-nowrap">
             <img
               src="/assets/NJLogo_small.gif"
               alt=""
               aria-hidden="true"
               className="h-6 w-auto opacity-80"
             />
-            <div className="text-sm">
+            <div className="text-sm whitespace-nowrap">
               <a href="https://nj.gov/governor/" className={brand.link}>
                 Governor Philip D. Murphy
               </a>{" "}
@@ -211,12 +231,12 @@ export default function Header() {
               </a>
             </div>
 
-            <a href="https://nj.gov" className={brand.link}>NJ Home</a>
-            <a href="https://nj.gov/services/" className={brand.link}>Services A to Z</a>
-            <a href="https://nj.gov/nj/deptserv/" className={brand.link}>Departments/Agencies</a>
+            <a href="https://nj.gov" className={`${brand.link} whitespace-nowrap`}>NJ Home</a>
+            <a href="https://nj.gov/services/" className={`${brand.link} whitespace-nowrap`}>Services A to Z</a>
+            <a href="https://nj.gov/nj/deptserv/" className={`${brand.link} whitespace-nowrap`}>Departments/Agencies</a>
 
-            {/* Translate trigger */}
-            <div ref={dropdownRef} className="relative">
+            {/* Translate trigger + popover */}
+            <div ref={ddRef} className="relative">
               <button
                 type="button"
                 aria-expanded={translateOpen}
@@ -232,10 +252,10 @@ export default function Header() {
                 <ChevronDown className="size-4" aria-hidden="true" />
               </button>
 
-              {/* Popover with disclaimer */}
+              {/* Desktop popover with full disclaimer */}
               <div
                 id="translate-dropdown"
-                className={`absolute right-0 mt-2 w-[420px] rounded-md border border-slate-200 bg-white p-3 shadow-xl z-50 ${
+                className={`absolute right-0 mt-2 w-[520px] rounded-md border border-slate-200 bg-white p-3 shadow-xl z-50 ${
                   translateOpen ? "block" : "hidden"
                 }`}
               >
@@ -248,19 +268,24 @@ export default function Header() {
                     Close
                   </button>
                 </div>
+                {/* The Google language list can be tall; let it scroll */}
                 <div id="gt-container" className="max-h-[420px] overflow-auto"></div>
+
                 <div className="mt-3 text-[12px] text-slate-600 leading-snug">
                   The State of NJ site may contain optional links, information, services and/or content from
                   other websites operated by third parties that are provided as a convenience, such as Google™
                   Translate. Google™ Translate is an online service for which the user pays nothing to obtain a
                   purported language translation. The user is on notice that neither the State of NJ site nor its
                   operators review any of the services, information and/or content from anything that may be
-                  linked to the State of NJ site for any reason…
+                  linked to the State of NJ site for any reason. To the extent Google™ Translate caches and
+                  presents older versions of the State of NJ site content, that is beyond the control of the State
+                  of NJ site and its operators who accept no responsibility or liability for the outdated
+                  translation.
                 </div>
               </div>
             </div>
 
-            <a href="https://nj.gov/faqs" className={brand.link}>NJ Gov FAQs</a>
+            <a href="https://nj.gov/faqs" className={`${brand.link} whitespace-nowrap`}>NJ Gov FAQs</a>
 
             {/* Search */}
             <label className="relative ml-2">
@@ -282,23 +307,23 @@ export default function Header() {
             aria-controls="mobile-panel"
             className="md:hidden inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
           >
-            <Menu className="size-5" aria-hidden={true} />
+            <Menu className="size-5" aria-hidden />
             <span className="text-sm">Menu</span>
           </button>
         </div>
       </div>
 
-      {/* MAIN NAV BAR (centered) */}
-      <div className={brand.line}>
+      {/* MAIN NAV BAR */}
+      <div className={`w-full ${brand.line}`}>
         <div className="max-w-[120rem] mx-auto px-4">
           <nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-3">
             {NAV.map((item) => (
-              <NavItem key={item.label} item={item} />
+              <DesktopItem key={item.label} item={item} />
             ))}
           </nav>
         </div>
 
-        {/* MOBILE PANEL (gov links hidden; translate + search included) */}
+        {/* MOBILE PANEL */}
         <div id="mobile-panel" className={`md:hidden ${menuOpen ? "block" : "hidden"}`}>
           <div className="px-4 pb-4 space-y-2">
             <div className="pt-2 pb-3 flex items-center justify-between">
@@ -311,25 +336,50 @@ export default function Header() {
               <MobileItem key={item.label} item={item} />
             ))}
 
+            {/* Mobile translate as full-screen sheet */}
             <div className="mt-3 border-t border-slate-200 pt-3">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-slate-700 flex items-center gap-2">
-                  <Globe className="size-4" /> Translate
-                </span>
-                <button onClick={() => setTranslateOpen(true)} className="text-blue-700 hover:underline">
-                  Open
-                </button>
-              </div>
-              <label className="relative mt-3 block">
-                <span className="sr-only">Search</span>
-                <input
-                  type="search"
-                  placeholder="Search..."
-                  className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
-                />
-                <Search className="absolute left-2.5 top-2.5 size-4 text-slate-400" aria-hidden="true" />
-              </label>
+              <button
+                onClick={() => setTranslateOpen(true)}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-slate-800"
+              >
+                <Globe className="size-4" />
+                <span>Translate</span>
+              </button>
+
+              {translateOpen && (
+                <div className="fixed inset-0 z-50 bg-black/30" onClick={() => setTranslateOpen(false)}>
+                  <div
+                    className="absolute inset-x-0 bottom-0 bg-white rounded-t-xl p-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-slate-700">Select Language</span>
+                      <button className="text-sm text-blue-700 hover:underline" onClick={() => setTranslateOpen(false)}>
+                        Close
+                      </button>
+                    </div>
+                    <div id="gt-container" className="max-h-[50vh] overflow-auto"></div>
+                    <div className="mt-3 text-[12px] text-slate-600 leading-snug">
+                      The State of NJ site may contain optional links, information, services and/or content from
+                      other websites operated by third parties that are provided as a convenience, such as Google™
+                      Translate. Google™ Translate is an online service for which the user pays nothing to obtain a
+                      purported language translation.
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Mobile search */}
+            <label className="relative mt-3 block">
+              <span className="sr-only">Search</span>
+              <input
+                type="search"
+                placeholder="Search..."
+                className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
+              />
+              <Search className="absolute left-2.5 top-2.5 size-4 text-slate-400" aria-hidden="true" />
+            </label>
           </div>
         </div>
       </div>
@@ -337,8 +387,10 @@ export default function Header() {
   );
 }
 
-/* ---------- Desktop item with nested groups ---------- */
-function NavItem({ item }: { item: NavNode }) {
+/* =========================
+   Desktop top-level item with fly-out for groups
+   ========================= */
+function DesktopItem({ item }: { item: NavNode }) {
   const hasChildren = !!item.children?.length;
   return (
     <div className="relative group">
@@ -357,12 +409,15 @@ function NavItem({ item }: { item: NavNode }) {
           <ul className="min-w-[26rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl">
             {item.children!.map((child) =>
               isGroup(child) ? (
-                <li key={child.label} className="relative">
-                  <div className="flex items-center justify-between rounded-md px-3 py-2 bg-slate-50 text-slate-900 font-medium">
+                // GROUP row that opens a FLY-OUT to the right
+                <li key={child.label} className="relative group/sub">
+                  <div className="flex items-center justify-between rounded-md px-3 py-2 bg-slate-50 text-slate-900 font-medium hover:bg-slate-100">
                     <span>{child.label}</span>
-                    <ChevronRight className="size-4 text-slate-400" aria-hidden={true} />
+                    <ChevronRight className="size-4 text-slate-400" aria-hidden />
                   </div>
-                  <ul className="mt-1 ml-3 border-l border-slate-200 pl-3">
+
+                  {/* fly-out panel (right side) */}
+                  <ul className="absolute top-0 left-full ml-2 hidden group-hover/sub:block rounded-md border border-slate-200 bg-white p-2 shadow-2xl min-w-[20rem]">
                     {child.children.map((leaf) => (
                       <li key={leaf.label}>
                         <a
@@ -375,7 +430,6 @@ function NavItem({ item }: { item: NavNode }) {
                       </li>
                     ))}
                   </ul>
-                  <hr className="my-2 border-slate-200" />
                 </li>
               ) : (
                 <li key={child.label}>
@@ -396,7 +450,9 @@ function NavItem({ item }: { item: NavNode }) {
   );
 }
 
-/* ---------- Mobile accordion with nested groups ---------- */
+/* =========================
+   Mobile accordion with nested groups
+   ========================= */
 function MobileItem({ item }: { item: NavNode }) {
   const [open, setOpen] = useState(false);
   const hasChildren = !!item.children?.length;
@@ -410,7 +466,7 @@ function MobileItem({ item }: { item: NavNode }) {
       >
         <span className="font-medium">{item.label}</span>
         {hasChildren && (
-          <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden={true} />
+          <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
         )}
       </button>
 
