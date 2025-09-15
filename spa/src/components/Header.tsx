@@ -1,136 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Menu, Search, Globe, ChevronDown, ChevronRight, X } from "lucide-react";
+import { Menu, Search, Globe, ChevronDown, ChevronRight } from "lucide-react";
 
-/** ──────────────────────────────────────────────
- *  Types (nav)
- *  ───────────────────────────────────────────── */
+/* =========================
+   NAV DATA (with correct NJCLASS structure)
+   ========================= */
+
 type NavLeaf = { label: string; href: string; target?: "_blank" };
-type NavGroup = { label: string; children: NavLeaf[] };
+type NavGroup = { label: string; href?: string; children?: NavLeaf[] };
 type NavNode = { label: string; href?: string; children?: (NavLeaf | NavGroup)[] };
 
-/** ──────────────────────────────────────────────
- *  Manageable Emergency / Maintenance banner
- *  - If you set window.HESAA_BANNER = {message, tone}
- *    it will appear until closed.
- *  - tone: "info" | "warning" | "danger"
- *  ───────────────────────────────────────────── */
-function EmergencyBanner() {
-  const [banner, setBanner] = useState<null | { message: string; tone?: "info" | "warning" | "danger" }>(
-    () => (window as any).HESAA_BANNER ?? null
-  );
-  if (!banner || !banner.message?.trim()) return null;
-
-  const colors =
-    banner.tone === "danger"
-      ? "bg-rose-50 border-rose-200 text-rose-800"
-      : banner.tone === "warning"
-      ? "bg-amber-50 border-amber-200 text-amber-900"
-      : "bg-blue-50 border-blue-200 text-blue-800";
-
-  return (
-    <div role="status" aria-live="polite" className={`w-full border-b ${colors}`}>
-      <div className="max-w-[120rem] mx-auto px-4 py-2 flex items-start gap-3">
-        <strong className="mt-0.5">Notice:</strong>
-        <div className="flex-1 text-sm leading-snug">{banner.message}</div>
-        <button
-          aria-label="Dismiss notice"
-          className="shrink-0 rounded p-1 hover:bg-white/60"
-          onClick={() => setBanner(null)}
-        >
-          <X className="size-4" />
-        </button>
-      </div>
-    </div>
-  );
+function isGroup(node: NavLeaf | NavGroup): node is NavGroup {
+  return (node as NavGroup).children !== undefined;
 }
 
-/** ──────────────────────────────────────────────
- *  Google Translate popover
- *  - one safe global callback
- *  - dropdown visible, then disclaimer
- *  ───────────────────────────────────────────── */
-function TranslateButton() {
-  const [open, setOpen] = useState(false);
-  const popRef = useRef<HTMLDivElement>(null);
-
-  // One-time global callback expected by the loader
-  useEffect(() => {
-    if (!(window as any).googleTranslateElementInit) {
-      (window as any).googleTranslateElementInit = () => {
-        if ((window as any).google?.translate) {
-          // eslint-disable-next-line no-new
-          new (window as any).google.translate.TranslateElement(
-            {
-              pageLanguage: "en",
-              layout: (window as any).google.translate.TranslateElement.InlineLayout.VERTICAL,
-              autoDisplay: false,
-            },
-            "gt-widget"
-          );
-        }
-      };
-    }
-  }, []);
-
-  // Outside click
-  useEffect(() => {
-    const onDoc = (e: MouseEvent) => {
-      if (!popRef.current) return;
-      if (!popRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("click", onDoc);
-    return () => document.removeEventListener("click", onDoc);
-  }, []);
-
-  return (
-    <div className="relative" ref={popRef}>
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }}
-        className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-[6px] text-slate-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-      >
-        <Globe className="size-4" aria-hidden="true" /> Translate <ChevronDown className="size-4" />
-      </button>
-
-      <div
-        className={`absolute right-0 mt-2 w-[420px] rounded-md border border-slate-200 bg-white shadow-xl z-50 ${
-          open ? "block" : "hidden"
-        }`}
-      >
-        <div className="flex items-center justify-between px-3 pt-3">
-          <span className="text-sm font-medium text-slate-700">Close</span>
-          <button className="text-sm text-blue-700 hover:underline" onClick={() => setOpen(false)}>
-            Close
-          </button>
-        </div>
-
-        <div className="px-3 pt-2">
-          {/* The dropdown will render here */}
-          <div id="gt-widget" className="mb-3" />
-          <div className="text-[12px] text-slate-600 leading-snug mb-3">
-            The State of NJ site may contain optional links, information, services and/or content from other websites
-            operated by third parties that are provided as a convenience, such as Google™ Translate. Google™ Translate
-            is an online service for which the user pays nothing to obtain a purported language translation. The user is
-            on notice that neither the State of NJ site nor its operators review any of the services, information and/or
-            content from anything that may be linked to the State of NJ site for any reason. To the extent Google™
-            Translate caches and presents older versions of the State of NJ site content, that is beyond the control of
-            the State of NJ site and its operators who accept no responsibility or liability for the outdated
-            translation.
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** ──────────────────────────────────────────────
- *  Navigation data
- *  - NJCLASS sub-group under “NJCLASS Family Loans” (no duplicate level)
- *  ───────────────────────────────────────────── */
 const NAV: NavNode[] = [
   { label: "Home", href: "/" },
 
@@ -163,17 +45,13 @@ const NAV: NavNode[] = [
           { label: "Deadlines for Grants & Scholarships", href: "/Pages/StateApplicationDeadlines.aspx" },
         ],
       },
-      { label: "NJCLASS Family Loans", href: "/Pages/NJCLASSHome.aspx" },
+      // ✅ NJCLASS items are second-level under Family Loans
       {
-        label: "NJCLASS",
+        label: "NJCLASS Family Loans",
         children: [
           { label: "Loan Comparison Chart", href: "/Documents/NJCLASSComparisonChart.pdf", target: "_blank" },
           { label: "NJCLASS Forms", href: "/Pages/NJCLASSForms.aspx" },
-          {
-            label: "NJCLASS Login",
-            href: "https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp",
-            target: "_blank",
-          },
+          { label: "NJCLASS Login", href: "https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp", target: "_blank" },
         ],
       },
       { label: "Loan Redemption Programs", href: "/Pages/LoanRedemptionPrograms.aspx" },
@@ -195,19 +73,16 @@ const NAV: NavNode[] = [
           { label: "Deadlines for Grants & Scholarships", href: "/Pages/StateApplicationDeadlines.aspx" },
         ],
       },
-      { label: "NJCLASS Family Loans", href: "/Pages/NJCLASSHome.aspx" },
+      // ✅ Same structure here
       {
-        label: "NJCLASS",
+        label: "NJCLASS Family Loans",
         children: [
           { label: "Loan Comparison Chart", href: "/Documents/NJCLASSComparisonChart.pdf", target: "_blank" },
           { label: "NJCLASS Forms", href: "/Pages/NJCLASSForms.aspx" },
-          {
-            label: "NJCLASS Login",
-            href: "https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp",
-            target: "_blank",
-          },
+          { label: "NJCLASS Login", href: "https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp", target: "_blank" },
         ],
       },
+      { label: "Loan Redemption Programs", href: "/Pages/LoanRedemptionPrograms.aspx" },
       { label: "NJBEST College Savings Plan", href: "/pages/NJBESTHome.aspx", target: "_blank" },
       { label: "Affordable Care Act", href: "https://nj.gov/governor/getcoverednj/", target: "_blank" },
       { label: "Publications (English/Spanish)", href: "/Pages/HESAAPublications.aspx" },
@@ -235,11 +110,7 @@ const NAV: NavNode[] = [
   {
     label: "Financial Aid Administrators",
     children: [
-      {
-        label: "E-Administrator Login",
-        href: "https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeFinAidAdmin.jsp",
-        target: "_blank",
-      },
+      { label: "E-Administrator Login", href: "https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeFinAidAdmin.jsp", target: "_blank" },
       { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx" },
       { label: "Garden State Guarantee", href: "/Pages/gsg.aspx" },
       {
@@ -271,28 +142,58 @@ const NAV: NavNode[] = [
   { label: "Login", href: "/Pages/LoginOptions.aspx" },
 ];
 
-/** ──────────────────────────────────────────────
- *  Styles
- *  ───────────────────────────────────────────── */
-const brand = {
-  bar: "bg-[#fafafacc]", // menu row only
-  line: "border-b border-slate-200",
-  link: "text-blue-700 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded",
-};
+/* ============ Translate popover renderer ============ */
 
-/** Helpers */
-function isGroup(node: NavLeaf | NavGroup): node is NavGroup {
-  return (node as NavGroup).children !== undefined;
+function renderTranslatePopover(open: boolean, setOpen: (v: boolean) => void) {
+  return (
+    <div
+      id="translate-pop"
+      className={`absolute right-0 mt-2 w-[440px] rounded-md border border-slate-200 bg-white shadow-xl z-50 ${
+        open ? "block" : "hidden"
+      }`}
+    >
+      <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200">
+        <span className="text-sm font-medium text-slate-700">Select Language</span>
+        <button onClick={() => setOpen(false)} className="text-sm text-blue-700 hover:underline">
+          Close
+        </button>
+      </div>
+
+      <div className="p-3 space-y-3">
+        {/* Google widget target (select should become full width via CSS in index.html) */}
+        <div id="gt-container" className="gt-popover" />
+
+        <div className="text-[12px] text-slate-600 leading-snug max-h-[260px] overflow-auto pr-1">
+          The State of NJ site may contain optional links, information, services and/or content from other
+          websites operated by third parties that are provided as a convenience, such as Google™ Translate.
+          Google™ Translate is an online service for which the user pays nothing to obtain a purported language
+          translation. The user is on notice that neither the State of NJ site nor its operators review any of
+          the services, information and/or content from anything that may be linked to the State of NJ site for
+          any reason. To the extent Google™ Translate caches and presents older versions of the State of NJ site
+          content, that is beyond the control of the State of NJ site and its operators who accept no responsibility
+          or liability for the outdated translation. Any third party link to the State of NJ site can be used at the
+          user's sole risk. The user is further on notice that the State of NJ site and its operators expressly and fully
+          disavow and disclaim any responsibility or liability in respect of any cause, claim, consequential or direct
+          damage or loss, however described, arising from the use of Google™ Translate or any other service, content or
+          information linked to the State of NJ site. The State of NJ site is provided 'AS-IS' with no warranties, express
+          or implied, and its use confers no privileges or rights. Links to third party services, information and/or content
+          is in no way an affiliation, endorsement, support or approval of the third party.
+        </div>
+      </div>
+    </div>
+  );
 }
 
-/** Desktop nav */
+/* ============ Desktop Nav item with peer-scoped flyout ============ */
+
 function NavItem({ item }: { item: NavNode }) {
   const hasChildren = !!item.children?.length;
   return (
-    <div className="relative group">
+    <li className="relative">
+      {/* trigger for this item only */}
       <a
         href={item.href || "#"}
-        className="px-4 py-2 rounded-md text-slate-900 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+        className="peer/nav px-4 py-2 rounded-md text-slate-900 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
         aria-haspopup={hasChildren ? "true" : undefined}
         aria-expanded="false"
       >
@@ -300,8 +201,9 @@ function NavItem({ item }: { item: NavNode }) {
         {hasChildren && <ChevronDown className="inline size-4 ml-1" aria-hidden="true" />}
       </a>
 
+      {/* fly-out opens only when THIS trigger is hovered/focused */}
       {hasChildren && (
-        <div className="absolute left-1/2 -translate-x-1/2 top-[calc(100%+8px)] hidden group-hover:block z-40">
+        <div className="absolute left-1/2 -translate-x-1/2 top-[calc(100%+8px)] z-40 hidden peer-hover/nav:block peer-focus/nav:block">
           <ul className="min-w-[26rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl">
             {item.children!.map((child) =>
               isGroup(child) ? (
@@ -311,8 +213,7 @@ function NavItem({ item }: { item: NavNode }) {
                     <ChevronRight className="size-4 text-slate-400" aria-hidden />
                   </div>
 
-                  {/* Fly-out panel to the right */}
-                  <ul className="absolute left-full top-0 ml-2 min-w-[20rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl hidden group-hover:block">
+                  <ul className="mt-1 ml-3 border-l border-slate-200 pl-3">
                     {child.children!.map((leaf) => (
                       <li key={leaf.label}>
                         <a
@@ -343,11 +244,12 @@ function NavItem({ item }: { item: NavNode }) {
           </ul>
         </div>
       )}
-    </div>
+    </li>
   );
 }
 
-/** Mobile nav */
+/* ============ Mobile nav item (accordion) ============ */
+
 function MobileItem({ item }: { item: NavNode }) {
   const [open, setOpen] = useState(false);
   const hasChildren = !!item.children?.length;
@@ -360,7 +262,9 @@ function MobileItem({ item }: { item: NavNode }) {
         aria-expanded={open}
       >
         <span className="font-medium">{item.label}</span>
-        {hasChildren && <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />}
+        {hasChildren && (
+          <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
+        )}
       </button>
 
       {hasChildren && open && (
@@ -401,133 +305,161 @@ function MobileItem({ item }: { item: NavNode }) {
   );
 }
 
-/** ──────────────────────────────────────────────
- *  Header (two rows, not sticky)
- *  ───────────────────────────────────────────── */
+/* =========================
+   Header
+   ========================= */
+
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [translateOpen, setTranslateOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Lock body scroll when mobile panel open
+  // Install Google Translate widget once
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
+    if (!window.googleTranslateElementInit) {
+      window.googleTranslateElementInit = () => {
+        if (window.google?.translate) {
+          // eslint-disable-next-line no-new
+          new window.google.translate.TranslateElement(
+            {
+              pageLanguage: "en",
+              layout: window.google.translate.TranslateElement.InlineLayout.VERTICAL,
+              autoDisplay: false,
+            },
+            "gt-container"
+          );
+        }
+      };
+    }
+  }, []);
+
+  // Close translate on outside click
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setTranslateOpen(false);
+      }
     };
-  }, [menuOpen]);
+    document.addEventListener("click", onDoc);
+    return () => document.removeEventListener("click", onDoc);
+  }, []);
 
   return (
     <header className="w-full">
-      <EmergencyBanner />
+      {/* Top logo row (white) */}
+      <div className="bg-white">
+        <div className="max-w-[120rem] mx-auto px-4 py-2 flex items-center justify-between">
+          {/* HESAA logo 254x112 */}
+          <a href="/" aria-label="HESAA Home">
+            <img
+              src="/assets/logo.gif"
+              alt="Higher Education Student Assistance Authority"
+              width={254}
+              height={112}
+              className="h-[112px] w-[254px]"
+            />
+          </a>
 
-      {/* Top row: logo left, NJ links + search right (white background) */}
-      <div className="w-full border-b border-slate-200 bg-white">
-        <div className="max-w-[120rem] mx-auto px-4">
-          <div className="flex items-center justify-between py-2">
-            {/* Logo — exact asset + size */}
-            <a href="/" className="inline-flex items-center" aria-label="HESAA Home">
-              <img
-                src="/assets/logo.gif"
-                alt="Higher Education Student Assistance Authority"
-                width={254}
-                height={112}
-                className="w-[254px] h-[112px]"
-              />
-            </a>
-
-            {/* Right: NJ links & search (stack like old site) */}
-            <div className="hidden md:flex flex-col items-end gap-2">
-              <div className="flex items-center gap-2 text-slate-800">
-                <img src="/assets/NJLogo_small.gif" alt="" className="h-6 w-auto opacity-80" />
-                <a href="https://nj.gov/governor/" className="font-semibold text-blue-700 hover:text-blue-900">
-                  Governor Philip D. Murphy
-                </a>
-                <span className="mx-1">•</span>
-                <a href="https://nj.gov/governor/" className="font-semibold text-blue-700 hover:text-blue-900">
-                  Lt. Governor Tahesha L. Way
-                </a>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <a href="https://nj.gov" className={brand.link}>
-                  NJ Home
-                </a>
-                <a href="https://nj.gov/services/" className={brand.link}>
-                  Services A to Z
-                </a>
-                <a href="https://nj.gov/nj/deptserv/" className={brand.link}>
-                  Departments/Agencies
-                </a>
-
-                <TranslateButton />
-
-                <a href="https://nj.gov/faqs" className={brand.link}>
-                  NJ Gov FAQs
-                </a>
-
-                <label className="relative ml-2">
-                  <span className="sr-only">Search</span>
-                  <input
-                    type="search"
-                    placeholder="Search..."
-                    className="w-60 rounded-full border border-slate-300 py-1.5 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
-                  />
-                  <Search className="absolute left-2.5 top-1.5 size-4 text-slate-400" aria-hidden="true" />
-                </label>
-              </div>
+          {/* Right: three stacked rows */}
+          <div className="hidden md:flex flex-col items-end gap-1 text-[13px] leading-5">
+            {/* Row 1 */}
+            <div className="font-semibold text-blue-700">
+              Governor Philip D. Murphy <span className="mx-1">•</span> Lt. Governor Tahesha L. Way
             </div>
 
-            {/* Hamburger (mobile) */}
-            <button
-              type="button"
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-expanded={menuOpen}
-              aria-controls="mobile-panel"
-              className="md:hidden inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-            >
-              <Menu className="size-5" aria-hidden />
-              <span className="text-sm">Menu</span>
-            </button>
+            {/* Row 2 */}
+            <div className="flex flex-wrap gap-x-3 text-blue-700">
+              <a className="hover:underline" href="https://nj.gov">
+                NJ Home
+              </a>
+              <span className="text-slate-400">|</span>
+              <a className="hover:underline" href="https://nj.gov/services/">
+                Services A to Z
+              </a>
+              <span className="text-slate-400">|</span>
+              <a className="hover:underline" href="https://nj.gov/nj/deptserv/">
+                Departments/Agencies
+              </a>
+              <span className="text-slate-400">|</span>
+              <a className="hover:underline" href="https://nj.gov/faqs">
+                NJ Gov FAQs
+              </a>
+            </div>
+
+            {/* Row 3: Translate + Search */}
+            <div className="flex items-center gap-3">
+              <div ref={dropdownRef} className="relative">
+                <button
+                  type="button"
+                  aria-expanded={translateOpen}
+                  aria-controls="translate-pop"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTranslateOpen((v) => !v);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-[6px] text-slate-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                >
+                  <Globe className="size-4" />
+                  Translate
+                  <ChevronDown className="size-4" />
+                </button>
+                {renderTranslatePopover(translateOpen, setTranslateOpen)}
+              </div>
+
+              <label className="relative">
+                <span className="sr-only">Search</span>
+                <input
+                  type="search"
+                  placeholder="Search..."
+                  className="w-64 rounded-full border border-slate-300 py-1.5 pl-9 pr-3 text-[13px] placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
+                />
+                <Search className="absolute left-2.5 top-1.5 size-4 text-slate-400" aria-hidden="true" />
+              </label>
+            </div>
           </div>
+
+          {/* Hamburger (mobile) */}
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-panel"
+            className="md:hidden inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+          >
+            <Menu className="size-5" aria-hidden />
+            <span className="text-sm">Menu</span>
+          </button>
         </div>
       </div>
 
-      {/* Menu row */}
-      <div className={`w-full ${brand.line} ${brand.bar}`}>
+      {/* Main nav row (NOT sticky) */}
+      <div className="w-full border-t border-slate-200" style={{ backgroundColor: "#fafafacc" }}>
         <div className="max-w-[120rem] mx-auto px-4">
           <nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-3">
-            {NAV.map((item) => (
-              <NavItem key={item.label} item={item} />
-            ))}
+            <ul className="flex items-center gap-2">
+              {NAV.map((item) => (
+                <NavItem key={item.label} item={item} />
+              ))}
+            </ul>
           </nav>
         </div>
 
-        {/* MOBILE PANEL (fixed overlay; background doesn’t scroll) */}
-        <div
-          id="mobile-panel"
-          className={`md:hidden fixed inset-0 z-50 bg-white overflow-auto transition-opacity ${
-            menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-          }`}
-          aria-hidden={!menuOpen}
-        >
-          <div className="max-w-[120rem] mx-auto px-4">
-            <div className="flex items-center justify-between py-3 border-b border-slate-200">
-              <img src="/assets/logo.gif" alt="HESAA" className="h-10 w-auto" />
-              <button
-                className="rounded-lg border border-slate-300 px-3 py-2 text-slate-800"
-                onClick={() => setMenuOpen(false)}
-              >
-                Close
-              </button>
+        {/* Mobile panel */}
+        <div id="mobile-panel" className={`md:hidden ${menuOpen ? "block" : "hidden"}`}>
+          <div className="px-4 pb-4 space-y-2">
+            <div className="pt-2 pb-3 flex items-center justify-between">
+              <img src="/assets/logo.gif" alt="HESAA" className="h-8 w-auto" />
+              <span className="sr-only">HESAA</span>
             </div>
+            <div className="border-t border-slate-200" />
 
-            <div className="py-2">
-              {NAV.map((item) => (
-                <MobileItem key={item.label} item={item} />
-              ))}
-            </div>
+            {NAV.map((item) => (
+              <MobileItem key={item.label} item={item} />
+            ))}
           </div>
         </div>
       </div>
     </header>
   );
 }
+
