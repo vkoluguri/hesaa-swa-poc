@@ -335,6 +335,9 @@
   .left-3 {
     left: calc(var(--spacing) * 3);
   }
+  .left-\[calc\(100\%\+4px\)\] {
+    left: calc(100% + 4px);
+  }
   .left-full {
     left: 100%;
   }
@@ -346,6 +349,12 @@
   }
   .z-50 {
     z-index: 50;
+  }
+  .col-span-2 {
+    grid-column: span 2 / span 2;
+  }
+  .row-span-2 {
+    grid-row: span 2 / span 2;
   }
   .container {
     width: 100%;
@@ -486,8 +495,8 @@
   .h-12 {
     height: calc(var(--spacing) * 12);
   }
-  .h-\[18px\] {
-    height: 18px;
+  .h-\[36px\] {
+    height: 36px;
   }
   .h-\[52vw\] {
     height: 52vw;
@@ -516,8 +525,11 @@
   .w-64 {
     width: calc(var(--spacing) * 64);
   }
-  .w-\[440px\] {
-    width: 440px;
+  .w-\[24px\] {
+    width: 24px;
+  }
+  .w-\[460px\] {
+    width: 460px;
   }
   .w-auto {
     width: auto;
@@ -530,6 +542,9 @@
   }
   .max-w-\[120rem\] {
     max-width: 120rem;
+  }
+  .min-w-\[20rem\] {
+    min-width: 20rem;
   }
   .min-w-\[26rem\] {
     min-width: 26rem;
@@ -567,6 +582,12 @@
   }
   .grid-cols-1 {
     grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  .grid-cols-\[24px_auto\] {
+    grid-template-columns: 24px auto;
+  }
+  .grid-rows-2 {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
   }
   .flex-col {
     flex-direction: column;
@@ -794,6 +815,10 @@
   .bg-yellow-100 {
     background-color: var(--color-yellow-100);
   }
+  .object-contain {
+    -o-object-fit: contain;
+       object-fit: contain;
+  }
   .object-cover {
     -o-object-fit: cover;
        object-fit: cover;
@@ -913,6 +938,9 @@
   }
   .text-\[\.95rem\] {
     font-size: .95rem;
+  }
+  .text-\[11px\] {
+    font-size: 11px;
   }
   .text-\[12px\] {
     font-size: 12px;
@@ -1096,6 +1124,13 @@
     --tw-duration: 700ms;
     transition-duration: 700ms;
   }
+  .group-hover\:block {
+    &:is(:where(.group):hover *) {
+      @media (hover: hover) {
+        display: block;
+      }
+    }
+  }
   .group-hover\:translate-x-0\.5 {
     &:is(:where(.group):hover *) {
       @media (hover: hover) {
@@ -1124,6 +1159,13 @@
     &:hover {
       @media (hover: hover) {
         background-color: var(--color-blue-700);
+      }
+    }
+  }
+  .hover\:bg-slate-50 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-slate-50);
       }
     }
   }
@@ -1238,6 +1280,11 @@
   .md\:flex {
     @media (width >= 48rem) {
       display: flex;
+    }
+  }
+  .md\:grid {
+    @media (width >= 48rem) {
+      display: grid;
     }
   }
   .md\:hidden {
