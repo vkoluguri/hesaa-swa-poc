@@ -1,6 +1,6 @@
 ﻿{
-  "message": "⚡ Test banner active (auto-generated).",
-  "tone": "warning",
-  "start_at": "09-16-2025 07:42 PM EST",
-  "end_at": "09-16-2025 07:47 PM EST"
+  "message": "System maintenance tonight 7–9 PM.",
+  "tone": "danger",
+  "start_at": "09-16-2025 07:55 PM EDT",
+  "end_at":   "09-16-2025 08:00 PM EDT"
 }

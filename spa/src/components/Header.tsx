@@ -614,7 +614,7 @@ export default function Header() {
       </div>
 
       {/* Main nav row */}
-      <div className="w-full border-t border-slate-200" style={{ backgroundColor: "#fafafacc" }}>
+      <div className="w-full border-t border-slate-200" style={{ backgroundColor: "#dbe5f9" }}>
         <div className="max-w-[120rem] mx-auto px-4">
           <nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-3">
             <ul className="flex items-center gap-2">
