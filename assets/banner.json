@@ -1,4 +1,6 @@
 ﻿{
-  "message": "Early closing at 3 PM due to weather.",
-  "tone": "warning"
+  "message": "⚡ Test banner active (auto-generated).",
+  "tone": "warning",
+  "start_at": "09-16-2025 07:42 PM EST",
+  "end_at": "09-16-2025 07:47 PM EST"
 }

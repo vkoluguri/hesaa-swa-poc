@@ -141,113 +141,142 @@ const NAV: NavNode[] = [
 ];
 
 /* ----------------------------------------------------------------
-   Banner (persistent): window.HESAA_BANNER -> <meta name="hesaa-banner">
-   -> GET /assets/banner.json  (optional static file you can publish)
+   Persistent banner (Option B: /assets/banner.json)
+   - Accepts MM-DD-YYYY hh:mm AM/PM [EST|EDT] or ISO strings
+   - Auto-shows at start_at, auto-hides at end_at
+   - Re-checks banner.json every 5 minutes
 ------------------------------------------------------------------*/
 function useBanner() {
   const [msg, setMsg] = useState<string | null>(null);
   const [tone, setTone] = useState<"warning" | "info" | "success" | "danger">("info");
 
   useEffect(() => {
-    let refreshTimer: number | null = null;
-    let startTimer: number | null = null;
-    let endTimer: number | null = null;
+    let pollId: number | null = null;     // setInterval id
+    let startId: number | null = null;    // setTimeout id
+    let endId: number | null = null;      // setTimeout id
+    const isDev = (import.meta as any)?.env?.DEV;
 
-    function clearTimers() {
-      if (refreshTimer) window.clearTimeout(refreshTimer);
-      if (startTimer) window.clearTimeout(startTimer);
-      if (endTimer) window.clearTimeout(endTimer);
+    function clearAll() {
+      if (pollId) window.clearInterval(pollId);
+      if (startId) window.clearTimeout(startId);
+      if (endId) window.clearTimeout(endId);
+      pollId = startId = endId = null;
     }
 
-    /** Parse MM-DD-YYYY hh:mm AM|PM EST */
-    function parseDate(str?: string): Date | null {
-      if (!str) return null;
-      try {
-        // Example: 09-16-2025 02:00 PM EST
-        const [datePart, timePart, ampm, tz] = str.split(" ");
-        if (!datePart || !timePart || !ampm) return null;
+    /* ---------- helpers ---------- */
+    const pad = (n: number) => String(n).padStart(2, "0");
 
-        const [mm, dd, yyyy] = datePart.split("-").map(Number);
-        const [hh, min] = timePart.split(":").map(Number);
+    // Return "-04:00" for summer dates (EDT) and "-05:00" for winter dates (EST)
+    function easternOffsetISO(year: number, month: number, day: number): string {
+      const utcNoon = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+      const tzName = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York",
+        timeZoneName: "short",
+      }).format(utcNoon);
+      const isEDT = /EDT|GMT-4/i.test(tzName);
+      return isEDT ? "-04:00" : "-05:00";
+    }
 
-        let hours = hh % 12;
-        if (ampm.toUpperCase() === "PM") hours += 12;
+    /**
+     * Accepts:
+     *  - "MM-DD-YYYY hh:mm AM/PM EST"
+     *  - "MM-DD-YYYY hh:mm AM/PM"
+     *  - "MM-DD-YYYY"
+     *  - ISO 8601
+     */
+    function parseDateFlexible(raw?: string): Date | null {
+      if (!raw) return null;
+      const s = raw.trim();
 
-        // Build a local Date object
-        const d = new Date(yyyy, mm - 1, dd, hours, min);
-
-        // If EST is specified, adjust to Eastern Time
-        if (tz?.toUpperCase() === "EST" || tz?.toUpperCase() === "EDT") {
-          const eastern = new Intl.DateTimeFormat("en-US", {
-            timeZone: "America/New_York",
-          }).formatToParts(d);
-
-          // Construct Date in Eastern time
-          const month = Number(eastern.find((p) => p.type === "month")?.value);
-          const day = Number(eastern.find((p) => p.type === "day")?.value);
-          const year = Number(eastern.find((p) => p.type === "year")?.value);
-          const hour = Number(eastern.find((p) => p.type === "hour")?.value);
-          const minute = Number(eastern.find((p) => p.type === "minute")?.value);
-          const isPM = eastern.find((p) => p.type === "dayPeriod")?.value === "PM";
-
-          let adjHour = hour % 12;
-          if (isPM) adjHour += 12;
-
-          return new Date(year, month - 1, day, adjHour, minute);
-        }
-
-        return d;
-      } catch {
-        return null;
+      // ISO → let the browser handle it.
+      if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+        const d = new Date(s);
+        return isNaN(+d) ? null : d;
       }
+
+      const m = s.match(
+        /^(\d{2})-(\d{2})-(\d{4})(?:\s+(\d{1,2}):(\d{2})\s*(AM|PM))?(?:\s*(EST|EDT))?$/i
+      );
+      if (!m) return null;
+
+      const [, mmS, ddS, yyyyS, hhS, minS, ampmS, tzS] = m;
+      const mm = Number(mmS), dd = Number(ddS), yyyy = Number(yyyyS);
+
+      let hh = 0, minute = 0;
+      if (hhS && minS) {
+        hh = Number(hhS) % 12;
+        minute = Number(minS);
+        if ((ampmS || "").toUpperCase() === "PM") hh += 12;
+      }
+
+      // Respect explicit EDT/EST; otherwise detect correct offset for that date
+      let offset = easternOffsetISO(yyyy, mm, dd); // "-04:00" or "-05:00"
+      if ((tzS || "").toUpperCase() === "EST") offset = "-05:00";
+      if ((tzS || "").toUpperCase() === "EDT") offset = "-04:00";
+
+      const iso = `${yyyy}-${pad(mm)}-${pad(dd)}T${pad(hh)}:${pad(minute)}:00${offset}`;
+      const d = new Date(iso);
+      return isNaN(+d) ? null : d;
     }
 
-    function scheduleShowHide(start?: string, end?: string, message?: string, tone?: string) {
-      const now = new Date();
-      const startAt = parseDate(start);
-      const endAt = parseDate(end);
+    function applyFromSource(source: any) {
+      const message = (source?.message || "").trim();
+      const toneIn = (source?.tone || "info") as "warning" | "info" | "success" | "danger";
+      const startAt = parseDateFlexible(source?.start_at);
+      const endAt = parseDateFlexible(source?.end_at);
 
-      const shouldShow =
-        message &&
+      const now = new Date();
+      const showNow =
+        !!message &&
         (!startAt || now >= startAt) &&
         (!endAt || now < endAt);
 
-      if (shouldShow) {
-        setMsg(message!);
-        setTone((tone as any) || "info");
+      if (isDev) {
+        console.debug("[banner]", { now, startAt, endAt, showNow, message, toneIn });
+      }
+
+      if (showNow) {
+        setMsg(message);
+        setTone(toneIn);
       } else {
         setMsg(null);
       }
 
+      // Arm timers
       if (startAt && now < startAt) {
-        startTimer = window.setTimeout(() => setMsg(message || null), startAt.getTime() - now.getTime());
+        startId = window.setTimeout(() => applyFromSource(source), startAt.getTime() - now.getTime());
       }
       if (endAt && now < endAt) {
-        endTimer = window.setTimeout(() => setMsg(null), endAt.getTime() - now.getTime());
+        endId = window.setTimeout(() => setMsg(null), endAt.getTime() - now.getTime());
       }
     }
 
     async function load() {
-      clearTimers();
+      clearAll(); // clear existing timers before re-applying
       try {
         const r = await fetch("/assets/banner.json", { cache: "no-store" });
         if (r.ok) {
           const j = await r.json();
-          scheduleShowHide(j.start_at, j.end_at, j.message, j.tone);
+          if (j && j.message && String(j.message).trim()) {
+            applyFromSource(j);
+          } else {
+            setMsg(null);
+          }
         } else {
+          if (isDev) console.warn("[banner] fetch not ok:", r.status);
           setMsg(null);
         }
-      } catch {
+      } catch (e) {
+        if (isDev) console.warn("[banner] fetch error:", e);
         setMsg(null);
       }
     }
 
     load();
+    // Poll every 5 minutes to pick up edits to banner.json
+    pollId = window.setInterval(load, 5 * 60 * 1000);
 
-    // re-check banner.json every 5 minutes
-    refreshTimer = window.setInterval(load, 5 * 60 * 1000);
-
-    return () => clearTimers();
+    return () => clearAll();
   }, []);
 
   const toneClass =
@@ -263,11 +292,10 @@ function useBanner() {
 }
 
 
-
 function SiteBanner() {
   const { msg, toneClass } = useBanner();
   if (!msg) return null;
-  return <div className={`w-full border ${toneClass} text-center text-sm py-2`}>{msg}</div>;
+  return <div className={`w-full border ${toneClass} text-center text-lg py-2`}>{msg}</div>;
 }
 
 /* ---------------- Translate popover (single instance when open) --------------- */
@@ -519,7 +547,7 @@ export default function Header() {
           </a>
 
           {/* Right block */}
-          <div className="hidden md:grid grid-cols-[34px_auto] grid-rows-2 gap-x-3 items-start text-[13px] leading-5 mt-[-2px] text-right">
+          <div className="hidden md:grid grid-cols-[34px_auto] grid-rows-2 gap-x-3 items-start text-[13px] leading-5 mt-[2px] text-right">
             {/* NJ seal 34x34 spanning rows 1-2 */}
             <img src="/assets/NJLogo_small.gif" alt="State of New Jersey" className="row-span-2 h-[34px] w-[34px] object-contain justify-self-start" />
 
