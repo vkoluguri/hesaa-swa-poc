@@ -9,6 +9,6 @@ declare global {
      * Optional runtime banner:
      * window.HESAA_BANNER = { message: "Site maintenance tonight 7-9 PM.", tone: "warning" }
      */
-    HESAA_BANNER?: { message: string; tone?: "info" | "warning" | "danger" };
+    HESAA_BANNER?: { message: string; tone?: "warning" | "info" | "success" | "danger" };
   }
 }
