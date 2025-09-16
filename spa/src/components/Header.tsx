@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Menu, Search, Globe, ChevronDown, ChevronRight } from "lucide-react";
 
-
 /* =========================
-   NAV DATA (unchanged)
+   NAV DATA (yours)
    ========================= */
 
 type NavLeaf = { label: string; href: string; target?: "_blank" };
@@ -141,33 +140,115 @@ const NAV: NavNode[] = [
   { label: "Login", href: "/Pages/LoginOptions.aspx" },
 ];
 
-/* ------------ Site banner (top-most) ------------ */
-function SiteBanner() {
+/* ----------------------------------------------------------------
+   Banner (persistent): window.HESAA_BANNER -> <meta name="hesaa-banner">
+   -> GET /assets/banner.json  (optional static file you can publish)
+------------------------------------------------------------------*/
+function useBanner() {
   const [msg, setMsg] = useState<string | null>(null);
   const [tone, setTone] = useState<"warning" | "info" | "success" | "danger">("info");
 
-  // read on load
   useEffect(() => {
-    if (window.HESAA_BANNER?.message) {
-      setMsg(window.HESAA_BANNER.message);
-      setTone(window.HESAA_BANNER.tone || "info");
+    let refreshTimer: number | null = null;
+    let startTimer: number | null = null;
+    let endTimer: number | null = null;
+
+    function clearTimers() {
+      if (refreshTimer) window.clearTimeout(refreshTimer);
+      if (startTimer) window.clearTimeout(startTimer);
+      if (endTimer) window.clearTimeout(endTimer);
     }
-  }, []);
 
-  // allow runtime console update: window.setHESAA_BANNER("text","warning")
-  useEffect(() => {
-    const h = (e: any) => {
-      const d = e.detail || {};
-      setMsg(d.message || null);
-      setTone(d.tone || "info");
-    };
-    window.addEventListener("hesaa:banner", h);
-    window.setHESAA_BANNER = (message: string, tone?: "warning" | "info" | "success" | "danger") =>
-      window.dispatchEvent(new CustomEvent("hesaa:banner", { detail: { message, tone } }));
-    return () => window.removeEventListener("hesaa:banner", h);
-  }, []);
+    /** Parse MM-DD-YYYY hh:mm AM|PM EST */
+    function parseDate(str?: string): Date | null {
+      if (!str) return null;
+      try {
+        // Example: 09-16-2025 02:00 PM EST
+        const [datePart, timePart, ampm, tz] = str.split(" ");
+        if (!datePart || !timePart || !ampm) return null;
 
-  if (!msg) return null;
+        const [mm, dd, yyyy] = datePart.split("-").map(Number);
+        const [hh, min] = timePart.split(":").map(Number);
+
+        let hours = hh % 12;
+        if (ampm.toUpperCase() === "PM") hours += 12;
+
+        // Build a local Date object
+        const d = new Date(yyyy, mm - 1, dd, hours, min);
+
+        // If EST is specified, adjust to Eastern Time
+        if (tz?.toUpperCase() === "EST" || tz?.toUpperCase() === "EDT") {
+          const eastern = new Intl.DateTimeFormat("en-US", {
+            timeZone: "America/New_York",
+          }).formatToParts(d);
+
+          // Construct Date in Eastern time
+          const month = Number(eastern.find((p) => p.type === "month")?.value);
+          const day = Number(eastern.find((p) => p.type === "day")?.value);
+          const year = Number(eastern.find((p) => p.type === "year")?.value);
+          const hour = Number(eastern.find((p) => p.type === "hour")?.value);
+          const minute = Number(eastern.find((p) => p.type === "minute")?.value);
+          const isPM = eastern.find((p) => p.type === "dayPeriod")?.value === "PM";
+
+          let adjHour = hour % 12;
+          if (isPM) adjHour += 12;
+
+          return new Date(year, month - 1, day, adjHour, minute);
+        }
+
+        return d;
+      } catch {
+        return null;
+      }
+    }
+
+    function scheduleShowHide(start?: string, end?: string, message?: string, tone?: string) {
+      const now = new Date();
+      const startAt = parseDate(start);
+      const endAt = parseDate(end);
+
+      const shouldShow =
+        message &&
+        (!startAt || now >= startAt) &&
+        (!endAt || now < endAt);
+
+      if (shouldShow) {
+        setMsg(message!);
+        setTone((tone as any) || "info");
+      } else {
+        setMsg(null);
+      }
+
+      if (startAt && now < startAt) {
+        startTimer = window.setTimeout(() => setMsg(message || null), startAt.getTime() - now.getTime());
+      }
+      if (endAt && now < endAt) {
+        endTimer = window.setTimeout(() => setMsg(null), endAt.getTime() - now.getTime());
+      }
+    }
+
+    async function load() {
+      clearTimers();
+      try {
+        const r = await fetch("/assets/banner.json", { cache: "no-store" });
+        if (r.ok) {
+          const j = await r.json();
+          scheduleShowHide(j.start_at, j.end_at, j.message, j.tone);
+        } else {
+          setMsg(null);
+        }
+      } catch {
+        setMsg(null);
+      }
+    }
+
+    load();
+
+    // re-check banner.json every 5 minutes
+    refreshTimer = window.setInterval(load, 5 * 60 * 1000);
+
+    return () => clearTimers();
+  }, []);
 
   const toneClass =
     tone === "warning"
@@ -178,11 +259,46 @@ function SiteBanner() {
       ? "bg-red-100 text-red-900 border-red-300"
       : "bg-blue-100 text-blue-900 border-blue-300";
 
+  return { msg, toneClass };
+}
+
+
+
+function SiteBanner() {
+  const { msg, toneClass } = useBanner();
+  if (!msg) return null;
   return <div className={`w-full border ${toneClass} text-center text-sm py-2`}>{msg}</div>;
 }
 
-/* ------------ Translate popover ------------ */
+/* ---------------- Translate popover (single instance when open) --------------- */
 function TranslatePopover({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const poweredSlotRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    // create widget on first open
+    if (!window.googleTranslateElementInit) {
+      window.googleTranslateElementInit = () => {
+        if (window.google?.translate) {
+          // eslint-disable-next-line no-new
+          new window.google.translate.TranslateElement(
+            { pageLanguage: "en", layout: window.google.translate.TranslateElement.InlineLayout.VERTICAL, autoDisplay: false },
+            "gt-container"
+          );
+          setTimeout(() => moveBrand(), 50);
+        }
+      };
+    } else {
+      // already defined and script likely loaded; still move brand
+      setTimeout(() => moveBrand(), 50);
+    }
+
+    function moveBrand() {
+      const brand = document.querySelector(".goog-logo-link") as HTMLElement | null;
+      if (brand && poweredSlotRef.current) poweredSlotRef.current.innerHTML = brand.outerHTML;
+    }
+  }, [open]);
+
   return (
     <div
       id="translate-pop"
@@ -200,15 +316,15 @@ function TranslatePopover({ open, onClose }: { open: boolean; onClose: () => voi
       </div>
 
       <div className="p-3 space-y-3">
-        {/* bordered translate dropdown */}
+        {/* Bordered dropdown lives here */}
         <div id="gt-container" className="gt-popover" />
 
-        {/* powered by google on right */}
+        {/* Powered by Google -> right side */}
         <div className="flex items-center justify-end">
-          <span id="gt-powered-slot" className="text-[11px] text-slate-500" />
+          <span ref={poweredSlotRef} id="gt-powered-slot" className="text-[11px] text-slate-500" />
         </div>
 
-        {/* full disclaimer */}
+        {/* Full disclaimer */}
         <div className="text-[12px] text-slate-700 leading-snug">
           The State of NJ site may contain optional links, information, services and/or content from other websites
           operated by third parties that are provided as a convenience, such as Google™ Translate. Google™ Translate is
@@ -230,7 +346,7 @@ function TranslatePopover({ open, onClose }: { open: boolean; onClose: () => voi
   );
 }
 
-/* ------------ Desktop nav item with hover-intent + right-flyout level 2 ------------ */
+/* ---------------- Desktop nav item (hover intent + brighter hover) ---------------- */
 function NavItem({ item }: { item: NavNode }) {
   const hasChildren = !!item.children?.length;
   const [open, setOpen] = useState(false);
@@ -241,7 +357,7 @@ function NavItem({ item }: { item: NavNode }) {
     if (closeTimer.current) window.clearTimeout(closeTimer.current);
     openTimer.current = window.setTimeout(() => setOpen(true), delay);
   }
-  function armClose(delay = 200) {
+  function armClose(delay = 180) {
     if (openTimer.current) window.clearTimeout(openTimer.current);
     closeTimer.current = window.setTimeout(() => setOpen(false), delay);
   }
@@ -250,7 +366,7 @@ function NavItem({ item }: { item: NavNode }) {
     <li className="relative" onMouseEnter={() => armOpen(120)} onMouseLeave={() => armClose(200)}>
       <a
         href={item.href || "#"}
-        className="px-4 py-2 rounded-md text-slate-900 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+        className="px-4 py-2 rounded-md text-slate-900 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
         aria-haspopup={hasChildren ? "true" : undefined}
         aria-expanded={hasChildren ? open : undefined}
         onFocus={() => setOpen(true)}
@@ -272,7 +388,7 @@ function NavItem({ item }: { item: NavNode }) {
             {item.children!.map((child) =>
               isGroup(child) ? (
                 <li key={child.label} className="relative group">
-                  <div className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-slate-50 text-slate-900 font-medium">
+                  <div className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-blue-50 text-slate-900 font-medium">
                     <span>{child.label}</span>
                     <ChevronRight className="size-4 text-slate-400" aria-hidden />
                   </div>
@@ -284,7 +400,7 @@ function NavItem({ item }: { item: NavNode }) {
                         <a
                           href={leaf.href}
                           target={leaf.target}
-                          className="block rounded-md px-3 py-2 text-[.95rem] text-slate-800 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                          className="block rounded-md px-3 py-2 text-[.95rem] text-slate-800 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                         >
                           {leaf.label}
                         </a>
@@ -297,7 +413,7 @@ function NavItem({ item }: { item: NavNode }) {
                   <a
                     href={child.href}
                     target={child.target}
-                    className="block rounded-md px-3 py-2 text-[.95rem] text-slate-800 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                    className="block rounded-md px-3 py-2 text-[.95rem] text-slate-800 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                   >
                     {child.label}
                   </a>
@@ -311,11 +427,10 @@ function NavItem({ item }: { item: NavNode }) {
   );
 }
 
-/* ------------ Mobile item (accordion) ------------ */
+/* ---------------- Mobile item (accordion; closed by default) ---------------- */
 function MobileItem({ item }: { item: NavNode }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState<boolean>(false);
   const hasChildren = !!item.children?.length;
-
   return (
     <div className="px-1">
       <button
@@ -324,9 +439,7 @@ function MobileItem({ item }: { item: NavNode }) {
         aria-expanded={open}
       >
         <span className="font-medium">{item.label}</span>
-        {hasChildren && (
-          <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
-        )}
+        {hasChildren && <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />}
       </button>
 
       {hasChildren && open && (
@@ -341,7 +454,7 @@ function MobileItem({ item }: { item: NavNode }) {
                       <a
                         href={leaf.href}
                         target={leaf.target}
-                        className="block rounded-md px-3 py-2 text-[.95rem] text-slate-700 hover:bg-white"
+                        className="block rounded-md px-3 py-2 text-[.95rem] text-slate-700 hover:bg-blue-50"
                       >
                         {leaf.label}
                       </a>
@@ -354,7 +467,7 @@ function MobileItem({ item }: { item: NavNode }) {
                 <a
                   href={child.href}
                   target={child.target}
-                  className="block rounded-md px-3 py-2 text-[.95rem] text-slate-700 hover:bg-white"
+                  className="block rounded-md px-3 py-2 text-[.95rem] text-slate-700 hover:bg-blue-50"
                 >
                   {child.label}
                 </a>
@@ -375,31 +488,7 @@ export default function Header() {
   const [translateOpen, setTranslateOpen] = useState(false);
   const translateWrapRef = useRef<HTMLDivElement>(null);
 
-  // Install Google Translate + move branding
-  useEffect(() => {
-    if (!window.googleTranslateElementInit) {
-      window.googleTranslateElementInit = () => {
-        if (window.google?.translate) {
-          // eslint-disable-next-line no-new
-          new window.google.translate.TranslateElement(
-            {
-              pageLanguage: "en",
-              layout: window.google.translate.TranslateElement.InlineLayout.VERTICAL,
-              autoDisplay: false,
-            },
-            "gt-container"
-          );
-          setTimeout(() => {
-            const brand = document.querySelector(".goog-logo-link");
-            const slot = document.getElementById("gt-powered-slot");
-            if (brand && slot) slot.innerHTML = (brand as HTMLElement).outerHTML;
-          }, 50);
-        }
-      };
-    }
-  }, []);
-
-  // Outside click to close translate
+  // Close translate on outside click
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
       if (translateWrapRef.current && !translateWrapRef.current.contains(e.target as Node)) {
@@ -412,14 +501,14 @@ export default function Header() {
 
   return (
     <header className="w-full">
-      {/* VERY TOP: emergency banner */}
+      {/* VERY TOP: persistent banner */}
       <SiteBanner />
 
-      {/* Logo + right-links */}
+      {/* Logo + right-links (right block nudged up & right-aligned) */}
       <div className="bg-white">
-        <div className="max-w-[120rem] mx-auto px-4 py-2 flex items-center justify-between">
+        <div className="max-w-[120rem] mx-auto px-4 py-1 flex items-start justify-between">
           {/* HESAA logo */}
-          <a href="/" aria-label="HESAA Home">
+          <a href="/" aria-label="HESAA Home" className="pt-1">
             <img
               src="/assets/logo.gif"
               alt="Higher Education Student Assistance Authority"
@@ -429,10 +518,10 @@ export default function Header() {
             />
           </a>
 
-          {/* Right block: NJ seal spans rows 1 & 2; links tighter; tools below */}
-          <div className="hidden md:grid grid-cols-[24px_auto] grid-rows-2 gap-x-3 items-center text-[13px] leading-5">
-            {/* NJ seal spanning two rows */}
-            <img src="/assets/NJLogo_small.gif" alt="State of New Jersey" className="row-span-2 h-[36px] w-[24px] object-contain" />
+          {/* Right block */}
+          <div className="hidden md:grid grid-cols-[34px_auto] grid-rows-2 gap-x-3 items-start text-[13px] leading-5 mt-[-2px] text-right">
+            {/* NJ seal 34x34 spanning rows 1-2 */}
+            <img src="/assets/NJLogo_small.gif" alt="State of New Jersey" className="row-span-2 h-[34px] w-[34px] object-contain justify-self-start" />
 
             {/* Row 1 */}
             <div className="font-semibold text-blue-700">
@@ -440,7 +529,7 @@ export default function Header() {
             </div>
 
             {/* Row 2 */}
-            <div className="flex flex-wrap items-center gap-x-2 text-blue-700">
+            <div className="flex flex-wrap items-center justify-end gap-x-2 text-blue-700">
               <a className="hover:underline" href="https://www.nj.gov/">NJ Home</a>
               <span className="text-slate-400">|</span>
               <a className="hover:underline" href="https://nj.gov/services/">Services A to Z</a>
@@ -450,7 +539,7 @@ export default function Header() {
               <a className="hover:underline" href="https://www.nj.gov/faqs/">NJ Gov FAQs</a>
             </div>
 
-            {/* Row 3: tools (translate + search) across full width */}
+            {/* Tools row (full width, right aligned) */}
             <div className="col-span-2 mt-1 flex items-center justify-end gap-3">
               <div ref={translateWrapRef} className="relative">
                 <button
@@ -482,13 +571,13 @@ export default function Header() {
             </div>
           </div>
 
-          {/* Mobile hamburger: label UNDER icon */}
+          {/* Mobile hamburger (label under) */}
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
             aria-expanded={menuOpen}
             aria-controls="mobile-panel"
-            className="md:hidden inline-flex flex-col items-center justify-center rounded-lg px-3 py-2 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            className="md:hidden inline-flex flex-col items-center justify-center rounded-lg border border-slate-300 px-3 py-2 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
           >
             <Menu className="size-6" aria-hidden />
             <span className="text-xs mt-1">Menu</span>
@@ -508,7 +597,7 @@ export default function Header() {
           </nav>
         </div>
 
-        {/* Mobile panel (NO logo image; includes Translate + Search) */}
+        {/* Mobile panel (no logo; translate works) */}
         <div id="mobile-panel" className={`md:hidden ${menuOpen ? "block" : "hidden"}`}>
           <div className="px-4 pb-4 space-y-2">
             <div className="pt-3 pb-2 flex items-center gap-2">
@@ -530,6 +619,7 @@ export default function Header() {
               </label>
             </div>
 
+            {/* Inline translate content on mobile */}
             {translateOpen && (
               <div className="relative mt-2" id="translate-pop">
                 <div className="rounded-md border border-slate-300 bg-white shadow-sm">

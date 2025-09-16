@@ -1608,3 +1608,15 @@
     }
   }
 }
+/* Google Translate in our popover */
+#translate-pop .goog-te-gadget-simple { display: none !important; }
+#translate-pop .goog-te-gadget { font-size: 0; }
+#translate-pop select.goog-te-combo {
+  width: 100%;
+  border: 1px solid rgb(203 213 225);
+  border-radius: .375rem;
+  padding: .5rem .5rem;
+  font-size: .875rem;
+  color: rgb(30 41 59);
+}
+#translate-pop .goog-logo-link { display: none !important; }
