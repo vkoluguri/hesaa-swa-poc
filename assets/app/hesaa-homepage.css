@@ -1608,14 +1608,17 @@
     }
   }
 }
-#translate-pop .goog-te-gadget-simple { display: none !important; }
-#translate-pop .goog-te-gadget { font-size: 0; }
+/* Translate popover fixes */
+#translate-pop .goog-te-gadget-simple { display: none !important; } /* hide the small inline badge */
+#translate-pop .goog-te-gadget { font-size: 0 !important; line-height: 0; } /* hide label text only */
 #translate-pop select.goog-te-combo {
-  width: 100%;
-  border: 1px solid rgb(203 213 225);
-  border-radius: .375rem;
-  padding: .5rem .5rem;
-  font-size: .875rem;
-  color: rgb(30 41 59);
+  display: block !important;
+  width: 100% !important;
+  border: 1px solid rgb(203 213 225) !important; /* slate-300 */
+  border-radius: .375rem !important;             /* rounded-md */
+  padding: .5rem .5rem !important;               /* px-2 py-2 */
+  font-size: .875rem !important;                  /* text-sm */
+  color: rgb(30 41 59) !important;               /* slate-800 */
+  background: #fff !important;
 }
-#translate-pop .goog-logo-link { display: none !important; }
+#translate-pop iframe { max-width: 100% !important; } /* if Google injects an iframe in some locales */

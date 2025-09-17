@@ -142,9 +142,6 @@ const NAV: NavNode[] = [
 
 /* ----------------------------------------------------------------
    Persistent banner (Option B: /assets/banner.json)
-   - Accepts MM-DD-YYYY hh:mm AM/PM [EST|EDT] or ISO strings
-   - Auto-shows at start_at, auto-hides at end_at
-   - Re-checks banner.json every 5 minutes
 ------------------------------------------------------------------*/
 function useBanner() {
   const [msg, setMsg] = useState<string | null>(null);
@@ -257,7 +254,6 @@ function useBanner() {
 
     load();
     pollId = window.setInterval(load, 5 * 60 * 1000);
-
     return () => clearAll();
   }, []);
 
@@ -287,58 +283,70 @@ function TranslatePopover({
 }: {
   open: boolean;
   onClose: () => void;
-  // was: React.RefObject<HTMLElement>
   anchorRef: React.RefObject<HTMLElement | null>;
 }) {
-
-  const popRef = useRef<HTMLDivElement>(null);
   const poweredSlotRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (!open) return;
 
+    if (!document.querySelector<HTMLScriptElement>("#gt-script")) {
+      const s = document.createElement("script");
+      s.id = "gt-script";
+      s.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+      document.body.appendChild(s);
+    }
+
     if (!window.googleTranslateElementInit) {
       window.googleTranslateElementInit = () => {
-        if (window.google?.translate) {
-          // eslint-disable-next-line no-new
-          new window.google.translate.TranslateElement(
-            {
-              pageLanguage: "en",
-              layout: window.google.translate.TranslateElement.InlineLayout.VERTICAL,
-              autoDisplay: false,
-            },
-            "gt-container"
-          );
-          setTimeout(moveBrand, 50);
-        }
+        /* noop; mount below */
       };
-    } else {
-      setTimeout(moveBrand, 50);
     }
 
-    function moveBrand() {
-      const brand = document.querySelector(".goog-logo-link") as HTMLElement | null;
-      if (brand && poweredSlotRef.current) poweredSlotRef.current.innerHTML = brand.outerHTML;
-    }
+    let mounted = false;
+    const tryMount = () => {
+      const g = (window as any).google;
+      if (g?.translate?.TranslateElement && !mounted) {
+        mounted = true;
+        const c = document.getElementById("gt-container");
+        if (c) c.innerHTML = "";
+        // eslint-disable-next-line no-new
+        new g.translate.TranslateElement(
+          {
+            pageLanguage: "en",
+            layout: g.translate.TranslateElement.InlineLayout.VERTICAL,
+            autoDisplay: false,
+          },
+          "gt-container"
+        );
+        setTimeout(() => {
+          const brand = document.querySelector(".goog-logo-link") as HTMLElement | null;
+          if (brand && poweredSlotRef.current) poweredSlotRef.current.innerHTML = brand.outerHTML;
+        }, 50);
+      }
+    };
+    const id = window.setInterval(tryMount, 100);
+    setTimeout(() => window.clearInterval(id), 4000);
+    tryMount();
+
+    return () => window.clearInterval(id);
   }, [open]);
 
-const style = React.useMemo(() => {
-  const a = anchorRef.current as (HTMLElement | null);
-  if (!a) return {};
-  const r = a.getBoundingClientRect();
-  return {
-    left: r.left + r.width / 2,
-    top: r.bottom + 8,
-    transform: "translateX(-50%)",
-  } as React.CSSProperties;
-}, [open, anchorRef]);
-
+  const style = React.useMemo(() => {
+    const a = anchorRef.current;
+    if (!a) return {};
+    const r = a.getBoundingClientRect();
+    const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+    const width = Math.min(vw * 0.92, 460);
+    let left = r.left + r.width / 2 - width / 2;
+    left = Math.max(8, Math.min(left, vw - width - 8));
+    return { width: `${width}px`, left, top: r.bottom + 8 } as React.CSSProperties;
+  }, [open, anchorRef]);
 
   return (
     <div
-      ref={popRef}
       id="translate-pop"
-      className={`fixed z-50 w-[460px] rounded-md border border-slate-300 bg-white shadow-xl ${open ? "block" : "hidden"}`}
+      className={`fixed z-[100] rounded-md border border-slate-300 bg-white shadow-xl ${open ? "block" : "hidden"}`}
       role="dialog"
       aria-modal="true"
       style={style}
@@ -376,12 +384,29 @@ const style = React.useMemo(() => {
   );
 }
 
+/* ---------------- Active top item helper ---------------- */
+function useActiveTopLabel() {
+  const [active, setActive] = useState<string | null>(null);
+  useEffect(() => {
+    const path = window.location.pathname.toLowerCase();
+    const top = NAV.find((n) =>
+      n.href
+        ? path.startsWith(n.href.toLowerCase())
+        : n.children?.some((c) => !("children" in c) && path.startsWith(((c as NavLeaf).href || "").toLowerCase()))
+    );
+    setActive(top?.label || null);
+  }, []);
+  return active;
+}
+
 /* ---------------- Desktop nav item (hover intent + brighter hover) ---------------- */
 function NavItem({ item }: { item: NavNode }) {
   const hasChildren = !!item.children?.length;
   const [open, setOpen] = useState(false);
   const openTimer = useRef<number | null>(null);
   const closeTimer = useRef<number | null>(null);
+  const activeTop = useActiveTopLabel();
+  const isActive = activeTop === item.label;
 
   function armOpen(delay = 120) {
     if (closeTimer.current) window.clearTimeout(closeTimer.current);
@@ -396,9 +421,13 @@ function NavItem({ item }: { item: NavNode }) {
     <li className="relative" onMouseEnter={() => armOpen(120)} onMouseLeave={() => armClose(200)}>
       <a
         href={item.href || "#"}
-        className="px-4 py-2 rounded-md text-slate-900 hover:bg-[#dbe5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+        className={
+          "px-4 py-2 rounded-md text-slate-900 hover:bg-[#dbe5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 " +
+          (isActive ? "border-b-2 border-blue-700" : "")
+        }
         aria-haspopup={hasChildren ? "true" : undefined}
         aria-expanded={hasChildren ? open : undefined}
+        aria-current={isActive ? "page" : undefined}
         onFocus={() => setOpen(true)}
         onBlur={(e) => {
           if (!(e.currentTarget.parentElement?.contains(document.activeElement))) setOpen(false);
@@ -423,8 +452,12 @@ function NavItem({ item }: { item: NavNode }) {
                     <ChevronRight className="size-4 text-slate-400" aria-hidden />
                   </div>
 
-                  {/* LEVEL-2 FLYOUT */}
-                  <ul className="absolute top-0 left-[calc(100%+4px)] min-w-[20rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl hidden group-hover:block">
+                  {/* LEVEL-2 FLYOUT (no gap so it doesn't drop) */}
+                  <ul
+                    className="absolute top-0 left-[calc(100%-1px)] min-w-[20rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl hidden group-hover:block"
+                    onMouseEnter={() => armOpen(0)}
+                    onMouseLeave={() => armClose(160)}
+                  >
                     {child.children!.map((leaf) => (
                       <li key={leaf.label}>
                         <a
@@ -472,13 +505,26 @@ function MobileItem({ item }: { item: NavNode }) {
         {hasChildren && <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />}
       </button>
 
+      {/* Only render second level when open */}
       {hasChildren && open && (
         <ul className="ml-2 mt-1 space-y-1">
           {item.children!.map((child) =>
             isGroup(child) ? (
               <li key={child.label} className="bg-slate-50 rounded-md">
-                <div className="px-3 py-2 font-medium">{child.label}</div>
-                <ul className="ml-2 mb-2 border-l border-slate-200 pl-3">
+                <button
+                  className="w-full flex items-center justify-between px-3 py-2 font-medium"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const next = (e.currentTarget as HTMLButtonElement).nextElementSibling as HTMLElement | null;
+                    if (next) next.classList.toggle("hidden");
+                    e.currentTarget.querySelector("svg")?.classList.toggle("rotate-180");
+                  }}
+                  aria-expanded={false}
+                >
+                  <span>{child.label}</span>
+                  <ChevronDown className="size-4 transition-transform" />
+                </button>
+                <ul className="ml-2 mb-2 border-l border-slate-200 pl-3 hidden">
                   {child.children!.map((leaf) => (
                     <li key={leaf.label}>
                       <a
@@ -510,7 +556,7 @@ function MobileItem({ item }: { item: NavNode }) {
   );
 }
 
-/* ---------- small helper to know which anchor (desktop/mobile) to use ---------- */
+/* ---------- helper: which anchor (desktop/mobile) to use ---------- */
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
   useEffect(() => {
@@ -529,12 +575,11 @@ function useIsMobile() {
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [translateOpen, setTranslateOpen] = useState(false);
-  const translateWrapRef = useRef<HTMLDivElement>(null);
   const desktopTranslateBtnRef = useRef<HTMLButtonElement>(null);
   const mobileTranslateBtnRef = useRef<HTMLButtonElement>(null);
   const isMobile = useIsMobile();
 
-  // Close translate on outside click (works for desktop & mobile)
+  // Close translate on outside click
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
       const pop = document.getElementById("translate-pop");
@@ -603,22 +648,20 @@ export default function Header() {
 
             {/* Tools row */}
             <div className="col-span-2 mt-1 flex items-center justify-end gap-3">
-              <div ref={translateWrapRef} className="relative">
-                <button
-                  ref={desktopTranslateBtnRef}
-                  type="button"
-                  aria-expanded={translateOpen}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setTranslateOpen((v) => !v);
-                  }}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-[6px] text-slate-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-                >
-                  <Globe className="size-4" />
-                  Translate
-                  <ChevronDown className="size-4" />
-                </button>
-              </div>
+              <button
+                ref={desktopTranslateBtnRef}
+                type="button"
+                aria-expanded={translateOpen}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTranslateOpen((v) => !v);
+                }}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-[6px] text-slate-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              >
+                <Globe className="size-4" />
+                Translate
+                <ChevronDown className="size-4" />
+              </button>
 
               <label className="relative">
                 <span className="sr-only">Search</span>
@@ -649,8 +692,8 @@ export default function Header() {
       {/* Main nav row */}
       <div className="w-full border-t border-slate-200" style={{ backgroundColor: "#dbe5f9" }}>
         <div className="max-w-[120rem] mx-auto px-4">
-          <nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-3">
-            <ul className="flex items-center gap-2">
+          <nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-3 mt-2">
+            <ul className="flex items-center gap-2 text-[15.5px] font-medium">
               {NAV.map((item) => (
                 <NavItem key={item.label} item={item} />
               ))}
@@ -694,7 +737,7 @@ export default function Header() {
       <TranslatePopover
         open={translateOpen}
         onClose={() => setTranslateOpen(false)}
-        anchorRef={isMobile ? mobileTranslateBtnRef : desktopTranslateBtnRef}
+        anchorRef={useIsMobile() ? mobileTranslateBtnRef : desktopTranslateBtnRef}
       />
     </header>
   );
