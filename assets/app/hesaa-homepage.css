@@ -1622,3 +1622,7 @@
   background: #fff !important;
 }
 #translate-pop iframe { max-width: 100% !important; } /* if Google injects an iframe in some locales */
+#gt-container select {
+    width: 100% !important;
+    border: 1px solid black;
+}
