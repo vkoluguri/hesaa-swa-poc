@@ -287,29 +287,33 @@ function TranslatePopover({
 }) {
   const poweredSlotRef = useRef<HTMLSpanElement>(null);
 
+  // Load Google script once
   useEffect(() => {
-    if (!open) return;
-
     if (!document.querySelector<HTMLScriptElement>("#gt-script")) {
       const s = document.createElement("script");
       s.id = "gt-script";
       s.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
       document.body.appendChild(s);
     }
-
     if (!window.googleTranslateElementInit) {
-      window.googleTranslateElementInit = () => {
-        /* noop; mount below */
-      };
+      window.googleTranslateElementInit = () => { /* noop, we mount below */ };
     }
+  }, []);
+
+  // Mount / re-mount the widget each time the popover opens
+  useEffect(() => {
+    if (!open) return;
 
     let mounted = false;
     const tryMount = () => {
       const g = (window as any).google;
       if (g?.translate?.TranslateElement && !mounted) {
         mounted = true;
-        const c = document.getElementById("gt-container");
-        if (c) c.innerHTML = "";
+
+        // Clear old contents then mount fresh
+        const host = document.getElementById("gt-container");
+        if (host) host.innerHTML = "";
+
         // eslint-disable-next-line no-new
         new g.translate.TranslateElement(
           {
@@ -319,19 +323,36 @@ function TranslatePopover({
           },
           "gt-container"
         );
+
+        // move "Powered by Google" into our slot + apply select styling
         setTimeout(() => {
           const brand = document.querySelector(".goog-logo-link") as HTMLElement | null;
           if (brand && poweredSlotRef.current) poweredSlotRef.current.innerHTML = brand.outerHTML;
+
+          const sel = document.querySelector<HTMLSelectElement>("#gt-container select.goog-te-combo");
+          if (sel) {
+            sel.style.display = "block";
+            sel.style.width = "100%";
+            sel.style.border = "1px solid rgb(203 213 225)"; // slate-300
+            sel.style.borderRadius = "6px";
+            sel.style.padding = "8px";
+            sel.style.fontSize = "14px";
+            sel.style.color = "rgb(30 41 59)"; // slate-800
+            sel.style.background = "#fff";
+          }
         }, 50);
       }
     };
-    const id = window.setInterval(tryMount, 100);
+
+    // try a few times in case script is still loading
+    const id = window.setInterval(tryMount, 120);
     setTimeout(() => window.clearInterval(id), 4000);
     tryMount();
 
     return () => window.clearInterval(id);
   }, [open]);
 
+  // position under the anchor, responsive width
   const style = React.useMemo(() => {
     const a = anchorRef.current;
     if (!a) return {};
@@ -343,30 +364,31 @@ function TranslatePopover({
     return { width: `${width}px`, left, top: r.bottom + 8 } as React.CSSProperties;
   }, [open, anchorRef]);
 
-useEffect(() => {
-  if (!open) return;
-  const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-  document.addEventListener("keydown", onKey);
-  return () => document.removeEventListener("keydown", onKey);
-}, [open, onClose]);
+  // ESC to close
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
-return (
-  <div
-    id="translate-pop"
-    className={`fixed z-[100] rounded-md border border-slate-300 bg-white shadow-xl ${open ? "block" : "hidden"}`}
-    role="dialog"
-    aria-modal="true"
-    style={style}
-  >
-    {/* REPLACED HEADER */}
-    <button
-      type="button"
-      onClick={onClose}
-      className="w-full bg-[#f4f4f4] border-0 text-[14px] py-1.5 cursor-pointer text-center hover:bg-[#ececec] focus:outline-none focus:ring-2 focus:ring-blue-600"
-      aria-label="Close language selection"
+  return (
+    <div
+      id="translate-pop"
+      role="dialog"
+      aria-modal="true"
+      className={`fixed z-[100] rounded-md border border-slate-300 bg-white shadow-xl ${open ? "block" : "hidden"}`}
+      style={style}
     >
-      CLOSE
-    </button>
+      {/* Close bar (your spec) */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="w-full bg-[#f4f4f4] border-0 text-[14px] py-1.5 cursor-pointer text-center hover:bg-[#ececec] focus:outline-none focus:ring-2 focus:ring-blue-600"
+        aria-label="Close language selection"
+      >
+        CLOSE
+      </button>
 
       <div className="p-3 space-y-3">
         <div id="gt-container" className="gt-popover" />
@@ -415,6 +437,7 @@ function NavItem({ item }: { item: NavNode }) {
   const [open, setOpen] = useState(false);
   const openTimer = useRef<number | null>(null);
   const closeTimer = useRef<number | null>(null);
+
   const activeTop = useActiveTopLabel();
   const isActive = activeTop === item.label;
 
@@ -429,22 +452,26 @@ function NavItem({ item }: { item: NavNode }) {
 
   return (
     <li className="relative" onMouseEnter={() => armOpen(120)} onMouseLeave={() => armClose(200)}>
-<a
-  href={item.href || "#"}
-  className={[
-    "px-4 py-2 rounded-md transition-colors",
-    "text-slate-900 hover:bg-[#cfe0ff] hover:text-blue-900 focus-visible:outline-none",
-    "focus-visible:ring-2 focus-visible:ring-blue-600",
-    isActive ? "bg-[#cfe0ff] text-blue-900 border-b-2 border-blue-700" : ""
-  ].join(" ")}
-  aria-haspopup={hasChildren ? "true" : undefined}
-  aria-expanded={hasChildren ? open : undefined}
-  aria-current={isActive ? "page" : undefined}
-  // onFocus/onBlur same as before
->
-  <span className="font-medium">{item.label}</span>
-  {hasChildren && <ChevronDown className="inline size-4 ml-1" aria-hidden />}
-</a>
+      <a
+        href={item.href || "#"}
+        className={[
+          "px-4 py-2 rounded-md transition-colors",
+          // hover + focus
+          "text-slate-900 hover:bg-[#cfe0ff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+          // active tab (and keep while dropdown is open)
+          (isActive || open) ? "bg-[#357ae8] text-white border-b-2 border-blue-700" : ""
+        ].join(" ")}
+        aria-haspopup={hasChildren ? "true" : undefined}
+        aria-expanded={hasChildren ? open : undefined}
+        aria-current={isActive ? "page" : undefined}
+        onFocus={() => setOpen(true)}
+        onBlur={(e) => {
+          if (!(e.currentTarget.parentElement?.contains(document.activeElement))) setOpen(false);
+        }}
+      >
+        <span className="font-medium">{item.label}</span>
+        {hasChildren && <ChevronDown className="inline size-4 ml-1" aria-hidden />}
+      </a>
 
       {hasChildren && open && (
         <div className="absolute left-1/2 -translate-x-1/2 top-[calc(100%+8px)] z-40">
@@ -456,12 +483,13 @@ function NavItem({ item }: { item: NavNode }) {
             {item.children!.map((child) =>
               isGroup(child) ? (
                 <li key={child.label} className="relative group">
-<div className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-[#e3ecff] text-slate-900 font-medium">
-  <span>{child.label}</span>
-  <ChevronRight className="size-4 text-slate-400" aria-hidden />
-</div>
+                  {/* not bold now */}
+                  <div className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-[#e3ecff] text-slate-900">
+                    <span>{child.label}</span>
+                    <ChevronRight className="size-4 text-slate-400" aria-hidden />
+                  </div>
 
-                  {/* LEVEL-2 FLYOUT (no gap so it doesn't drop) */}
+                  {/* level-2 flyout — butt edges so the cursor never crosses a gap */}
                   <ul
                     className="absolute top-0 left-[calc(100%-1px)] min-w-[20rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl hidden group-hover:block"
                     onMouseEnter={() => armOpen(0)}
@@ -469,13 +497,13 @@ function NavItem({ item }: { item: NavNode }) {
                   >
                     {child.children!.map((leaf) => (
                       <li key={leaf.label}>
-<a
-  href={leaf.href}
-  target={leaf.target}
-  className="block rounded-md px-3 py-2 text-[16px] text-slate-800 hover:bg-[#e3ecff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
->
-  {leaf.label}
-</a>
+                        <a
+                          href={leaf.href}
+                          target={leaf.target}
+                          className="block rounded-md px-3 py-2 text-[16px] text-slate-800 hover:bg-[#e3ecff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                        >
+                          {leaf.label}
+                        </a>
                       </li>
                     ))}
                   </ul>
