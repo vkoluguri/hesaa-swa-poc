@@ -1,17 +1,21 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, ExternalLink, CalendarDays, Newspaper } from "lucide-react";
+import { ArrowRight, ExternalLink, CalendarDays, Newspaper, Pause, Play } from "lucide-react";
 
 /* =========================
-   Hero carousel (native image height, responsive)
+   Slides
    ========================= */
 
 type Slide = { src: string; alt: string; href?: string };
 const SLIDES: Slide[] = [
-  { src: "/assets/Grants-Scholarships-Banner2.jpg", alt: "Grants & Scholarships" },
-  { src: "/assets/call_center_banner.jpg", alt: "Customer Care phone number" },
-  { src: "/assets/BackToSchool_NJBEST.jpg", alt: "NJBEST back-to-school" },
-  { src: "/assets/emailAlert_webBanner.jpg", alt: "Email alerts" },
+  { src: "/assets/Grants-Scholarships-Banner2.jpg", alt: "Learn about New Jersey Grants and Scholarships" },
+  { src: "/assets/call_center_banner.jpg", alt: "Call our Customer Care team for financial aid help" },
+  { src: "/assets/BackToSchool_NJBEST.jpg", alt: "NJBEST 529, back to school savings" },
+  { src: "/assets/emailAlert_webBanner.jpg", alt: "Get email alerts from HESAA" },
 ];
+
+/* =========================
+   Helpers
+   ========================= */
 
 function usePreloaded(srcs: string[]) {
   const [ready, setReady] = useState(false);
@@ -35,6 +39,7 @@ function usePreloaded(srcs: string[]) {
   return ready;
 }
 
+// high-precision timer that keeps cadence across tab visibility changes
 function useAccurateTimer(run: boolean, stepMs: number, onTick: () => void) {
   const nextAt = useRef<number | null>(null);
   useEffect(() => {
@@ -59,123 +64,250 @@ function useAccurateTimer(run: boolean, stepMs: number, onTick: () => void) {
   }, [run, stepMs, onTick]);
 }
 
-function Carousel() {
-  const [idx, setIdx] = useState(0);
-  const [hover, setHover] = useState(false);
-  const ready = usePreloaded(useMemo(() => SLIDES.map((s) => s.src), []));
-  const advance = () => setIdx((p) => (p + 1) % SLIDES.length);
+/* =========================
+   ADA-friendly seamless Carousel (one direction)
+   ========================= */
 
-  useAccurateTimer(ready && !hover, 7000, advance);
+function Carousel() {
+  const base = SLIDES;
+  const slides = useMemo(() => {
+    if (base.length === 0) return [];
+    return [base[base.length - 1], ...base, base[0]]; // [last, ...base, first]
+  }, [base]);
+
+  const ready = usePreloaded(useMemo(() => base.map((s) => s.src), [base]));
+  const [idx, setIdx] = useState(1); // point at first real slide
+  const [transitioning, setTransitioning] = useState(true);
+
+  // motion controls
+  const [userPaused, setUserPaused] = useState(false);
+  const [hovering, setHovering] = useState(false);
+  const [focusWithin, setFocusWithin] = useState(false);
+
+  const autoRun = ready && !userPaused && !hovering && !focusWithin;
+  const step = () => setIdx((p) => p + 1);
+  useAccurateTimer(autoRun, 7000, step);
+
+  const trackRef = useRef<HTMLDivElement>(null);
+  const carouselRef = useRef<HTMLElement>(null);
+  const liveRef = useRef<HTMLDivElement>(null);
+
+  // keep loop seamless
+  useEffect(() => {
+    const t = trackRef.current;
+    if (!t) return;
+    const onEnd = () => {
+      if (idx === slides.length - 1) {
+        setTransitioning(false);
+        setIdx(1);
+      }
+      if (idx === 0) {
+        setTransitioning(false);
+        setIdx(slides.length - 2);
+      }
+    };
+    t.addEventListener("transitionend", onEnd);
+    return () => t.removeEventListener("transitionend", onEnd);
+  }, [idx, slides.length]);
+
+  useEffect(() => {
+    if (!transitioning) {
+      const id = requestAnimationFrame(() => setTransitioning(true));
+      return () => cancelAnimationFrame(id);
+    }
+  }, [transitioning]);
+
+  // Announce slide changes succinctly for SR users
+  useEffect(() => {
+    if (!liveRef.current) return;
+    const realCount = SLIDES.length;
+    const realIndex = idx === 0 ? realCount : idx === slides.length - 1 ? 1 : idx; // 1..N index space
+    const human = `${realIndex} of ${realCount}`;
+    liveRef.current.textContent = `Slide ${human}`;
+  }, [idx, slides.length]);
+
+  const percent = idx * 100;
 
   const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowRight") setIdx((p) => (p + 1) % SLIDES.length);
-    if (e.key === "ArrowLeft") setIdx((p) => (p - 1 + SLIDES.length) % SLIDES.length);
+    switch (e.key) {
+      case "ArrowRight":
+        e.preventDefault();
+        setIdx((p) => p + 1);
+        break;
+      case "ArrowLeft":
+        e.preventDefault();
+        setIdx((p) => p - 1);
+        break;
+      case "Home":
+        e.preventDefault();
+        setIdx(1);
+        break;
+      case "End":
+        e.preventDefault();
+        setIdx(slides.length - 2);
+        break;
+    }
   };
+
+  const onFocusCapture = (e: React.FocusEvent) => {
+    if (carouselRef.current && carouselRef.current.contains(e.target as Node)) {
+      setFocusWithin(true);
+    }
+  };
+  const onBlurCapture = (e: React.FocusEvent) => {
+    // when focus leaves carousel entirely
+    if (carouselRef.current && !carouselRef.current.contains(e.relatedTarget as Node)) {
+      setFocusWithin(false);
+    }
+  };
+
+  const currentRealIndex =
+    idx === 0 ? SLIDES.length - 1 : idx === slides.length - 1 ? 0 : idx - 1;
 
   return (
     <section
+      ref={carouselRef}
       aria-roledescription="carousel"
       aria-label="Promotional banners"
       className="w-full"
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
       onKeyDown={onKey}
+      onFocusCapture={onFocusCapture}
+      onBlurCapture={onBlurCapture}
     >
-      {/* Container has NO forced height. Track determines height via natural image size. */}
-      <div className="relative w-full overflow-hidden bg-slate-100">
-        {/* Track: flex row we translate; each slide is width:100% */}
+      {/* Instructions for screen readers */}
+      <p id="carousel-instructions" className="sr-only">
+        Carousel: use the previous and next buttons or Left and Right arrow keys to navigate.
+        Use the Play or Pause button to control auto-advance. Press Home to go to the first slide and End for the last.
+      </p>
+
+      <div className="relative w-full overflow-hidden bg-slate-100" aria-describedby="carousel-instructions">
+        {/* Track */}
         <div
-          className="flex transition-transform duration-700 will-change-transform"
-          style={{ transform: `translateX(-${idx * 100}%)` }}
+          ref={trackRef}
+          className={`flex will-change-transform ${transitioning ? "transition-transform duration-700" : ""}`}
+          style={{ transform: `translateX(-${percent}%)` }}
         >
-          {SLIDES.map((s) => {
-            const Img = (
-              <img
-                src={s.src}
-                alt={s.alt}
-                className="block w-full h-auto select-none"
-                draggable={false}
-              />
-            );
+          {slides.map((s, i) => {
+            // map to 1..N for SR label
+            let srIndex = i;
+            if (i === 0) srIndex = SLIDES.length; // cloned last
+            else if (i === slides.length - 1) srIndex = 1; // cloned first
+            else srIndex = i;
+
             return (
-              <div key={s.src} className="w-full shrink-0" role="group" aria-roledescription="slide">
+              <div
+                key={`${s.src}-${i}`}
+                className="w-full shrink-0"
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`Slide ${srIndex} of ${SLIDES.length}`}
+              >
                 {s.href ? (
                   <a
                     href={s.href}
                     className="block focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/40"
                   >
-                    {Img}
+                    <img src={s.src} alt={s.alt} className="block w-full h-auto select-none" draggable={false} />
                   </a>
                 ) : (
-                  Img
+                  <img src={s.src} alt={s.alt} className="block w-full h-auto select-none" draggable={false} />
                 )}
               </div>
             );
           })}
         </div>
 
-        {/* Plain arrows (no box/padding), bigger, nudged inward; hidden on mobile */}
+        {/* Live region for concise updates */}
+        <div aria-live="polite" aria-atomic="true" className="sr-only" ref={liveRef} />
+
+        {/* Controls bar: Play/Pause + arrows + dots (dots hidden on mobile) */}
+        <div className="absolute inset-x-0 bottom-2 flex items-center justify-center gap-4">
+          {/* Play/Pause button satisfies WCAG pause requirement */}
+          <button
+            type="button"
+            onClick={() => setUserPaused((p) => !p)}
+            aria-pressed={userPaused}
+            className="flex items-center gap-2 rounded-full bg-black/55 text-white px-3 py-1 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            {userPaused ? <Play className="size-4" aria-hidden="true" /> : <Pause className="size-4" aria-hidden="true" />}
+            <span>{userPaused ? "Play" : "Pause"}</span>
+          </button>
+
+          {/* Dots (desktop only) */}
+          <div
+            className="hidden md:flex gap-2"
+            role="tablist"
+            aria-label="Slide navigation"
+          >
+            {SLIDES.map((_, realI) => (
+              <button
+                key={realI}
+                role="tab"
+                aria-selected={realI === currentRealIndex}
+                aria-label={`Go to slide ${realI + 1}`}
+                tabIndex={realI === currentRealIndex ? 0 : -1}
+                onClick={() => setIdx(realI + 1)}
+                className={`h-3 w-3 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+                  realI === currentRealIndex ? "bg-white shadow ring-1 ring-black/20" : "bg-white/60 hover:bg-white"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Arrows: small on mobile, large on desktop; plain glyphs, no box */}
         <button
           aria-label="Previous slide"
-          onClick={() => setIdx((p) => (p - 1 + SLIDES.length) % SLIDES.length)}
-          className="hidden md:block absolute left-5 top-1/2 -translate-y-1/2 z-10 text-white text-6xl leading-none select-none"
+          onClick={() => setIdx((p) => p - 1)}
+          className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 z-10 text-white text-3xl md:text-6xl leading-none select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
           style={{ textShadow: "0 1px 3px rgba(0,0,0,.6)" }}
         >
           &lt;
         </button>
         <button
           aria-label="Next slide"
-          onClick={() => setIdx((p) => (p + 1) % SLIDES.length)}
-          className="hidden md:block absolute right-5 top-1/2 -translate-y-1/2 z-10 text-white text-6xl leading-none select-none"
+          onClick={() => setIdx((p) => p + 1)}
+          className="absolute right-3 md:right-5 top-1/2 -translate-y-1/2 z-10 text-white text-3xl md:text-6xl leading-none select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
           style={{ textShadow: "0 1px 3px rgba(0,0,0,.6)" }}
         >
           &gt;
         </button>
-
-        {/* Dots slightly lifted from bottom */}
-        <div
-          className="absolute left-1/2 -translate-x-1/2 bottom-4 flex gap-2"
-          role="tablist"
-          aria-label="Slide navigation"
-        >
-          {SLIDES.map((_, i) => (
-            <button
-              key={i}
-              role="tab"
-              aria-selected={i === idx}
-              aria-label={`Go to slide ${i + 1}`}
-              tabIndex={i === idx ? 0 : -1}
-              onClick={() => setIdx(i)}
-              className={`h-3 w-3 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white ${
-                i === idx ? "bg-white shadow ring-1 ring-black/20" : "bg-white/60 hover:bg-white"
-              }`}
-            />
-          ))}
-        </div>
       </div>
     </section>
   );
 }
 
 /* =========================
-   Spotlight (native proportions, no zoom)
+   Spotlight (no crop/zoom; bounded height)
    ========================= */
+
 function SpotlightCard({ img, alt, href }: { img: string; alt: string; href: string }) {
   return (
     <article className="rounded-xl bg-white shadow hover:shadow-md transition">
-      {/* Native height: no object-cover; just width:100% & height:auto */}
-      <img src={img} alt={alt} className="block w-full h-auto" />
+      <div className="w-full bg-white flex items-center justify-center">
+        <img
+          src={img}
+          alt={alt}
+          className="block w-full h-auto max-h-[420px] md:max-h-[460px] object-contain"
+        />
+      </div>
       <div className="p-4">
         <a
           href={href}
           className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
         >
-          Learn more <ArrowRight className="size-4" />
+          Learn more <ArrowRight className="size-4" aria-hidden="true" />
         </a>
       </div>
     </article>
   );
 }
+
+/* =========================
+   Quick links + News/Events
+   ========================= */
 
 const quickLinks = [
   { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx", color: "bg-slate-600" },
@@ -195,7 +327,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
         </div>
       ) : null}
 
-      {/* Carousel (native image height) */}
+      {/* Carousel */}
       <Carousel />
 
       {/* Spotlight + Quick Links */}
@@ -212,7 +344,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
             <div className="grid sm:grid-cols-2 gap-6">
               <SpotlightCard
                 img="/assets/NJCLASSSpotlight.jpg"
-                alt="NJCLASS spotlight"
+                alt="NJCLASS program spotlight"
                 href="/Pages/NJCLASSHome.aspx"
               />
               <SpotlightCard
@@ -235,10 +367,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
                     className={`group ${q.color} text-white w-full inline-flex items-center justify-between rounded-lg px-4 py-3 shadow hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-600`}
                   >
                     <span className="font-semibold text-base md:text-[22px] leading-tight">{q.label}</span>
-                    <ExternalLink
-                      className="size-4 opacity-90 group-hover:translate-x-0.5 transition-transform"
-                      aria-hidden="true"
-                    />
+                    <ExternalLink className="size-4 opacity-90 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
                   </a>
                 </li>
               ))}
