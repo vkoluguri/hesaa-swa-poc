@@ -518,7 +518,7 @@ function NavItem({ item }: { item: NavNode }) {
                 <li key={child.label} className="relative group">
                   {/* not bold now */}
                   <div className="group-header flex items-center justify-between rounded-md px-3 py-2 hover:bg-[#e3ecff] text-slate-900 text-[16px] font-normal">
-                    <span className="font-normal">{child.label}</span>
+                    <span>{child.label}</span>
                     <ChevronRight className="size-4 text-slate-400" aria-hidden />
                   </div>
 
