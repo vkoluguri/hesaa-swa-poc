@@ -396,7 +396,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
                 <li key={q.label}>
                   <a
                     href={q.href}
-                    className={`group ${q.color} text-white w-full inline-flex items-center justify-between rounded-lg px-4 py-3 shadow hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-600`}
+                    className={`group ${q.color} text-white w-full inline-flex items-center justify-between rounded-lg px-4 py-4 shadow hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-600`}
                   >
                     <span className="font-semibold text-base md:text-[22px] leading-tight">{q.label}</span>
                     <ExternalLink className="size-4 opacity-90 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
