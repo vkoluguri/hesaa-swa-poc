@@ -343,20 +343,30 @@ function TranslatePopover({
     return { width: `${width}px`, left, top: r.bottom + 8 } as React.CSSProperties;
   }, [open, anchorRef]);
 
-  return (
-    <div
-      id="translate-pop"
-      className={`fixed z-[100] rounded-md border border-slate-300 bg-white shadow-xl ${open ? "block" : "hidden"}`}
-      role="dialog"
-      aria-modal="true"
-      style={style}
+useEffect(() => {
+  if (!open) return;
+  const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+  document.addEventListener("keydown", onKey);
+  return () => document.removeEventListener("keydown", onKey);
+}, [open, onClose]);
+
+return (
+  <div
+    id="translate-pop"
+    className={`fixed z-[100] rounded-md border border-slate-300 bg-white shadow-xl ${open ? "block" : "hidden"}`}
+    role="dialog"
+    aria-modal="true"
+    style={style}
+  >
+    {/* REPLACED HEADER */}
+    <button
+      type="button"
+      onClick={onClose}
+      className="w-full bg-[#f4f4f4] border-0 text-[14px] py-1.5 cursor-pointer text-center hover:bg-[#ececec] focus:outline-none focus:ring-2 focus:ring-blue-600"
+      aria-label="Close language selection"
     >
-      <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200">
-        <span className="text-sm font-medium text-slate-800">Select Language</span>
-        <button onClick={onClose} className="text-lg leading-none px-2 py-1 rounded hover:bg-slate-100" aria-label="Close">
-          ×
-        </button>
-      </div>
+      CLOSE
+    </button>
 
       <div className="p-3 space-y-3">
         <div id="gt-container" className="gt-popover" />
@@ -419,23 +429,22 @@ function NavItem({ item }: { item: NavNode }) {
 
   return (
     <li className="relative" onMouseEnter={() => armOpen(120)} onMouseLeave={() => armClose(200)}>
-      <a
-        href={item.href || "#"}
-        className={
-          "px-4 py-2 rounded-md text-slate-900 hover:bg-[#dbe5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 " +
-          (isActive ? "border-b-2 border-blue-700" : "")
-        }
-        aria-haspopup={hasChildren ? "true" : undefined}
-        aria-expanded={hasChildren ? open : undefined}
-        aria-current={isActive ? "page" : undefined}
-        onFocus={() => setOpen(true)}
-        onBlur={(e) => {
-          if (!(e.currentTarget.parentElement?.contains(document.activeElement))) setOpen(false);
-        }}
-      >
-        <span className="font-medium">{item.label}</span>
-        {hasChildren && <ChevronDown className="inline size-4 ml-1" aria-hidden="true" />}
-      </a>
+<a
+  href={item.href || "#"}
+  className={[
+    "px-4 py-2 rounded-md transition-colors",
+    "text-slate-900 hover:bg-[#cfe0ff] hover:text-blue-900 focus-visible:outline-none",
+    "focus-visible:ring-2 focus-visible:ring-blue-600",
+    isActive ? "bg-[#cfe0ff] text-blue-900 border-b-2 border-blue-700" : ""
+  ].join(" ")}
+  aria-haspopup={hasChildren ? "true" : undefined}
+  aria-expanded={hasChildren ? open : undefined}
+  aria-current={isActive ? "page" : undefined}
+  // onFocus/onBlur same as before
+>
+  <span className="font-medium">{item.label}</span>
+  {hasChildren && <ChevronDown className="inline size-4 ml-1" aria-hidden />}
+</a>
 
       {hasChildren && open && (
         <div className="absolute left-1/2 -translate-x-1/2 top-[calc(100%+8px)] z-40">
@@ -447,10 +456,10 @@ function NavItem({ item }: { item: NavNode }) {
             {item.children!.map((child) =>
               isGroup(child) ? (
                 <li key={child.label} className="relative group">
-                  <div className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-[#dbe5f9] text-slate-900 font-medium">
-                    <span>{child.label}</span>
-                    <ChevronRight className="size-4 text-slate-400" aria-hidden />
-                  </div>
+<div className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-[#e3ecff] text-slate-900 font-medium">
+  <span>{child.label}</span>
+  <ChevronRight className="size-4 text-slate-400" aria-hidden />
+</div>
 
                   {/* LEVEL-2 FLYOUT (no gap so it doesn't drop) */}
                   <ul
@@ -460,13 +469,13 @@ function NavItem({ item }: { item: NavNode }) {
                   >
                     {child.children!.map((leaf) => (
                       <li key={leaf.label}>
-                        <a
-                          href={leaf.href}
-                          target={leaf.target}
-                          className="block rounded-md px-3 py-2 text-[.95rem] text-slate-800 hover:bg-[#dbe5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-                        >
-                          {leaf.label}
-                        </a>
+<a
+  href={leaf.href}
+  target={leaf.target}
+  className="block rounded-md px-3 py-2 text-[15px] text-slate-800 hover:bg-[#e3ecff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+>
+  {leaf.label}
+</a>
                       </li>
                     ))}
                   </ul>
@@ -510,34 +519,37 @@ function MobileItem({ item }: { item: NavNode }) {
         <ul className="ml-2 mt-1 space-y-1">
           {item.children!.map((child) =>
             isGroup(child) ? (
-              <li key={child.label} className="bg-slate-50 rounded-md">
-                <button
-                  className="w-full flex items-center justify-between px-3 py-2 font-medium"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const next = (e.currentTarget as HTMLButtonElement).nextElementSibling as HTMLElement | null;
-                    if (next) next.classList.toggle("hidden");
-                    e.currentTarget.querySelector("svg")?.classList.toggle("rotate-180");
-                  }}
-                  aria-expanded={false}
-                >
-                  <span>{child.label}</span>
-                  <ChevronDown className="size-4 transition-transform" />
-                </button>
-                <ul className="ml-2 mb-2 border-l border-slate-200 pl-3 hidden">
-                  {child.children!.map((leaf) => (
-                    <li key={leaf.label}>
-                      <a
-                        href={leaf.href}
-                        target={leaf.target}
-                        className="block rounded-md px-3 py-2 text-[.95rem] text-slate-700 hover:bg-[#dbe5f9]"
-                      >
-                        {leaf.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </li>
+<li key={child.label} className="rounded-md bg-[#eef3ff]">
+  <button
+    className="w-full flex items-center justify-between px-3 py-2 font-medium"
+    onClick={(e) => {
+      e.preventDefault();
+      const next = (e.currentTarget as HTMLButtonElement).nextElementSibling as HTMLElement | null;
+      if (next) next.classList.toggle("hidden");
+      e.currentTarget.querySelector("svg")?.classList.toggle("rotate-180");
+    }}
+    aria-expanded={false}
+  >
+    <span>{child.label}</span>
+    <ChevronDown className="size-4 transition-transform" />
+  </button>
+
+  {/* REMOVE the border-left here */}
+  <ul className="mb-2 pl-0 pt-1 hidden">
+    {child.children!.map((leaf) => (
+      <li key={leaf.label}>
+        <a
+          href={leaf.href}
+          target={leaf.target}
+          className="block rounded-md px-3 py-2 text-[15px] text-slate-800 hover:bg-[#e3ecff] hover:text-blue-900 hover:border-l-2 hover:border-blue-600"
+        >
+          {leaf.label}
+        </a>
+      </li>
+    ))}
+  </ul>
+</li>
+
             ) : (
               <li key={child.label}>
                 <a
@@ -693,7 +705,7 @@ export default function Header() {
       <div className="w-full border-t border-slate-200" style={{ backgroundColor: "#dbe5f9" }}>
         <div className="max-w-[120rem] mx-auto px-4">
           <nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-3 mt-2">
-            <ul className="flex items-center gap-2 text-[15.5px] font-medium">
+            <ul className="flex items-center gap-2 text-[16px] font-medium">
               {NAV.map((item) => (
                 <NavItem key={item.label} item={item} />
               ))}
