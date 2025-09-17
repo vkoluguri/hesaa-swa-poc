@@ -1622,7 +1622,7 @@
   background: #fff !important;
 }
 #translate-pop iframe { max-width: 100% !important; }
-
+#gt-container { min-height: 40px; }
 #gt-container select {
     width: 100% !important;
     border: 1px solid black !important;

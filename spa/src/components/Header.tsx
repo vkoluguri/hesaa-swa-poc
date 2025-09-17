@@ -276,6 +276,33 @@ function SiteBanner() {
 }
 
 /* ---------------- Translate popover (shared for desktop+mobile) --------------- */
+// Singleton loader so we only add the script once
+let gteReady: Promise<void> | null = null;
+function ensureGoogleTranslate(): Promise<void> {
+  if (gteReady) return gteReady;
+  gteReady = new Promise<void>((resolve) => {
+    // If already on page, resolve immediately
+    const g = (window as any).google;
+    if (g?.translate?.TranslateElement) return resolve();
+
+    // Create cb that resolves when Google calls it
+    (window as any).googleTranslateElementInit = () => {
+      const g2 = (window as any).google;
+      if (g2?.translate?.TranslateElement) resolve();
+    };
+
+    // Inject script once
+    if (!document.querySelector<HTMLScriptElement>("#gt-script")) {
+      const s = document.createElement("script");
+      s.id = "gt-script";
+      s.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+      s.defer = true;
+      document.body.appendChild(s);
+    }
+  });
+  return gteReady;
+}
+
 function TranslatePopover({
   open,
   onClose,
@@ -287,72 +314,7 @@ function TranslatePopover({
 }) {
   const poweredSlotRef = useRef<HTMLSpanElement>(null);
 
-  // Load Google script once
-  useEffect(() => {
-    if (!document.querySelector<HTMLScriptElement>("#gt-script")) {
-      const s = document.createElement("script");
-      s.id = "gt-script";
-      s.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-      document.body.appendChild(s);
-    }
-    if (!window.googleTranslateElementInit) {
-      window.googleTranslateElementInit = () => { /* noop, we mount below */ };
-    }
-  }, []);
-
-  // Mount / re-mount the widget each time the popover opens
-  useEffect(() => {
-    if (!open) return;
-
-    let mounted = false;
-    const tryMount = () => {
-      const g = (window as any).google;
-      if (g?.translate?.TranslateElement && !mounted) {
-        mounted = true;
-
-        // Clear old contents then mount fresh
-        const host = document.getElementById("gt-container");
-        if (host) host.innerHTML = "";
-
-        // eslint-disable-next-line no-new
-        new g.translate.TranslateElement(
-          {
-            pageLanguage: "en",
-            layout: g.translate.TranslateElement.InlineLayout.VERTICAL,
-            autoDisplay: false,
-          },
-          "gt-container"
-        );
-
-        // move "Powered by Google" into our slot + apply select styling
-        setTimeout(() => {
-          const brand = document.querySelector(".goog-logo-link") as HTMLElement | null;
-          if (brand && poweredSlotRef.current) poweredSlotRef.current.innerHTML = brand.outerHTML;
-
-          const sel = document.querySelector<HTMLSelectElement>("#gt-container select.goog-te-combo");
-          if (sel) {
-            sel.style.display = "block";
-            sel.style.width = "100%";
-            sel.style.border = "1px solid rgb(203 213 225)"; // slate-300
-            sel.style.borderRadius = "6px";
-            sel.style.padding = "8px";
-            sel.style.fontSize = "14px";
-            sel.style.color = "rgb(30 41 59)"; // slate-800
-            sel.style.background = "#fff";
-          }
-        }, 50);
-      }
-    };
-
-    // try a few times in case script is still loading
-    const id = window.setInterval(tryMount, 120);
-    setTimeout(() => window.clearInterval(id), 4000);
-    tryMount();
-
-    return () => window.clearInterval(id);
-  }, [open]);
-
-  // position under the anchor, responsive width
+  // Position under the trigger, responsive width
   const style = React.useMemo(() => {
     const a = anchorRef.current;
     if (!a) return {};
@@ -372,6 +334,71 @@ function TranslatePopover({
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  // Mount (and re-mount) the widget every time the popover opens
+  useEffect(() => {
+    if (!open) return;
+
+    let cancelled = false;
+    let retries = 0;
+    let retryId: number | null = null;
+    let mo: MutationObserver | null = null;
+
+    const mount = () => {
+      if (cancelled) return;
+      const g = (window as any).google;
+      if (!g?.translate?.TranslateElement) {
+        // Try again shortly (Google script still initializing)
+        if (retries++ < 12) retryId = window.setTimeout(mount, 250);
+        return;
+      }
+
+      // Clear old widget & mount fresh
+      const host = document.getElementById("gt-container");
+      if (host) host.innerHTML = "";
+
+      // eslint-disable-next-line no-new
+      new g.translate.TranslateElement(
+        {
+          pageLanguage: "en",
+          layout: g.translate.TranslateElement.InlineLayout.VERTICAL,
+          autoDisplay: false,
+        },
+        "gt-container"
+      );
+
+      // Observe until the <select> appears, then style + move brand
+      mo = new MutationObserver(() => {
+        const sel = document.querySelector<HTMLSelectElement>("#gt-container select.goog-te-combo");
+        if (sel) {
+          // Force visible styling (works even if site CSS loads late)
+          sel.style.display = "block";
+          sel.style.width = "100%";
+          sel.style.border = "1px solid rgb(203 213 225)";
+          sel.style.borderRadius = "6px";
+          sel.style.padding = "8px";
+          sel.style.fontSize = "14px";
+          sel.style.color = "rgb(30 41 59)";
+          sel.style.background = "#fff";
+
+          const brand = document.querySelector(".goog-logo-link") as HTMLElement | null;
+          if (brand && poweredSlotRef.current) poweredSlotRef.current.innerHTML = brand.outerHTML;
+
+          mo?.disconnect();
+          mo = null;
+        }
+      });
+      if (host) mo.observe(host, { subtree: true, childList: true });
+    };
+
+    ensureGoogleTranslate().then(mount);
+
+    return () => {
+      cancelled = true;
+      if (retryId) window.clearTimeout(retryId);
+      mo?.disconnect();
+    };
+  }, [open]);
+
   return (
     <div
       id="translate-pop"
@@ -380,7 +407,7 @@ function TranslatePopover({
       className={`fixed z-[100] rounded-md border border-slate-300 bg-white shadow-xl ${open ? "block" : "hidden"}`}
       style={style}
     >
-      {/* Close bar (your spec) */}
+      {/* Close bar */}
       <button
         type="button"
         onClick={onClose}
@@ -391,10 +418,15 @@ function TranslatePopover({
       </button>
 
       <div className="p-3 space-y-3">
-        <div id="gt-container" className="gt-popover" />
+        {/* Small placeholder so the box never looks empty while loading */}
+        <div id="gt-container" className="gt-popover min-h-[40px]">
+          <div className="text-[12px] text-slate-500" aria-live="polite">Loading languages…</div>
+        </div>
+
         <div className="flex items-center justify-end">
           <span ref={poweredSlotRef} id="gt-powered-slot" className="text-[11px] text-slate-500" />
         </div>
+
         <div className="text-[12px] text-slate-700 leading-snug">
           The State of NJ site may contain optional links, information, services and/or content from other websites
           operated by third parties that are provided as a convenience, such as Google™ Translate. Google™ Translate is
@@ -415,6 +447,7 @@ function TranslatePopover({
     </div>
   );
 }
+
 
 /* ---------------- Active top item helper ---------------- */
 function useActiveTopLabel() {
@@ -534,11 +567,11 @@ function MobileItem({ item }: { item: NavNode }) {
   return (
     <div className="px-1">
       <button
-        className="w-full flex items-center justify-between rounded-md px-3 py-2 text-left hover:bg-white"
+        className="w-full flex items-center justify-between rounded-md px-3 py-2 text-left hover:bg-white text-[16px]"
         onClick={() => (hasChildren ? setOpen((v) => !v) : (window.location.href = item.href || "#"))}
         aria-expanded={open}
       >
-        <span className="font-medium">{item.label}</span>
+        <span className="font-normal">{item.label}</span>
         {hasChildren && <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />}
       </button>
 
@@ -549,7 +582,7 @@ function MobileItem({ item }: { item: NavNode }) {
             isGroup(child) ? (
 <li key={child.label} className="rounded-md bg-[#eef3ff]">
   <button
-    className="w-full flex items-center justify-between px-3 py-2 font-medium"
+    className="w-full flex items-center justify-between px-3 py-2 text-[16px]"
     onClick={(e) => {
       e.preventDefault();
       const next = (e.currentTarget as HTMLButtonElement).nextElementSibling as HTMLElement | null;
