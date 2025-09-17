@@ -100,35 +100,41 @@ function Carousel() {
         </div>
 
         {/* desktop arrows only; large, no circle/padding background */}
-        <button
-          aria-label="Previous slide"
-          onClick={() => go(-1)}
-          className="hidden md:block absolute left-2 top-1/2 -translate-y-1/2 z-10 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] hover:drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] text-[48px] leading-none"
-        >
-          ‹
-        </button>
-        <button
-          aria-label="Next slide"
-          onClick={() => go(1)}
-          className="hidden md:block absolute right-2 top-1/2 -translate-y-1/2 z-10 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] hover:drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] text-[48px] leading-none"
-        >
-          ›
-        </button>
+<button
+  aria-label="Previous slide"
+  onClick={() => go(-1)}
+  className="hidden sm:flex items-center justify-center
+             absolute left-6 top-1/2 -translate-y-1/2 z-10
+             text-white/90 hover:text-white
+             text-[44px] md:text-[56px] leading-none"
+>
+  ‹
+</button>
+
+<button
+  aria-label="Next slide"
+  onClick={() => go(1)}
+  className="hidden sm:flex items-center justify-center
+             absolute right-6 top-1/2 -translate-y-1/2 z-10
+             text-white/90 hover:text-white
+             text-[44px] md:text-[56px] leading-none"
+>
+  ›
+</button>
 
         {/* dots */}
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-3 flex gap-2">
-          {SLIDES.map((_, idx) => {
-            const active = i === idx + 1 || (i === 0 && idx === SLIDES.length - 1) || (i === SLIDES.length + 1 && idx === 0);
-            return (
-              <button
-                key={idx}
-                aria-label={`Go to slide ${idx + 1}`}
-                onClick={() => { setAnim(true); setI(idx + 1); }}
-                className={`h-2.5 w-2.5 rounded-full ${active ? "bg-white shadow ring-1 ring-black/10" : "bg-white/60 hover:bg-white"}`}
-              />
-            );
-          })}
-        </div>
+<div className="absolute left-1/2 -translate-x-1/2 bottom-5 md:bottom-6 flex gap-2">
+  {SLIDES.map((_, idx) => (
+    <button
+      key={idx}
+      aria-label={`Go to slide ${idx + 1}`}
+      onClick={() => setI(idx)}
+      className={`h-2.5 w-2.5 rounded-full ${
+        i === idx ? "bg-white shadow ring-1 ring-black/10" : "bg-white/70 hover:bg-white"
+      }`}
+    />
+  ))}
+</div>
       </div>
     </section>
   );
@@ -222,10 +228,11 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
                       href={n.href}
                       className="flex items-center gap-4 rounded-xl bg-white px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition"
                     >
-                      <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
-                        <div className="text-base font-bold">{mon}</div>
-                        <div className="text-xs opacity-90">{day}</div>
-                      </div>
+<div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
+  <div className="text-[18px] font-bold">{mon}</div>   {/* was text-base */}
+  <div className="text-[18px] opacity-90">{day}</div> {/* was text-xs */}
+</div>
+
                       <div className="font-medium text-[16px] md:text-[18px] text-slate-900">{n.title}</div>
                     </a>
                   </li>
@@ -249,10 +256,11 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
                     href={e.href}
                     className="flex items-center gap-4 rounded-xl bg-white px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition"
                   >
-                    <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
-                      <div className="text-base font-bold">{e.m}</div>
-                      <div className="text-xs opacity-90">{e.d}</div>
-                    </div>
+<div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
+  <div className="text-[18px] font-bold">{e.m}</div>
+  <div className="text-[18px] opacity-90">{e.d}</div>
+</div>
+
                     <div className="font-medium text-[16px] md:text-[18px] text-slate-900">{e.title}</div>
                   </a>
                 </li>
