@@ -1,160 +1,178 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, ExternalLink, CalendarDays, Newspaper } from "lucide-react";
 
-/* =========================================================
-   SLIDES (use your own files/alt text; href is optional)
-   ========================================================= */
+/* =========================
+   Hero carousel (fade, preloaded, ARIA)
+   ========================= */
+
 type Slide = { src: string; alt: string; href?: string };
 const SLIDES: Slide[] = [
   { src: "/assets/Grants-Scholarships-Banner2.jpg", alt: "Grants & Scholarships" },
-  { src: "/assets/call_center_banner.jpg", alt: "Call Center" },
-  { src: "/assets/BackToSchool_NJBEST.jpg", alt: "NJBEST" },
-  { src: "/assets/emailAlert_webBanner.jpg", alt: "Email Alerts" },
+  { src: "/assets/call_center_banner.jpg", alt: "Customer Care phone number" },
+  { src: "/assets/BackToSchool_NJBEST.jpg", alt: "NJBEST back-to-school" },
+  { src: "/assets/emailAlert_webBanner.jpg", alt: "Email alerts" },
 ];
 
-/* =========================================================
-   UTIL
-   ========================================================= */
-const cx = (...xs: Array<string | false | null | undefined>) => xs.filter(Boolean).join(" ");
+// Utility: preload all slide images once
+function usePreloaded(srcs: string[]) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    const imgs = srcs.map(
+      (s) =>
+        new Promise<void>((res) => {
+          const im = new Image();
+          im.onload = () => res();
+          im.onerror = () => res(); // don't block on errors
+          im.src = s;
+        })
+    );
+    Promise.all(imgs).then(() => alive && setReady(true));
+    return () => {
+      alive = false;
+    };
+  }, [srcs]);
+  return ready;
+}
 
-/* =========================================================
-   CAROUSEL (seamless loop, stable height, autoplay 7s, no tab pause)
-   ========================================================= */
+// Timer that survives tab switches without producing “blank” frames
+function useAccurateTimer(run: boolean, stepMs: number, onTick: () => void) {
+  const nextAt = useRef<number | null>(null);
+  useEffect(() => {
+    if (!run) return;
+    let raf = 0;
+    const loop = (t: number) => {
+      if (nextAt.current == null) nextAt.current = t + stepMs;
+      if (t >= nextAt.current) {
+        onTick();
+        // if the tab was hidden for a while, skip forward exactly one step
+        nextAt.current = t + stepMs;
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    const onVis = () => {
+      // resume cleanly on visibility changes
+      nextAt.current = null;
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener("visibilitychange", onVis);
+      nextAt.current = null;
+    };
+  }, [run, stepMs, onTick]);
+}
+
 function Carousel() {
-  // extended track so we can loop without jumping: [last, ...real, first]
-  const extended = useMemo<Slide[]>(() => {
-    if (!SLIDES.length) return [];
-    return [SLIDES[SLIDES.length - 1], ...SLIDES, SLIDES[0]];
-  }, []);
-  const n = SLIDES.length;
-
-  const [idx, setIdx] = useState(1);       // current index in extended
-  const [anim, setAnim] = useState(true);  // CSS transition on/off
-  const tickRef = useRef<number | null>(null);
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  // go helpers
-  const go = (delta: number) => setIdx((p) => p + delta);
-  const goToReal = (real0: number) => setIdx(real0 + 1);
-
-  // autoplay every 7s — intentionally NO visibility pause (keeps moving when tab isn’t active)
-  const clear = () => { if (tickRef.current) window.clearInterval(tickRef.current); tickRef.current = null; };
-  const start = () => {
-    clear();
-    if (n > 1) tickRef.current = window.setInterval(() => go(1), 7000);
-  };
-  useEffect(() => { start(); return clear; }, [n]);
-
-  // seamless wrap: when we hit clone, jump without animation
-  const onTransitionEnd = () => {
-    if (idx === 0) { setAnim(false); setIdx(n); }         // jumped left beyond first real
-    else if (idx === n + 1) { setAnim(false); setIdx(1); } // jumped right beyond last real
-  };
-  useEffect(() => {
-    if (!anim) {
-      const id = window.setTimeout(() => setAnim(true), 20);
-      return () => window.clearTimeout(id);
-    }
-  }, [anim]);
-
-  // optional pause on hover (desktop)
+  const [idx, setIdx] = useState(0);
   const [hover, setHover] = useState(false);
-  useEffect(() => {
-    if (hover) clear(); else start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hover]);
+  const ready = usePreloaded(useMemo(() => SLIDES.map((s) => s.src), []));
+  const advance = () => setIdx((p) => (p + 1) % SLIDES.length);
 
-  // stable height: aspect ratio ensures no “white flash”
-  const aspect = "aspect-[16/9] md:aspect-[21/9]";
+  // 7s per slide; pause on hover/focus
+  useAccurateTimer(ready && !hover, 7000, advance);
+
+  // Keyboard arrow support
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowRight") setIdx((p) => (p + 1) % SLIDES.length);
+    if (e.key === "ArrowLeft") setIdx((p) => (p - 1 + SLIDES.length) % SLIDES.length);
+  };
 
   return (
     <section
-      aria-label="Promotions"
+      aria-roledescription="carousel"
+      aria-label="Promotional banners"
       className="w-full"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onKeyDown={onKey}
     >
-      <div ref={rootRef} className={cx("relative w-full overflow-hidden bg-black/5", aspect)}>
-        {/* track */}
-        <div
-          className={cx("flex h-full w-full", anim && "transition-transform duration-700")}
-          style={{ transform: `translateX(-${idx * 100}%)` }}
-          onTransitionEnd={onTransitionEnd}
-        >
-          {extended.map((s, k) => (
-            <div key={`${s.src}-${k}`} className="w-full h-full shrink-0">
-              {s.href ? (
-                <a href={s.href} className="block w-full h-full">
-                  <img loading="lazy" src={s.src} alt={s.alt} className="block w-full h-full object-cover" />
-                </a>
-              ) : (
-                <img loading="lazy" src={s.src} alt={s.alt} className="block w-full h-full object-cover" />
-              )}
-            </div>
-          ))}
+      <div className="relative w-full overflow-hidden bg-slate-100">
+        {/* Keep a stable, responsive height; images use object-contain to avoid crop/zoom */}
+        <div className="w-full" style={{ aspectRatio: "16 / 6" }} />
+
+        {/* Slides (stacked, fading) */}
+        <div className="absolute inset-0">
+          {SLIDES.map((s, i) => {
+            const visible = i === idx;
+            const imgEl = (
+              <img
+                src={s.src}
+                alt={s.alt}
+                className="w-full h-full object-contain"
+                aria-hidden={!visible}
+              />
+            );
+            return (
+              <div
+                key={s.src}
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`${i + 1} of ${SLIDES.length}: ${s.alt}`}
+                className={`absolute inset-0 transition-opacity duration-700 ${
+                  visible ? "opacity-100" : "opacity-0 pointer-events-none"
+                }`}
+              >
+                {s.href ? (
+                  <a href={s.href} className="block w-full h-full focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/40">
+                    {imgEl}
+                  </a>
+                ) : (
+                  imgEl
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        {/* arrows (desktop only), larger and slightly inset */}
-        {n > 1 && (
-          <>
-            <button
-              aria-label="Previous slide"
-              onClick={() => go(-1)}
-              className="hidden md:flex items-center justify-center
-                         absolute left-6 top-1/2 -translate-y-1/2 z-10
-                         h-12 w-12 text-white/95 text-3xl leading-none
-                         hover:text-white drop-shadow"
-            >
-              ‹
-            </button>
-            <button
-              aria-label="Next slide"
-              onClick={() => go(1)}
-              className="hidden md:flex items-center justify-center
-                         absolute right-6 top-1/2 -translate-y-1/2 z-10
-                         h-12 w-12 text-white/95 text-3xl leading-none
-                         hover:text-white drop-shadow"
-            >
-              ›
-            </button>
-          </>
-        )}
+        {/* Arrows (desktop only) */}
+        <button
+          aria-label="Previous slide"
+          onClick={() => setIdx((p) => (p - 1 + SLIDES.length) % SLIDES.length)}
+          className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-10 h-12 w-12 items-center justify-center text-white/90 text-3xl bg-black/35 hover:bg-black/45 rounded-md focus:outline-none focus-visible:ring-4 focus-visible:ring-white/50"
+        >
+          ‹
+        </button>
+        <button
+          aria-label="Next slide"
+          onClick={() => setIdx((p) => (p + 1) % SLIDES.length)}
+          className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-10 h-12 w-12 items-center justify-center text-white/90 text-3xl bg-black/35 hover:bg-black/45 rounded-md focus:outline-none focus-visible:ring-4 focus-visible:ring-white/50"
+        >
+          ›
+        </button>
 
-        {/* dots (lifted from bottom) */}
-        {n > 1 && (
-          <div className="absolute left-1/2 -translate-x-1/2 bottom-6 flex gap-2">
-            {SLIDES.map((_, realIdx) => {
-              const active =
-                idx === realIdx + 1 ||
-                (idx === 0 && realIdx === n - 1) ||
-                (idx === n + 1 && realIdx === 0);
-              return (
-                <button
-                  key={realIdx}
-                  aria-label={`Go to slide ${realIdx + 1}`}
-                  onClick={() => goToReal(realIdx)}
-                  className={cx(
-                    "h-3 w-3 rounded-full",
-                    active ? "bg-white shadow ring-1 ring-black/10" : "bg-white/60 hover:bg-white"
-                  )}
-                />
-              );
-            })}
-          </div>
-        )}
+        {/* Dots */}
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-5 flex gap-2" role="tablist" aria-label="Slide navigation">
+          {SLIDES.map((_, i) => (
+            <button
+              key={i}
+              role="tab"
+              aria-selected={i === idx}
+              aria-label={`Go to slide ${i + 1}`}
+              tabIndex={i === idx ? 0 : -1}
+              onClick={() => setIdx(i)}
+              className={`h-3 w-3 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+                i === idx ? "bg-white shadow ring-1 ring-black/20" : "bg-white/60 hover:bg-white"
+              }`}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
-/* =========================================================
-   SPOTLIGHT CARD (simple, responsive, no awkward zoom)
-   ========================================================= */
+/* =========================
+   Spotlight cards
+   ========================= */
+
 function SpotlightCard({ img, alt, href }: { img: string; alt: string; href: string }) {
   return (
     <article className="rounded-xl bg-white shadow hover:shadow-md transition">
-      <div className="w-full aspect-[16/9] overflow-hidden">
-        <img src={img} alt={alt} className="w-full h-full object-cover" />
+      {/* fixed, non-zoom aspect; object-contain to avoid cropping */}
+      <div className="w-full overflow-hidden" style={{ aspectRatio: "16 / 9" }}>
+        <img src={img} alt={alt} className="w-full h-full object-contain bg-slate-50" />
       </div>
       <div className="p-4">
         <a
@@ -168,9 +186,9 @@ function SpotlightCard({ img, alt, href }: { img: string; alt: string; href: str
   );
 }
 
-/* =========================================================
-   QUICK LINKS (bigger font on desktop only)
-   ========================================================= */
+/* =========================
+   Quick links data
+   ========================= */
 const quickLinks = [
   { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx", color: "bg-slate-600" },
   { label: "NJ Grants & Scholarships", href: "/Pages/NJGrantsHome.aspx", color: "bg-red-700" },
@@ -180,17 +198,20 @@ const quickLinks = [
   { label: "Employer Resources", href: "/Pages/EmployerResources.aspx", color: "bg-emerald-800" },
 ];
 
-/* =========================================================
-   HOME CONTENT (export)
-   ========================================================= */
+/* =========================
+   Page
+   ========================= */
 export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb?: boolean }) {
   return (
     <main className="w-full">
+      {/* optional breadcrumb (kept off by default) */}
       {showBreadcrumb ? (
-        <div className="max-w-[120rem] mx-auto px-4 text-sm text-slate-500 mt-2">Home</div>
+        <div className="max-w-[120rem] mx-auto px-4 text-sm text-slate-500 mt-2" aria-label="Breadcrumb">
+          Home
+        </div>
       ) : null}
 
-      {/* full width carousel */}
+      {/* Carousel */}
       <Carousel />
 
       <div className="h-6" />
@@ -201,7 +222,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
           <div className="lg:col-span-2">
             <h2
               id="spotlight-title"
-              className="text-2xl md:text-3xl font-semibold text-[#7a4b00] text-center mb-4"
+              className="text-2xl md:text-3xl font-semibold text-amber-800 text-center mb-4"
             >
               HESAA Spotlight
             </h2>
@@ -209,33 +230,31 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
             <div className="grid sm:grid-cols-2 gap-6">
               <SpotlightCard
                 img="/assets/NJCLASSSpotlight.jpg"
-                alt="NJCLASS Spotlight"
+                alt="NJCLASS spotlight"
                 href="/Pages/NJCLASSHome.aspx"
               />
               <SpotlightCard
                 img="/assets/SPOTLIGHTTall-Fill-It-Out.jpg"
-                alt="Complete your Financial Aid Application"
+                alt="Complete your financial aid application"
                 href="/Pages/financialaidhub.aspx"
               />
             </div>
           </div>
 
-          <aside className="lg:col-span-1">
-            <h2 className="text-2xl md:text-3xl font-semibold text-[#7a4b00] text-center mb-4">Quick Links</h2>
-            <ul className="grid sm:grid-cols-1 gap-3">
+          <aside className="lg:col-span-1" aria-labelledby="quick-links-title">
+            <h2 id="quick-links-title" className="text-2xl md:text-3xl font-semibold text-amber-800 text-center mb-4">
+              Quick Links
+            </h2>
+            <ul className="grid sm:grid-cols-1 gap-3" role="list">
               {quickLinks.map((q) => (
                 <li key={q.label}>
                   <a
                     href={q.href}
-                    className={cx(
-                      "group", q.color,
-                      "text-white w-full inline-flex items-center justify-between rounded-lg px-4 py-3 shadow hover:brightness-110",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-600",
-                      "text-[16px] md:text-[22px]" // bigger on desktop only
-                    )}
+                    className={`group ${q.color} text-white w-full inline-flex items-center justify-between rounded-lg px-4 py-3 shadow hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-600`}
                   >
-                    <span className="font-semibold">{q.label}</span>
-                    <ExternalLink className="size-4 opacity-90 group-hover:translate-x-0.5 transition-transform" />
+                    {/* bigger desktop type; normal on mobile */}
+                    <span className="font-semibold text-base md:text-[22px] leading-tight">{q.label}</span>
+                    <ExternalLink className="size-4 opacity-90 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
                   </a>
                 </li>
               ))}
@@ -245,13 +264,17 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
       </section>
 
       {/* News + Events */}
-      <section className="mt-12 py-10 bg-slate-50/80">
+      <section className="mt-12 py-10 bg-slate-50/80" aria-labelledby="news-and-events">
+        <h2 id="news-and-events" className="sr-only">News and Events</h2>
         <div className="max-w-[120rem] mx-auto px-4 grid lg:grid-cols-2 gap-8">
-          <div>
-            <h3 className="flex items-center gap-2 text-2xl md:text-3xl font-semibold text-[#7a4b00] mb-4">
-              <Newspaper className="size-6" /> Recent News
+          <div aria-labelledby="recent-news-title">
+            <h3
+              id="recent-news-title"
+              className="flex items-center justify-center gap-2 text-2xl md:text-3xl font-semibold text-amber-800 mb-4"
+            >
+              <Newspaper className="size-6" aria-hidden="true" /> Recent News
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-3" role="list">
               {[
                 { date: "Aug 14, 2025", title: "RFP Depository Banking Services", href: "#" },
                 { date: "Jul 18, 2025", title: "HESAA Board Meeting Notice", href: "#" },
@@ -263,13 +286,15 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
                   <li key={n.title}>
                     <a
                       href={n.href}
-                      className="flex items-center gap-4 rounded-xl bg-white px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition"
+                      className="flex items-center gap-4 rounded-xl bg-white px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                     >
                       <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
                         <div className="text-[18px] font-bold">{mon}</div>
                         <div className="text-[18px] opacity-90">{day}</div>
                       </div>
-                      <div className="font-medium text-slate-900 text-[16px] md:text-[18px]">{n.title}</div>
+                      <div className="font-medium text-slate-900 text-base md:text-[18px] leading-snug">
+                        {n.title}
+                      </div>
                     </a>
                   </li>
                 );
@@ -277,11 +302,14 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
             </ul>
           </div>
 
-          <div>
-            <h3 className="flex items-center gap-2 text-2xl md:text-3xl font-semibold text-[#7a4b00] mb-4">
-              <CalendarDays className="size-6" /> Events
+          <div aria-labelledby="events-title">
+            <h3
+              id="events-title"
+              className="flex items-center justify-center gap-2 text-2xl md:text-3xl font-semibold text-amber-800 mb-4"
+            >
+              <CalendarDays className="size-6" aria-hidden="true" /> Events
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-3" role="list">
               {[
                 { m: "Sep", d: "15", title: "FA Application Deadline for Renewal Students", href: "#" },
                 { m: "Oct", d: "02", title: "School Counselor Workshop", href: "#" },
@@ -290,13 +318,15 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
                 <li key={e.title}>
                   <a
                     href={e.href}
-                    className="flex items-center gap-4 rounded-xl bg-white px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition"
+                    className="flex items-center gap-4 rounded-xl bg-white px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                   >
                     <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
                       <div className="text-[18px] font-bold">{e.m}</div>
                       <div className="text-[18px] opacity-90">{e.d}</div>
                     </div>
-                    <div className="font-medium text-slate-900 text-[16px] md:text-[18px]">{e.title}</div>
+                    <div className="font-medium text-slate-900 text-base md:text-[18px] leading-snug">
+                      {e.title}
+                    </div>
                   </a>
                 </li>
               ))}
