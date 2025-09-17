@@ -693,7 +693,7 @@ export default function Header() {
             onClick={() => setMenuOpen((v) => !v)}
             aria-expanded={menuOpen}
             aria-controls="mobile-panel"
-            className="md:hidden inline-flex flex-col items-center justify-center rounded-lg border border-slate-300 px-3 py-2 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            className="md:hidden inline-flex flex-col items-center justify-center rounded-lg px-3 py-2 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
           >
             <Menu className="size-6" aria-hidden />
             <span className="text-xs mt-1">Menu</span>
@@ -702,10 +702,10 @@ export default function Header() {
       </div>
 
       {/* Main nav row */}
-      <div className="w-full border-t border-slate-200" style={{ backgroundColor: "#dbe5f9" }}>
+      <div className="w-full border-t border-slate-200 mt-3" style={{ backgroundColor: "#dbe5f9" }}>
         <div className="max-w-[120rem] mx-auto px-4">
-          <nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-3 mt-2">
-            <ul className="flex items-center gap-2 text-[16px] font-medium">
+          <nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-3">
+            <ul className="flex items-center gap-2 text-[18px] font-medium">
               {NAV.map((item) => (
                 <NavItem key={item.label} item={item} />
               ))}
