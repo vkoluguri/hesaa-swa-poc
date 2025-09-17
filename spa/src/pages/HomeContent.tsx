@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ArrowRight, ExternalLink, CalendarDays, Newspaper } from "lucide-react";
 
-/** ====== Carousel (full width, arrows + dots, responsive) ====== */
+/* ===================== Carousel ===================== */
+
 type Slide = { src: string; alt: string; href?: string };
 const SLIDES: Slide[] = [
   { src: "/assets/Grants-Scholarships-Banner2.jpg", alt: "Grants & Scholarships" },
@@ -10,84 +11,131 @@ const SLIDES: Slide[] = [
   { src: "/assets/emailAlert_webBanner.jpg", alt: "Email Alerts" },
 ];
 
+/** stable interval hook */
 function useInterval(cb: () => void, delay: number | null) {
   const saved = useRef(cb);
   useEffect(() => void (saved.current = cb), [cb]);
   useEffect(() => {
-    if (delay === null) return;
+    if (delay == null) return;
     const id = setInterval(() => saved.current(), delay);
     return () => clearInterval(id);
   }, [delay]);
 }
 
+/**
+ * Infinite carousel via head/tail clones:
+ * [CLONE(last), ...slides, CLONE(first)]
+ * index starts at 1; on transition end we snap without transition when we hit a clone.
+ */
 function Carousel() {
-  const [i, setI] = useState(0);
-  const go = (n: number) => setI((p) => (p + n + SLIDES.length) % SLIDES.length);
+  const clones = [SLIDES[SLIDES.length - 1], ...SLIDES, SLIDES[0]];
+  const [i, setI] = useState(1); // visible index in clones
+  const [anim, setAnim] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // 7s autoplay
+  const go = (delta: number) => {
+    setI((p) => p + delta);
+    setAnim(true);
+  };
+
+  // auto every 7s
   useInterval(() => go(1), 7000);
+
+  // snap on transition end
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onEnd = () => {
+      if (i === 0) {
+        setAnim(false);
+        setI(SLIDES.length);
+      } else if (i === SLIDES.length + 1) {
+        setAnim(false);
+        setI(1);
+      }
+    };
+    el.addEventListener("transitionend", onEnd);
+    return () => el.removeEventListener("transitionend", onEnd);
+  }, [i]);
+
+  useEffect(() => {
+    if (!anim) {
+      // re-enable transition on the next frame
+      const id = requestAnimationFrame(() => setAnim(true));
+      return () => cancelAnimationFrame(id);
+    }
+  }, [anim]);
+
+  // width percentage based on clones array
+  const pct = (100 * i).toFixed(3);
 
   return (
     <section aria-label="Promotions" className="w-full">
       <div className="relative w-full overflow-hidden">
         <div
-          className="flex transition-transform duration-700"
-          style={{ transform: `translateX(-${i * 100}%)` }}
+          ref={containerRef}
+          className={`flex ${anim ? "transition-transform duration-700" : ""}`}
+          style={{ transform: `translateX(-${pct}%)` }}
         >
-          {SLIDES.map((s) => (
-            <div key={s.src} className="w-full shrink-0">
-              <a href={s.href || "#"} className="block">
-                {/* Aspect ratio ensures responsive, non-awkward crops:
-                   mobile: 4/3, md: 16/9, lg+: 21/9 */}
-                <div className="w-full aspect-[4/3] md:aspect-[16/9] lg:aspect-[21/9]">
+          {clones.map((s, idx) => (
+            <div key={`${s.src}-${idx}`} className="w-full shrink-0">
+              {s.href ? (
+                <a href={s.href} className="block">
                   <img
                     src={s.src}
                     alt={s.alt}
-                    className="w-full h-full object-cover"
-                    loading="eager"
-                    decoding="async"
+                    /* Keep aspect, no crop */
+                    className="w-full h-[50vw] max-h-[560px] md:h-[28rem] object-contain bg-white"
                   />
-                </div>
-              </a>
+                </a>
+              ) : (
+                <img
+                  src={s.src}
+                  alt={s.alt}
+                  className="w-full h-[50vw] max-h-[560px] md:h-[28rem] object-contain bg-white"
+                />
+              )}
             </div>
           ))}
         </div>
 
-        {/* arrows — no padding around glyph, larger, closer to edges */}
+        {/* desktop arrows only; large, no circle/padding background */}
         <button
           aria-label="Previous slide"
           onClick={() => go(-1)}
-          className="absolute left-1 top-1/2 -translate-y-1/2 z-10 grid place-content-center w-12 h-12 rounded-full bg-white/80 hover:bg-white shadow"
+          className="hidden md:block absolute left-2 top-1/2 -translate-y-1/2 z-10 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] hover:drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] text-[48px] leading-none"
         >
-          <span className="leading-none text-3xl select-none">‹</span>
+          ‹
         </button>
         <button
           aria-label="Next slide"
           onClick={() => go(1)}
-          className="absolute right-1 top-1/2 -translate-y-1/2 z-10 grid place-content-center w-12 h-12 rounded-full bg-white/80 hover:bg-white shadow"
+          className="hidden md:block absolute right-2 top-1/2 -translate-y-1/2 z-10 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] hover:drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] text-[48px] leading-none"
         >
-          <span className="leading-none text-3xl select-none">›</span>
+          ›
         </button>
 
         {/* dots */}
         <div className="absolute left-1/2 -translate-x-1/2 bottom-3 flex gap-2">
-          {SLIDES.map((_, idx) => (
-            <button
-              key={idx}
-              aria-label={`Go to slide ${idx + 1}`}
-              onClick={() => setI(idx)}
-              className={`h-2.5 w-2.5 rounded-full ${
-                i === idx ? "bg-white shadow ring-1 ring-black/10" : "bg-white/60 hover:bg-white"
-              }`}
-            />
-          ))}
+          {SLIDES.map((_, idx) => {
+            const active = i === idx + 1 || (i === 0 && idx === SLIDES.length - 1) || (i === SLIDES.length + 1 && idx === 0);
+            return (
+              <button
+                key={idx}
+                aria-label={`Go to slide ${idx + 1}`}
+                onClick={() => { setAnim(true); setI(idx + 1); }}
+                className={`h-2.5 w-2.5 rounded-full ${active ? "bg-white shadow ring-1 ring-black/10" : "bg-white/60 hover:bg-white"}`}
+              />
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
 
-/** ====== Quick Links (keep your exact URLs, just styled) ====== */
+/* ===================== Quick Links ===================== */
+
 const quickLinks = [
   { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx", color: "bg-slate-600" },
   { label: "NJ Grants & Scholarships", href: "/Pages/NJGrantsHome.aspx", color: "bg-red-700" },
@@ -97,8 +145,7 @@ const quickLinks = [
   { label: "Employer Resources", href: "/Pages/EmployerResources.aspx", color: "bg-emerald-800" },
 ];
 
-// warm heading color to reuse
-const warmHeading = "text-amber-700";
+const warmHeading = "text-[#b35c00]"; // warm orange-brown
 
 export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb?: boolean }) {
   return (
@@ -107,19 +154,16 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
         <div className="max-w-[120rem] mx-auto px-4 text-sm text-slate-500 mt-2">Home</div>
       ) : null}
 
-      {/* Full-width carousel */}
+      {/* HERO */}
       <Carousel />
 
       <div className="h-6" />
 
-      {/* Spotlight + Quick Links (2/3 + 1/3) */}
+      {/* Spotlight + Quick Links */}
       <section aria-labelledby="spotlight-title" className="max-w-[120rem] mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <h2
-              id="spotlight-title"
-              className={`text-3xl md:text-[2rem] font-semibold ${warmHeading} text-center mb-4`}
-            >
+            <h2 id="spotlight-title" className={`text-2xl md:text-3xl font-semibold ${warmHeading} text-center mb-4`}>
               HESAA Spotlight
             </h2>
 
@@ -138,18 +182,17 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
           </div>
 
           <aside className="lg:col-span-1">
-            <h2 className={`text-3xl md:text-[2rem] font-semibold ${warmHeading} text-center mb-4`}>
-              Quick Links
-            </h2>
+            <h2 className={`text-2xl md:text-3xl font-semibold ${warmHeading} text-center mb-4`}>Quick Links</h2>
             <ul className="grid sm:grid-cols-1 gap-3">
               {quickLinks.map((q) => (
                 <li key={q.label}>
                   <a
                     href={q.href}
-                    className={`group ${q.color} text-white w-full inline-flex items-center justify-between rounded-lg px-5 py-3.5 text-[16px] shadow hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-600`}
+                    className={`group ${q.color} text-white w-full inline-flex items-center justify-between rounded-lg px-5 py-3 md:py-4 shadow hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-600`}
                   >
-                    <span className="font-semibold">{q.label}</span>
-                    <ExternalLink className="size-4 opacity-90 group-hover:translate-x-0.5 transition-transform" />
+                    {/* normal on mobile, ~22px on desktop */}
+                    <span className="font-semibold text-[16px] md:text-[22px] leading-tight">{q.label}</span>
+                    <ExternalLink className="size-4 md:size-5 opacity-90 group-hover:translate-x-0.5 transition-transform" />
                   </a>
                 </li>
               ))}
@@ -162,7 +205,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
       <section className="mt-12 py-10 bg-slate-50/80">
         <div className="max-w-[120rem] mx-auto px-4 grid lg:grid-cols-2 gap-8">
           <div>
-            <h3 className={`flex items-center gap-2 text-3xl md:text-[2rem] font-semibold ${warmHeading} mb-4`}>
+            <h3 className={`flex items-center gap-2 text-2xl md:text-3xl font-semibold ${warmHeading} mb-4`}>
               <Newspaper className="size-6" /> Recent News
             </h3>
             <ul className="space-y-3">
@@ -183,7 +226,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
                         <div className="text-base font-bold">{mon}</div>
                         <div className="text-xs opacity-90">{day}</div>
                       </div>
-                      <div className="font-medium text-slate-900 text-[16px]">{n.title}</div>
+                      <div className="font-medium text-[16px] md:text-[18px] text-slate-900">{n.title}</div>
                     </a>
                   </li>
                 );
@@ -192,7 +235,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
           </div>
 
           <div>
-            <h3 className={`flex items-center gap-2 text-3xl md:text-[2rem] font-semibold ${warmHeading} mb-4`}>
+            <h3 className={`flex items-center gap-2 text-2xl md:text-3xl font-semibold ${warmHeading} mb-4`}>
               <CalendarDays className="size-6" /> Events
             </h3>
             <ul className="space-y-3">
@@ -210,7 +253,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
                       <div className="text-base font-bold">{e.m}</div>
                       <div className="text-xs opacity-90">{e.d}</div>
                     </div>
-                    <div className="font-medium text-slate-900 text-[16px]">{e.title}</div>
+                    <div className="font-medium text-[16px] md:text-[18px] text-slate-900">{e.title}</div>
                   </a>
                 </li>
               ))}
@@ -222,12 +265,13 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
   );
 }
 
+/* -------- Spotlight Card -------- */
 function SpotlightCard({ img, alt, href }: { img: string; alt: string; href: string }) {
   return (
     <article className="rounded-xl bg-white shadow hover:shadow-md transition">
-      {/* fixed aspect ratio to avoid “tall/awkward zoom” */}
-      <div className="w-full aspect-[16/9] overflow-hidden">
-        <img src={img} alt={alt} className="w-full h-full object-cover" />
+      {/* fixed aspect; use object-contain for clean, non-zoomed render */}
+      <div className="w-full aspect-[16/9] overflow-hidden bg-white">
+        <img src={img} alt={alt} className="w-full h-full object-contain" />
       </div>
       <div className="p-4">
         <a
