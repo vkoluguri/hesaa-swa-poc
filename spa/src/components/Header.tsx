@@ -502,7 +502,7 @@ function NavItem({ item }: { item: NavNode }) {
           if (!(e.currentTarget.parentElement?.contains(document.activeElement))) setOpen(false);
         }}
       >
-        <span className="font-normal">{item.label}</span>
+        <span className="font-medium">{item.label}</span>
         {hasChildren && <ChevronDown className="inline size-4 ml-1" aria-hidden />}
       </a>
 
@@ -518,7 +518,7 @@ function NavItem({ item }: { item: NavNode }) {
                 <li key={child.label} className="relative group">
                   {/* not bold now */}
                   <div className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-[#e3ecff] text-slate-900">
-                    <span>{child.label}</span>
+                    <span className="font-normal">{child.label}</span>
                     <ChevronRight className="size-4 text-slate-400" aria-hidden />
                   </div>
 
