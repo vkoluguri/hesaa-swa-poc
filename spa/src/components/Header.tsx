@@ -502,7 +502,7 @@ function NavItem({ item }: { item: NavNode }) {
           if (!(e.currentTarget.parentElement?.contains(document.activeElement))) setOpen(false);
         }}
       >
-        <span className="font-medium">{item.label}</span>
+        <span className="font-normal">{item.label}</span>
         {hasChildren && <ChevronDown className="inline size-4 ml-1" aria-hidden />}
       </a>
 
