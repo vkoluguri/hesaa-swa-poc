@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, ExternalLink, CalendarDays, Newspaper } from "lucide-react";
 
 /* =========================
-   Hero carousel (fade, preloaded, ARIA)
+   Hero carousel (fade, preloaded, no aspect-ratio spacer)
    ========================= */
 
 type Slide = { src: string; alt: string; href?: string };
@@ -13,21 +13,22 @@ const SLIDES: Slide[] = [
   { src: "/assets/emailAlert_webBanner.jpg", alt: "Email alerts" },
 ];
 
-// Utility: preload all slide images once
+// Preload all images once
 function usePreloaded(srcs: string[]) {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     let alive = true;
-    const imgs = srcs.map(
-      (s) =>
-        new Promise<void>((res) => {
-          const im = new Image();
-          im.onload = () => res();
-          im.onerror = () => res(); // don't block on errors
-          im.src = s;
-        })
-    );
-    Promise.all(imgs).then(() => alive && setReady(true));
+    Promise.all(
+      srcs.map(
+        (s) =>
+          new Promise<void>((res) => {
+            const im = new Image();
+            im.onload = () => res();
+            im.onerror = () => res();
+            im.src = s;
+          })
+      )
+    ).then(() => alive && setReady(true));
     return () => {
       alive = false;
     };
@@ -35,7 +36,7 @@ function usePreloaded(srcs: string[]) {
   return ready;
 }
 
-// Timer that survives tab switches without producing “blank” frames
+// Accurate timer that doesn’t drift or create blanks on tab switches
 function useAccurateTimer(run: boolean, stepMs: number, onTick: () => void) {
   const nextAt = useRef<number | null>(null);
   useEffect(() => {
@@ -45,16 +46,12 @@ function useAccurateTimer(run: boolean, stepMs: number, onTick: () => void) {
       if (nextAt.current == null) nextAt.current = t + stepMs;
       if (t >= nextAt.current) {
         onTick();
-        // if the tab was hidden for a while, skip forward exactly one step
         nextAt.current = t + stepMs;
       }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
-    const onVis = () => {
-      // resume cleanly on visibility changes
-      nextAt.current = null;
-    };
+    const onVis = () => (nextAt.current = null);
     document.addEventListener("visibilitychange", onVis);
     return () => {
       cancelAnimationFrame(raf);
@@ -73,7 +70,6 @@ function Carousel() {
   // 7s per slide; pause on hover/focus
   useAccurateTimer(ready && !hover, 7000, advance);
 
-  // Keyboard arrow support
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowRight") setIdx((p) => (p + 1) % SLIDES.length);
     if (e.key === "ArrowLeft") setIdx((p) => (p - 1 + SLIDES.length) % SLIDES.length);
@@ -88,11 +84,13 @@ function Carousel() {
       onMouseLeave={() => setHover(false)}
       onKeyDown={onKey}
     >
-      <div className="relative w-full overflow-hidden bg-slate-100">
-        {/* Keep a stable, responsive height; images use object-contain to avoid crop/zoom */}
-        <div className="w-full" style={{ aspectRatio: "16 / 6" }} />
-
-        {/* Slides (stacked, fading) */}
+      {/* No extra spacer: we set a real, responsive height on the container */}
+      <div
+        className="relative w-full overflow-hidden bg-slate-100"
+        // clamp(min, preferred, max) → tall enough on desktop; not huge on mobile
+        style={{ height: "clamp(220px, 50vw, 540px)" }}
+      >
+        {/* Slides (stacked + fading). Images fill the area (object-cover) so no white bands. */}
         <div className="absolute inset-0">
           {SLIDES.map((s, i) => {
             const visible = i === idx;
@@ -100,8 +98,9 @@ function Carousel() {
               <img
                 src={s.src}
                 alt={s.alt}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover"
                 aria-hidden={!visible}
+                draggable={false}
               />
             );
             return (
@@ -115,7 +114,10 @@ function Carousel() {
                 }`}
               >
                 {s.href ? (
-                  <a href={s.href} className="block w-full h-full focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/40">
+                  <a
+                    href={s.href}
+                    className="block w-full h-full focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/40"
+                  >
                     {imgEl}
                   </a>
                 ) : (
@@ -126,24 +128,28 @@ function Carousel() {
           })}
         </div>
 
-        {/* Arrows (desktop only) */}
+        {/* Arrows (desktop only), bigger & moved inward */}
         <button
           aria-label="Previous slide"
           onClick={() => setIdx((p) => (p - 1 + SLIDES.length) % SLIDES.length)}
-          className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-10 h-12 w-12 items-center justify-center text-white/90 text-3xl bg-black/35 hover:bg-black/45 rounded-md focus:outline-none focus-visible:ring-4 focus-visible:ring-white/50"
+          className="hidden md:flex absolute left-5 top-1/2 -translate-y-1/2 z-10 h-14 w-14 items-center justify-center text-white/95 text-4xl bg-black/40 hover:bg-black/55 rounded-md focus:outline-none focus-visible:ring-4 focus-visible:ring-white/60"
         >
           ‹
         </button>
         <button
           aria-label="Next slide"
           onClick={() => setIdx((p) => (p + 1) % SLIDES.length)}
-          className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-10 h-12 w-12 items-center justify-center text-white/90 text-3xl bg-black/35 hover:bg-black/45 rounded-md focus:outline-none focus-visible:ring-4 focus-visible:ring-white/50"
+          className="hidden md:flex absolute right-5 top-1/2 -translate-y-1/2 z-10 h-14 w-14 items-center justify-center text-white/95 text-4xl bg-black/40 hover:bg-black/55 rounded-md focus:outline-none focus-visible:ring-4 focus-visible:ring-white/60"
         >
           ›
         </button>
 
-        {/* Dots */}
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-5 flex gap-2" role="tablist" aria-label="Slide navigation">
+        {/* Dots – lifted up a bit from the very bottom */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 bottom-6 flex gap-2"
+          role="tablist"
+          aria-label="Slide navigation"
+        >
           {SLIDES.map((_, i) => (
             <button
               key={i}
@@ -164,15 +170,14 @@ function Carousel() {
 }
 
 /* =========================
-   Spotlight cards
+   Spotlight cards (simple, responsive)
    ========================= */
-
 function SpotlightCard({ img, alt, href }: { img: string; alt: string; href: string }) {
   return (
     <article className="rounded-xl bg-white shadow hover:shadow-md transition">
-      {/* fixed, non-zoom aspect; object-contain to avoid cropping */}
+      {/* Fixed 16:9 visual; cover to avoid letterboxing, but card is smaller so it won’t look “zoomed” */}
       <div className="w-full overflow-hidden" style={{ aspectRatio: "16 / 9" }}>
-        <img src={img} alt={alt} className="w-full h-full object-contain bg-slate-50" />
+        <img src={img} alt={alt} className="w-full h-full object-cover" />
       </div>
       <div className="p-4">
         <a
@@ -204,7 +209,6 @@ const quickLinks = [
 export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb?: boolean }) {
   return (
     <main className="w-full">
-      {/* optional breadcrumb (kept off by default) */}
       {showBreadcrumb ? (
         <div className="max-w-[120rem] mx-auto px-4 text-sm text-slate-500 mt-2" aria-label="Breadcrumb">
           Home
@@ -214,10 +218,8 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
       {/* Carousel */}
       <Carousel />
 
-      <div className="h-6" />
-
       {/* Spotlight + Quick Links */}
-      <section aria-labelledby="spotlight-title" className="max-w-[120rem] mx-auto px-4">
+      <section aria-labelledby="spotlight-title" className="max-w-[120rem] mx-auto px-4 mt-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <h2
@@ -252,9 +254,11 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
                     href={q.href}
                     className={`group ${q.color} text-white w-full inline-flex items-center justify-between rounded-lg px-4 py-3 shadow hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-600`}
                   >
-                    {/* bigger desktop type; normal on mobile */}
                     <span className="font-semibold text-base md:text-[22px] leading-tight">{q.label}</span>
-                    <ExternalLink className="size-4 opacity-90 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+                    <ExternalLink
+                      className="size-4 opacity-90 group-hover:translate-x-0.5 transition-transform"
+                      aria-hidden="true"
+                    />
                   </a>
                 </li>
               ))}
@@ -265,14 +269,16 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
 
       {/* News + Events */}
       <section className="mt-12 py-10 bg-slate-50/80" aria-labelledby="news-and-events">
-        <h2 id="news-and-events" className="sr-only">News and Events</h2>
+        <h2 id="news-and-events" className="sr-only">
+          News and Events
+        </h2>
         <div className="max-w-[120rem] mx-auto px-4 grid lg:grid-cols-2 gap-8">
           <div aria-labelledby="recent-news-title">
             <h3
               id="recent-news-title"
               className="flex items-center justify-center gap-2 text-2xl md:text-3xl font-semibold text-amber-800 mb-4"
             >
-              <Newspaper className="size-6" aria-hidden="true" /> Recent News
+              <Newspaper className="size-7 md:size-8" aria-hidden="true" /> Recent News
             </h3>
             <ul className="space-y-3" role="list">
               {[
@@ -307,7 +313,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
               id="events-title"
               className="flex items-center justify-center gap-2 text-2xl md:text-3xl font-semibold text-amber-800 mb-4"
             >
-              <CalendarDays className="size-6" aria-hidden="true" /> Events
+              <CalendarDays className="size-7 md:size-8" aria-hidden="true" /> Events
             </h3>
             <ul className="space-y-3" role="list">
               {[
