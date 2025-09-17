@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Menu, Search, Globe, ChevronDown, ChevronRight } from "lucide-react";
 
 /* =========================
@@ -151,9 +151,9 @@ function useBanner() {
   const [tone, setTone] = useState<"warning" | "info" | "success" | "danger">("info");
 
   useEffect(() => {
-    let pollId: number | null = null;     // setInterval id
-    let startId: number | null = null;    // setTimeout id
-    let endId: number | null = null;      // setTimeout id
+    let pollId: number | null = null;
+    let startId: number | null = null;
+    let endId: number | null = null;
     const isDev = (import.meta as any)?.env?.DEV;
 
     function clearAll() {
@@ -163,10 +163,8 @@ function useBanner() {
       pollId = startId = endId = null;
     }
 
-    /* ---------- helpers ---------- */
     const pad = (n: number) => String(n).padStart(2, "0");
 
-    // Return "-04:00" for summer dates (EDT) and "-05:00" for winter dates (EST)
     function easternOffsetISO(year: number, month: number, day: number): string {
       const utcNoon = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
       const tzName = new Intl.DateTimeFormat("en-US", {
@@ -177,18 +175,10 @@ function useBanner() {
       return isEDT ? "-04:00" : "-05:00";
     }
 
-    /**
-     * Accepts:
-     *  - "MM-DD-YYYY hh:mm AM/PM EST"
-     *  - "MM-DD-YYYY hh:mm AM/PM"
-     *  - "MM-DD-YYYY"
-     *  - ISO 8601
-     */
     function parseDateFlexible(raw?: string): Date | null {
       if (!raw) return null;
       const s = raw.trim();
 
-      // ISO → let the browser handle it.
       if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
         const d = new Date(s);
         return isNaN(+d) ? null : d;
@@ -209,8 +199,7 @@ function useBanner() {
         if ((ampmS || "").toUpperCase() === "PM") hh += 12;
       }
 
-      // Respect explicit EDT/EST; otherwise detect correct offset for that date
-      let offset = easternOffsetISO(yyyy, mm, dd); // "-04:00" or "-05:00"
+      let offset = easternOffsetISO(yyyy, mm, dd);
       if ((tzS || "").toUpperCase() === "EST") offset = "-05:00";
       if ((tzS || "").toUpperCase() === "EDT") offset = "-04:00";
 
@@ -226,14 +215,9 @@ function useBanner() {
       const endAt = parseDateFlexible(source?.end_at);
 
       const now = new Date();
-      const showNow =
-        !!message &&
-        (!startAt || now >= startAt) &&
-        (!endAt || now < endAt);
+      const showNow = !!message && (!startAt || now >= startAt) && (!endAt || now < endAt);
 
-      if (isDev) {
-        console.debug("[banner]", { now, startAt, endAt, showNow, message, toneIn });
-      }
+      if (isDev) console.debug("[banner]", { now, startAt, endAt, showNow, message, toneIn });
 
       if (showNow) {
         setMsg(message);
@@ -242,7 +226,6 @@ function useBanner() {
         setMsg(null);
       }
 
-      // Arm timers
       if (startAt && now < startAt) {
         startId = window.setTimeout(() => applyFromSource(source), startAt.getTime() - now.getTime());
       }
@@ -252,7 +235,7 @@ function useBanner() {
     }
 
     async function load() {
-      clearAll(); // clear existing timers before re-applying
+      clearAll();
       try {
         const r = await fetch("/assets/banner.json", { cache: "no-store" });
         if (r.ok) {
@@ -273,7 +256,6 @@ function useBanner() {
     }
 
     load();
-    // Poll every 5 minutes to pick up edits to banner.json
     pollId = window.setInterval(load, 5 * 60 * 1000);
 
     return () => clearAll();
@@ -291,34 +273,47 @@ function useBanner() {
   return { msg, toneClass };
 }
 
-
 function SiteBanner() {
   const { msg, toneClass } = useBanner();
   if (!msg) return null;
   return <div className={`w-full border ${toneClass} text-center text-lg py-2`}>{msg}</div>;
 }
 
-/* ---------------- Translate popover (single instance when open) --------------- */
-function TranslatePopover({ open, onClose }: { open: boolean; onClose: () => void }) {
+/* ---------------- Translate popover (shared for desktop+mobile) --------------- */
+function TranslatePopover({
+  open,
+  onClose,
+  anchorRef,
+}: {
+  open: boolean;
+  onClose: () => void;
+  // was: React.RefObject<HTMLElement>
+  anchorRef: React.RefObject<HTMLElement | null>;
+}) {
+
+  const popRef = useRef<HTMLDivElement>(null);
   const poweredSlotRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    // create widget on first open
+
     if (!window.googleTranslateElementInit) {
       window.googleTranslateElementInit = () => {
         if (window.google?.translate) {
           // eslint-disable-next-line no-new
           new window.google.translate.TranslateElement(
-            { pageLanguage: "en", layout: window.google.translate.TranslateElement.InlineLayout.VERTICAL, autoDisplay: false },
+            {
+              pageLanguage: "en",
+              layout: window.google.translate.TranslateElement.InlineLayout.VERTICAL,
+              autoDisplay: false,
+            },
             "gt-container"
           );
-          setTimeout(() => moveBrand(), 50);
+          setTimeout(moveBrand, 50);
         }
       };
     } else {
-      // already defined and script likely loaded; still move brand
-      setTimeout(() => moveBrand(), 50);
+      setTimeout(moveBrand, 50);
     }
 
     function moveBrand() {
@@ -327,14 +322,26 @@ function TranslatePopover({ open, onClose }: { open: boolean; onClose: () => voi
     }
   }, [open]);
 
+const style = React.useMemo(() => {
+  const a = anchorRef.current as (HTMLElement | null);
+  if (!a) return {};
+  const r = a.getBoundingClientRect();
+  return {
+    left: r.left + r.width / 2,
+    top: r.bottom + 8,
+    transform: "translateX(-50%)",
+  } as React.CSSProperties;
+}, [open, anchorRef]);
+
+
   return (
     <div
+      ref={popRef}
       id="translate-pop"
-      className={`absolute right-0 mt-2 w-[460px] rounded-md border border-slate-300 bg-white shadow-xl z-50 ${
-        open ? "block" : "hidden"
-      }`}
+      className={`fixed z-50 w-[460px] rounded-md border border-slate-300 bg-white shadow-xl ${open ? "block" : "hidden"}`}
       role="dialog"
       aria-modal="true"
+      style={style}
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200">
         <span className="text-sm font-medium text-slate-800">Select Language</span>
@@ -344,15 +351,10 @@ function TranslatePopover({ open, onClose }: { open: boolean; onClose: () => voi
       </div>
 
       <div className="p-3 space-y-3">
-        {/* Bordered dropdown lives here */}
         <div id="gt-container" className="gt-popover" />
-
-        {/* Powered by Google -> right side */}
         <div className="flex items-center justify-end">
           <span ref={poweredSlotRef} id="gt-powered-slot" className="text-[11px] text-slate-500" />
         </div>
-
-        {/* Full disclaimer */}
         <div className="text-[12px] text-slate-700 leading-snug">
           The State of NJ site may contain optional links, information, services and/or content from other websites
           operated by third parties that are provided as a convenience, such as Google™ Translate. Google™ Translate is
@@ -394,7 +396,7 @@ function NavItem({ item }: { item: NavNode }) {
     <li className="relative" onMouseEnter={() => armOpen(120)} onMouseLeave={() => armClose(200)}>
       <a
         href={item.href || "#"}
-        className="px-4 py-2 rounded-md text-slate-900 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+        className="px-4 py-2 rounded-md text-slate-900 hover:bg-[#dbe5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
         aria-haspopup={hasChildren ? "true" : undefined}
         aria-expanded={hasChildren ? open : undefined}
         onFocus={() => setOpen(true)}
@@ -416,7 +418,7 @@ function NavItem({ item }: { item: NavNode }) {
             {item.children!.map((child) =>
               isGroup(child) ? (
                 <li key={child.label} className="relative group">
-                  <div className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-blue-50 text-slate-900 font-medium">
+                  <div className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-[#dbe5f9] text-slate-900 font-medium">
                     <span>{child.label}</span>
                     <ChevronRight className="size-4 text-slate-400" aria-hidden />
                   </div>
@@ -428,7 +430,7 @@ function NavItem({ item }: { item: NavNode }) {
                         <a
                           href={leaf.href}
                           target={leaf.target}
-                          className="block rounded-md px-3 py-2 text-[.95rem] text-slate-800 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                          className="block rounded-md px-3 py-2 text-[.95rem] text-slate-800 hover:bg-[#dbe5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                         >
                           {leaf.label}
                         </a>
@@ -441,7 +443,7 @@ function NavItem({ item }: { item: NavNode }) {
                   <a
                     href={child.href}
                     target={child.target}
-                    className="block rounded-md px-3 py-2 text-[.95rem] text-slate-800 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                    className="block rounded-md px-3 py-2 text-[.95rem] text-slate-800 hover:bg-[#dbe5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                   >
                     {child.label}
                   </a>
@@ -482,7 +484,7 @@ function MobileItem({ item }: { item: NavNode }) {
                       <a
                         href={leaf.href}
                         target={leaf.target}
-                        className="block rounded-md px-3 py-2 text-[.95rem] text-slate-700 hover:bg-blue-50"
+                        className="block rounded-md px-3 py-2 text-[.95rem] text-slate-700 hover:bg-[#dbe5f9]"
                       >
                         {leaf.label}
                       </a>
@@ -495,7 +497,7 @@ function MobileItem({ item }: { item: NavNode }) {
                 <a
                   href={child.href}
                   target={child.target}
-                  className="block rounded-md px-3 py-2 text-[.95rem] text-slate-700 hover:bg-blue-50"
+                  className="block rounded-md px-3 py-2 text-[.95rem] text-slate-700 hover:bg-[#dbe5f9]"
                 >
                   {child.label}
                 </a>
@@ -508,6 +510,19 @@ function MobileItem({ item }: { item: NavNode }) {
   );
 }
 
+/* ---------- small helper to know which anchor (desktop/mobile) to use ---------- */
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    setIsMobile(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return isMobile;
+}
+
 /* =========================
    Header (export)
    ========================= */
@@ -515,13 +530,20 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [translateOpen, setTranslateOpen] = useState(false);
   const translateWrapRef = useRef<HTMLDivElement>(null);
+  const desktopTranslateBtnRef = useRef<HTMLButtonElement>(null);
+  const mobileTranslateBtnRef = useRef<HTMLButtonElement>(null);
+  const isMobile = useIsMobile();
 
-  // Close translate on outside click
+  // Close translate on outside click (works for desktop & mobile)
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
-      if (translateWrapRef.current && !translateWrapRef.current.contains(e.target as Node)) {
-        setTranslateOpen(false);
-      }
+      const pop = document.getElementById("translate-pop");
+      const t = e.target as Node;
+      const wasInside =
+        (pop && pop.contains(t)) ||
+        desktopTranslateBtnRef.current?.contains(t) ||
+        mobileTranslateBtnRef.current?.contains(t);
+      if (!wasInside) setTranslateOpen(false);
     };
     document.addEventListener("click", onDoc);
     return () => document.removeEventListener("click", onDoc);
@@ -532,7 +554,7 @@ export default function Header() {
       {/* VERY TOP: persistent banner */}
       <SiteBanner />
 
-      {/* Logo + right-links (right block nudged up & right-aligned) */}
+      {/* Logo + right-links */}
       <div className="bg-white">
         <div className="max-w-[120rem] mx-auto px-4 py-1 flex items-start justify-between">
           {/* HESAA logo */}
@@ -549,7 +571,11 @@ export default function Header() {
           {/* Right block */}
           <div className="hidden md:grid grid-cols-[34px_auto] grid-rows-2 gap-x-3 items-start text-[13px] leading-5 mt-[2px] text-right">
             {/* NJ seal 34x34 spanning rows 1-2 */}
-            <img src="/assets/NJLogo_small.gif" alt="State of New Jersey" className="row-span-2 h-[34px] w-[34px] object-contain justify-self-start" />
+            <img
+              src="/assets/NJLogo_small.gif"
+              alt="State of New Jersey"
+              className="row-span-2 h-[34px] w-[34px] object-contain justify-self-start"
+            />
 
             {/* Row 1 */}
             <div className="font-semibold text-blue-700">
@@ -558,22 +584,30 @@ export default function Header() {
 
             {/* Row 2 */}
             <div className="flex flex-wrap items-center justify-end gap-x-2 text-blue-700">
-              <a className="hover:underline" href="https://www.nj.gov/">NJ Home</a>
+              <a className="hover:underline" href="https://www.nj.gov/">
+                NJ Home
+              </a>
               <span className="text-slate-400">|</span>
-              <a className="hover:underline" href="https://nj.gov/services/">Services A to Z</a>
+              <a className="hover:underline" href="https://nj.gov/services/">
+                Services A to Z
+              </a>
               <span className="text-slate-400">|</span>
-              <a className="hover:underline" href="https://nj.gov/nj/deptserv/">Departments/Agencies</a>
+              <a className="hover:underline" href="https://nj.gov/nj/deptserv/">
+                Departments/Agencies
+              </a>
               <span className="text-slate-400">|</span>
-              <a className="hover:underline" href="https://www.nj.gov/faqs/">NJ Gov FAQs</a>
+              <a className="hover:underline" href="https://www.nj.gov/faqs/">
+                NJ Gov FAQs
+              </a>
             </div>
 
-            {/* Tools row (full width, right aligned) */}
+            {/* Tools row */}
             <div className="col-span-2 mt-1 flex items-center justify-end gap-3">
               <div ref={translateWrapRef} className="relative">
                 <button
+                  ref={desktopTranslateBtnRef}
                   type="button"
                   aria-expanded={translateOpen}
-                  aria-controls="translate-pop"
                   onClick={(e) => {
                     e.stopPropagation();
                     setTranslateOpen((v) => !v);
@@ -584,7 +618,6 @@ export default function Header() {
                   Translate
                   <ChevronDown className="size-4" />
                 </button>
-                <TranslatePopover open={translateOpen} onClose={() => setTranslateOpen(false)} />
               </div>
 
               <label className="relative">
@@ -625,13 +658,14 @@ export default function Header() {
           </nav>
         </div>
 
-        {/* Mobile panel (no logo; translate works) */}
+        {/* Mobile panel */}
         <div id="mobile-panel" className={`md:hidden ${menuOpen ? "block" : "hidden"}`}>
           <div className="px-4 pb-4 space-y-2">
             <div className="pt-3 pb-2 flex items-center gap-2">
               <button
+                ref={mobileTranslateBtnRef}
                 onClick={() => setTranslateOpen((v) => !v)}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-2 text-slate-800"
+                className="inline-flex items-center gap-2 rounded-full border border-black/25 px-3 py-2 text-slate-900 bg-white/80"
               >
                 <Globe className="size-4" />
                 Translate
@@ -641,30 +675,11 @@ export default function Header() {
                 <input
                   type="search"
                   placeholder="Search..."
-                  className="w-full rounded-full border border-slate-300 py-2 pl-9 pr-3 text-[13px] placeholder:text-slate-400"
+                  className="w-full rounded-full border border-black/25 py-2 pl-9 pr-3 text-[13px] placeholder:text-black/50 text-slate-900 bg-white/80"
                 />
-                <Search className="absolute left-2.5 top-2.5 size-4 text-slate-400" aria-hidden="true" />
+                <Search className="absolute left-2.5 top-2.5 size-4 text-black/40" aria-hidden="true" />
               </label>
             </div>
-
-            {/* Inline translate content on mobile */}
-            {translateOpen && (
-              <div className="relative mt-2" id="translate-pop">
-                <div className="rounded-md border border-slate-300 bg-white shadow-sm">
-                  <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200">
-                    <span className="text-sm font-medium text-slate-800">Select Language</span>
-                    <button onClick={() => setTranslateOpen(false)} className="text-lg leading-none px-2 py-1 rounded hover:bg-slate-100" aria-label="Close">×</button>
-                  </div>
-                  <div className="p-3 space-y-3">
-                    <div id="gt-container" className="gt-popover" />
-                    <div className="flex items-center justify-end"><span id="gt-powered-slot" className="text-[11px] text-slate-500" /></div>
-                    <div className="text-[12px] text-slate-700 leading-snug">
-                      The State of NJ site may contain optional links, information, services and/or content from other websites operated by third parties that are provided as a convenience, such as Google™ Translate. Google™ Translate is an online service for which the user pays nothing to obtain a purported language translation. The user is on notice that neither the State of NJ site nor its operators review any of the services, information and/or content from anything that may be linked to the State of NJ site for any reason. To the extent Google™ Translate caches and presents older versions of the State of NJ site content, that is beyond the control of the State of NJ site and its operators who accept no responsibility or liability for the outdated translation. Any third party link to the State of NJ site can be used at the user's sole risk. The user is further on notice that the State of NJ site and its operators expressly and fully disavow and disclaim any responsibility or liability in respect of any cause, claim, consequential or direct damage or loss, however described, arising from the use of Google™ Translate or any other service, content or information linked to the State of NJ site. The State of NJ site is provided 'AS-IS' with no warranties, express or implied, and its use confers no privileges or rights. Links to third party services, information and/or content is in no way an affiliation, endorsement, support or approval of the third party.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             <div className="border-t border-slate-200" />
 
@@ -674,6 +689,13 @@ export default function Header() {
           </div>
         </div>
       </div>
+
+      {/* Shared translate popover (centered under whichever button is active) */}
+      <TranslatePopover
+        open={translateOpen}
+        onClose={() => setTranslateOpen(false)}
+        anchorRef={isMobile ? mobileTranslateBtnRef : desktopTranslateBtnRef}
+      />
     </header>
   );
 }

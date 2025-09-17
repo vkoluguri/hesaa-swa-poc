@@ -1608,7 +1608,6 @@
     }
   }
 }
-/* Google Translate in our popover */
 #translate-pop .goog-te-gadget-simple { display: none !important; }
 #translate-pop .goog-te-gadget { font-size: 0; }
 #translate-pop select.goog-te-combo {
