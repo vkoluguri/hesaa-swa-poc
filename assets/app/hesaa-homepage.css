@@ -1608,6 +1608,10 @@
     }
   }
 }
+/***** normalize dropdown group headers *****/
+.nav-dropdown .group-header,
+.nav-dropdown .group-header span { font-weight: 400 !important; }
+
 /* Translate popover fixes */
 #translate-pop .goog-te-gadget-simple { display: none !important; } /* hide inline badge */
 #translate-pop .goog-te-gadget { font-size: 0 !important; line-height: 0; }
