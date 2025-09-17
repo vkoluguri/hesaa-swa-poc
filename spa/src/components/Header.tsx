@@ -432,7 +432,7 @@ function NavItem({ item }: { item: NavNode }) {
 <a
   href={item.href || "#"}
   className={[
-    "px-4 py-2 rounded-md transition-colors",
+    "px-4 py-2 text-[16px] rounded-md transition-colors",
     "text-slate-900 hover:bg-[#cfe0ff] hover:text-blue-900 focus-visible:outline-none",
     "focus-visible:ring-2 focus-visible:ring-blue-600",
     isActive ? "bg-[#cfe0ff] text-blue-900 border-b-2 border-blue-700" : ""
@@ -472,7 +472,7 @@ function NavItem({ item }: { item: NavNode }) {
 <a
   href={leaf.href}
   target={leaf.target}
-  className="block rounded-md px-3 py-2 text-[15px] text-slate-800 hover:bg-[#e3ecff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+  className="block rounded-md px-3 py-2 text-[16px] text-slate-800 hover:bg-[#e3ecff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
 >
   {leaf.label}
 </a>
