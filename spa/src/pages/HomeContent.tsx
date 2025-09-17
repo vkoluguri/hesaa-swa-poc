@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, ExternalLink, CalendarDays, Newspaper } from "lucide-react";
 
 /* =========================
-   Hero carousel (fade, preloaded, no aspect-ratio spacer)
+   Hero carousel (native image height, responsive)
    ========================= */
 
 type Slide = { src: string; alt: string; href?: string };
@@ -13,7 +13,6 @@ const SLIDES: Slide[] = [
   { src: "/assets/emailAlert_webBanner.jpg", alt: "Email alerts" },
 ];
 
-// Preload all images once
 function usePreloaded(srcs: string[]) {
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -36,7 +35,6 @@ function usePreloaded(srcs: string[]) {
   return ready;
 }
 
-// Accurate timer that doesn’t drift or create blanks on tab switches
 function useAccurateTimer(run: boolean, stepMs: number, onTick: () => void) {
   const nextAt = useRef<number | null>(null);
   useEffect(() => {
@@ -67,7 +65,6 @@ function Carousel() {
   const ready = usePreloaded(useMemo(() => SLIDES.map((s) => s.src), []));
   const advance = () => setIdx((p) => (p + 1) % SLIDES.length);
 
-  // 7s per slide; pause on hover/focus
   useAccurateTimer(ready && !hover, 7000, advance);
 
   const onKey = (e: React.KeyboardEvent) => {
@@ -84,69 +81,60 @@ function Carousel() {
       onMouseLeave={() => setHover(false)}
       onKeyDown={onKey}
     >
-      {/* No extra spacer: we set a real, responsive height on the container */}
-      <div
-        className="relative w-full overflow-hidden bg-slate-100"
-        // clamp(min, preferred, max) → tall enough on desktop; not huge on mobile
-        style={{ height: "clamp(220px, 50vw, 540px)" }}
-      >
-        {/* Slides (stacked + fading). Images fill the area (object-cover) so no white bands. */}
-        <div className="absolute inset-0">
-          {SLIDES.map((s, i) => {
-            const visible = i === idx;
-            const imgEl = (
+      {/* Container has NO forced height. Track determines height via natural image size. */}
+      <div className="relative w-full overflow-hidden bg-slate-100">
+        {/* Track: flex row we translate; each slide is width:100% */}
+        <div
+          className="flex transition-transform duration-700 will-change-transform"
+          style={{ transform: `translateX(-${idx * 100}%)` }}
+        >
+          {SLIDES.map((s) => {
+            const Img = (
               <img
                 src={s.src}
                 alt={s.alt}
-                className="w-full h-full object-cover"
-                aria-hidden={!visible}
+                className="block w-full h-auto select-none"
                 draggable={false}
               />
             );
             return (
-              <div
-                key={s.src}
-                role="group"
-                aria-roledescription="slide"
-                aria-label={`${i + 1} of ${SLIDES.length}: ${s.alt}`}
-                className={`absolute inset-0 transition-opacity duration-700 ${
-                  visible ? "opacity-100" : "opacity-0 pointer-events-none"
-                }`}
-              >
+              <div key={s.src} className="w-full shrink-0" role="group" aria-roledescription="slide">
                 {s.href ? (
                   <a
                     href={s.href}
-                    className="block w-full h-full focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/40"
+                    className="block focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/40"
                   >
-                    {imgEl}
+                    {Img}
                   </a>
                 ) : (
-                  imgEl
+                  Img
                 )}
               </div>
             );
           })}
         </div>
 
-        {/* Arrows (desktop only), bigger & moved inward */}
+        {/* Plain arrows (no box/padding), bigger, nudged inward; hidden on mobile */}
         <button
           aria-label="Previous slide"
           onClick={() => setIdx((p) => (p - 1 + SLIDES.length) % SLIDES.length)}
-          className="hidden md:flex absolute left-5 top-1/2 -translate-y-1/2 z-10 h-14 w-14 items-center justify-center text-white/95 text-4xl bg-black/40 hover:bg-black/55 rounded-md focus:outline-none focus-visible:ring-4 focus-visible:ring-white/60"
+          className="hidden md:block absolute left-5 top-1/2 -translate-y-1/2 z-10 text-white text-6xl leading-none select-none"
+          style={{ textShadow: "0 1px 3px rgba(0,0,0,.6)" }}
         >
-          ‹
+          &lt;
         </button>
         <button
           aria-label="Next slide"
           onClick={() => setIdx((p) => (p + 1) % SLIDES.length)}
-          className="hidden md:flex absolute right-5 top-1/2 -translate-y-1/2 z-10 h-14 w-14 items-center justify-center text-white/95 text-4xl bg-black/40 hover:bg-black/55 rounded-md focus:outline-none focus-visible:ring-4 focus-visible:ring-white/60"
+          className="hidden md:block absolute right-5 top-1/2 -translate-y-1/2 z-10 text-white text-6xl leading-none select-none"
+          style={{ textShadow: "0 1px 3px rgba(0,0,0,.6)" }}
         >
-          ›
+          &gt;
         </button>
 
-        {/* Dots – lifted up a bit from the very bottom */}
+        {/* Dots slightly lifted from bottom */}
         <div
-          className="absolute left-1/2 -translate-x-1/2 bottom-6 flex gap-2"
+          className="absolute left-1/2 -translate-x-1/2 bottom-4 flex gap-2"
           role="tablist"
           aria-label="Slide navigation"
         >
@@ -170,15 +158,13 @@ function Carousel() {
 }
 
 /* =========================
-   Spotlight cards (simple, responsive)
+   Spotlight (native proportions, no zoom)
    ========================= */
 function SpotlightCard({ img, alt, href }: { img: string; alt: string; href: string }) {
   return (
     <article className="rounded-xl bg-white shadow hover:shadow-md transition">
-      {/* Fixed 16:9 visual; cover to avoid letterboxing, but card is smaller so it won’t look “zoomed” */}
-      <div className="w-full overflow-hidden" style={{ aspectRatio: "16 / 9" }}>
-        <img src={img} alt={alt} className="w-full h-full object-cover" />
-      </div>
+      {/* Native height: no object-cover; just width:100% & height:auto */}
+      <img src={img} alt={alt} className="block w-full h-auto" />
       <div className="p-4">
         <a
           href={href}
@@ -191,9 +177,6 @@ function SpotlightCard({ img, alt, href }: { img: string; alt: string; href: str
   );
 }
 
-/* =========================
-   Quick links data
-   ========================= */
 const quickLinks = [
   { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx", color: "bg-slate-600" },
   { label: "NJ Grants & Scholarships", href: "/Pages/NJGrantsHome.aspx", color: "bg-red-700" },
@@ -203,9 +186,6 @@ const quickLinks = [
   { label: "Employer Resources", href: "/Pages/EmployerResources.aspx", color: "bg-emerald-800" },
 ];
 
-/* =========================
-   Page
-   ========================= */
 export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb?: boolean }) {
   return (
     <main className="w-full">
@@ -215,7 +195,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
         </div>
       ) : null}
 
-      {/* Carousel */}
+      {/* Carousel (native image height) */}
       <Carousel />
 
       {/* Spotlight + Quick Links */}
