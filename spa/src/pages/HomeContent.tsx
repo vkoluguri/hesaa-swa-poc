@@ -280,22 +280,48 @@ function Carousel() {
 }
 
 /* =========================
-   Spotlight (no crop/zoom; bounded height)
+   Spotlight (equal height, no crop/zoom)
    ========================= */
 
-function SpotlightCard({ img, alt, href }: { img: string; alt: string; href: string }) {
+function SpotlightCard({
+  img,
+  alt,
+  href,
+  idx,
+}: {
+  img: string;
+  alt: string;
+  href: string;
+  idx: number;
+}) {
   return (
-    <article className="rounded-xl bg-white shadow hover:shadow-md transition">
-      <div className="w-full bg-white flex items-center justify-center">
+    <article className="h-full rounded-xl bg-white shadow hover:shadow-md transition focus-within:shadow-md" aria-labelledby={`spot-${idx}-title`}>
+      {/* Fixed responsive media area for equal heights */}
+      <div
+        className="
+          w-full overflow-hidden bg-white
+          h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px]
+          flex items-center justify-center
+        "
+      >
         <img
           src={img}
           alt={alt}
-          className="block w-full h-auto max-h-[420px] md:max-h-[460px] object-contain"
+          decoding="async"
+          loading="lazy"
+          className="max-h-full w-auto h-auto object-contain"
         />
       </div>
+
       <div className="p-4">
+        {/* Hidden label that names the card for AT */}
+        <span id={`spot-${idx}-title`} className="sr-only">
+          {alt}
+        </span>
+
         <a
           href={href}
+          aria-describedby={`spot-${idx}-title`}
           className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
         >
           Learn more <ArrowRight className="size-4" aria-hidden="true" />
@@ -341,18 +367,24 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
               HESAA Spotlight
             </h2>
 
-            <div className="grid sm:grid-cols-2 gap-6">
-              <SpotlightCard
-                img="/assets/NJCLASSSpotlight.jpg"
-                alt="NJCLASS program spotlight"
-                href="/Pages/NJCLASSHome.aspx"
-              />
-              <SpotlightCard
-                img="/assets/SPOTLIGHTTall-Fill-It-Out.jpg"
-                alt="Complete your financial aid application"
-                href="/Pages/financialaidhub.aspx"
-              />
-            </div>
+            <ul className="grid sm:grid-cols-2 gap-6 list-none p-0 m-0" role="list">
+              {[
+                {
+                  img: "/assets/NJCLASSSpotlight.jpg",
+                  alt: "NJCLASS program spotlight",
+                  href: "/Pages/NJCLASSHome.aspx",
+                },
+                {
+                  img: "/assets/SPOTLIGHTTall-Fill-It-Out.jpg",
+                  alt: "Complete your financial aid application",
+                  href: "/Pages/financialaidhub.aspx",
+                },
+              ].map((item, i) => (
+                <li key={item.img} className="m-0">
+                  <SpotlightCard img={item.img} alt={item.alt} href={item.href} idx={i} />
+                </li>
+              ))}
+            </ul>
           </div>
 
           <aside className="lg:col-span-1" aria-labelledby="quick-links-title">

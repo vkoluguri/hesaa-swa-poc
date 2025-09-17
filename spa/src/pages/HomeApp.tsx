@@ -8,7 +8,7 @@ export default function HomeApp() {
     <>
       <Header />
       {/* small gap so page content/breadcrumb never crowds the nav */}
-      <main className="mt-4 md:mt-3">
+      <main className="mt-4 md:mt-6">
         {/* Home page: no breadcrumb */}
         <HomeContent showBreadcrumb={false} />
       </main>
