@@ -1608,42 +1608,24 @@
     }
   }
 }
-/* ========== Translate popover fixes ========== */
-#translate-pop .goog-te-gadget-simple { display: none !important; }
-#translate-pop .goog-te-gadget { font-size: 0 !important; line-height: 0 !important; }
-
-#translate-pop .gt-popover select.goog-te-combo,
-#gt-container-desktop select.goog-te-combo,
-#gt-container-mobile select.goog-te-combo {
+/* Translate popover fixes */
+#translate-pop .goog-te-gadget-simple { display: none !important; } /* hide the small inline badge */
+#translate-pop .goog-te-gadget { font-size: 0 !important; line-height: 0; } /* hide label text only */
+#translate-pop select.goog-te-combo {
   display: block !important;
   width: 100% !important;
-  background: #fff !important;
   border: 1px solid rgb(203 213 225) !important; /* slate-300 */
-  border-radius: .375rem !important;
-  padding: .5rem .5rem !important;
-  font-size: .875rem !important;
-  color: rgb(30 41 59) !important;
+  border-radius: .375rem !important;             /* rounded-md */
+  padding: .5rem .5rem !important;               /* px-2 py-2 */
+  font-size: .875rem !important;                  /* text-sm */
+  color: rgb(30 41 59) !important;               /* slate-800 */
+  background: #fff !important;
 }
-
-/* Some locales inject an iframe */
-#translate-pop iframe { max-width: 100% !important; }
-
-/* ========== Desktop menu clarity ========== */
-nav[aria-label="Primary"] > ul > li > a[aria-current="page"] {
-  position: relative;
-}
-nav[aria-label="Primary"] > ul > li > a[aria-current="page"]::after {
-  content: "";
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: -6px;
-  height: 3px;
-  background: #1d4ed8; /* blue-700 */
-  border-radius: 2px;
-}
-
+#translate-pop iframe { max-width: 100% !important; } /* if Google injects an iframe in some locales */
 #gt-container select {
     width: 100% !important;
     border: 1px solid black !important;
+}
+#targetLanguage{
+  border: 1px solid black !important;
 }
