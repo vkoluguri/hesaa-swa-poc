@@ -541,7 +541,7 @@ function MobileItem({ item }: { item: NavNode }) {
         <a
           href={leaf.href}
           target={leaf.target}
-          className="block rounded-md px-3 py-2 text-[15px] text-slate-800 hover:bg-[#e3ecff] hover:text-blue-900 hover:border-l-2 hover:border-blue-600"
+          className="block rounded-md px-3 py-2 text-[16px] text-slate-800 hover:bg-[#e3ecff] hover:text-blue-900 hover:border-l-2 hover:border-blue-600"
         >
           {leaf.label}
         </a>
@@ -555,7 +555,7 @@ function MobileItem({ item }: { item: NavNode }) {
                 <a
                   href={child.href}
                   target={child.target}
-                  className="block rounded-md px-3 py-2 text-[.95rem] text-slate-700 hover:bg-[#dbe5f9]"
+                  className="block rounded-md px-3 py-2 text-[16px] text-slate-800 hover:bg-[#dbe5f9]"
                 >
                   {child.label}
                 </a>
