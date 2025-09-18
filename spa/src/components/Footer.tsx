@@ -3,7 +3,7 @@ import React from "react";
 const year = new Date().getFullYear();
 
 // Keep footer aligned with the rest of the site (80rem rail)
-const CONTAINER = "max-w-[80rem] mx-auto px-4";
+const CONTAINER = "max-w-[85rem] mx-auto px-4";
 
 // ---- Solid, accessible social icons (currentColor) ----
 function IconFacebook(props: React.SVGProps<SVGSVGElement>) {

@@ -520,7 +520,7 @@ function NavItem({ item }: { item: NavNode }) {
     if (closeTimer.current) window.clearTimeout(closeTimer.current);
     openTimer.current = window.setTimeout(() => setOpen(true), delay);
   }
-  function armClose(delay = 180) {
+  function armClose(delay = 250) {
     if (openTimer.current) window.clearTimeout(openTimer.current);
     closeTimer.current = window.setTimeout(() => setOpen(false), delay);
   }
@@ -567,7 +567,7 @@ function NavItem({ item }: { item: NavNode }) {
 ].join(" ")}
 
         >
-          <span className="font-semibold">{item.label}</span>
+          <span>{item.label}</span>
           <ChevronDown
             className={`inline size-4 ml-1 transition-colors ${open || isActive ? "text-white" : "text-slate-500"}`}
             aria-hidden
@@ -588,7 +588,7 @@ function NavItem({ item }: { item: NavNode }) {
       )}
 
  {hasChildren && open && (
-   <ul
+<ul
      id={submenuId}
      role="menu"
      className="absolute left-1/2 -translate-x-1/2 top-full mt-2 min-w-[26rem]
@@ -596,6 +596,7 @@ function NavItem({ item }: { item: NavNode }) {
      onMouseEnter={() => armOpen(0)}
      onMouseLeave={() => armClose(160)}
    >
+    <div className="pointer-events-auto absolute -top-2 left-0 right-0 h-2" />
             {item.children!.map((child) =>
               isGroup(child) ? (
                 <li key={child.label} className="relative group" role="none">
@@ -611,10 +612,11 @@ function NavItem({ item }: { item: NavNode }) {
 
                   <ul
                     role="menu"
-                    className="absolute top-0 left-[calc(100%-1px)] min-w-[20rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl hidden group-hover:block"
+                    className="absolute top-0 left-full min-w-[20rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl hidden group-hover:block"
                     onMouseEnter={() => armOpen(0)}
                     onMouseLeave={() => armClose(160)}
                   >
+                    <div className="pointer-events-auto absolute -left-2 top-0 h-full w-2" />
                     {child.children!.map((leaf) => (
                       <li key={leaf.label} role="none">
                         <a
@@ -779,7 +781,7 @@ export default function Header() {
 
       {/* Logo + right-links */}
       <div className="bg-white">
-        <div className="max-w-[120rem] mx-auto px-4 py-1 flex items-start justify-between">
+        <div className="max-w-[85rem] mx-auto px-4 py-1 flex items-start justify-between">
           {/* HESAA logo */}
           <a href="/" aria-label="HESAA Home" className="pt-1">
             <img
@@ -869,8 +871,8 @@ export default function Header() {
 
       {/* Main nav row */}
       <div className="w-full border-t border-slate-200 mt-3" style={{ backgroundColor: "#dbe5f9" }}>
-        <div className="max-w-[120rem] mx-auto px-4">
-          <nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-3">
+        <div className="max-w-[85rem] mx-auto px-4">
+          <nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-2">
             <ul className="flex items-center gap-2 text-[18px] font-medium">
               {NAV.map((item) => (
                 <NavItem key={item.label} item={item} />

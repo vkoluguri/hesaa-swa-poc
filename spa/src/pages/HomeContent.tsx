@@ -4,7 +4,7 @@ import { ArrowRight, ExternalLink, CalendarDays, Newspaper, Pause, Play } from "
 /* =========================
    Shared container (80rem) to match Footer
    ========================= */
-const CONTAINER = "max-w-[80rem] mx-auto px-4";
+const CONTAINER = "max-w-[85rem] mx-auto px-4";
 /* =========================
    Slides
    ========================= */
