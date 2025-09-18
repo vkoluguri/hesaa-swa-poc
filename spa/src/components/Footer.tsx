@@ -157,19 +157,12 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Bottom row now uses the SAME 4-column grid, so items align to columns 1 & 4 */}
+      {/* Bottom row: OPRA left, copyright right; tiny nudge for OPRA on lg; copyright kept on one line */}
       <div className={`${CONTAINER} pb-8`}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-center">
-          <p className="col-span-1 justify-self-start text-slate-800">
-            © {year} Higher Education Student Assistance Authority
-          </p>
-
-          {/* spacer keeps column structure on lg; collapses naturally on smaller screens */}
-          <div className="hidden lg:block lg:col-span-2" />
-
+        <div className="flex items-center justify-between">
           <a
             href="/Pages/OpenPublicRecordsAct.aspx"
-            className="col-span-1 justify-self-end block focus:outline-none focus:ring-2 focus:ring-blue-600/40 rounded"
+            className="block focus:outline-none focus:ring-2 focus:ring-blue-600/40 rounded lg:ml-2"
           >
             <img
               src="/assets/OPRA.jpg"
@@ -177,6 +170,10 @@ export default function Footer() {
               className="h-8 w-auto"
             />
           </a>
+
+          <p className="text-slate-800 whitespace-nowrap">
+            © {year} Higher Education Student Assistance Authority
+          </p>
         </div>
       </div>
     </footer>
