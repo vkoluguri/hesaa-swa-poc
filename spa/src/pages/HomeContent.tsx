@@ -2,6 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, ExternalLink, CalendarDays, Newspaper, Pause, Play } from "lucide-react";
 
 /* =========================
+   Shared container (80rem) to match Footer
+   ========================= */
+const CONTAINER = "max-w-[80rem] mx-auto px-4";
+/* =========================
    Slides
    ========================= */
 
@@ -39,7 +43,7 @@ function usePreloaded(srcs: string[]) {
   return ready;
 }
 
-// high-precision timer that keeps cadence across tab visibility changes
+//  timer that keeps cadence across tab visibility changes
 function useAccurateTimer(run: boolean, stepMs: number, onTick: () => void) {
   const nextAt = useRef<number | null>(null);
   useEffect(() => {
@@ -348,7 +352,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
   return (
     <main className="w-full">
       {showBreadcrumb ? (
-        <div className="max-w-[120rem] mx-auto px-4 text-sm text-slate-500 mt-2" aria-label="Breadcrumb">
+        <div className={`${CONTAINER} text-sm text-slate-500 mt-2`} aria-label="Breadcrumb">
           Home
         </div>
       ) : null}
@@ -357,7 +361,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
       <Carousel />
 
       {/* Spotlight + Quick Links */}
-      <section aria-labelledby="spotlight-title" className="max-w-[120rem] mx-auto px-4 mt-6">
+      <section aria-labelledby="spotlight-title" className={`${CONTAINER} mt-6`}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <h2
@@ -413,7 +417,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
         <h2 id="news-and-events" className="sr-only">
           News and Events
         </h2>
-        <div className="max-w-[120rem] mx-auto px-4 grid lg:grid-cols-2 gap-8">
+        <div className={`${CONTAINER} grid lg:grid-cols-2 gap-8`}>
           <div aria-labelledby="recent-news-title">
             <h3
               id="recent-news-title"

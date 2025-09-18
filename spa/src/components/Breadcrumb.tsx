@@ -8,7 +8,8 @@ export default function Breadcrumb({ title, isHome = false }: { title: string; i
   if (isHome) return null;
   return (
     <div className="w-full border-b border-slate-200 bg-white">
-      <div className="max-w-[120rem] mx-auto px-4">
+      {/* switched to 80rem to align with footer + spotlight + quicklinks + news/events */}
+      <div className="max-w-[80rem] mx-auto px-4">
         <nav aria-label="Breadcrumb" className="py-2 text-sm">
           <ol className="flex items-center gap-2 text-slate-600">
             <li>
