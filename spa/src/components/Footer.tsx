@@ -55,10 +55,10 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 justify-items-start">
           {/* HESAA column */}
           <nav aria-labelledby="ft-hesaa">
-            <h3 id="ft-hesaa" className="text-lg font-semibold text-slate-900 mb-3">
+            <h3 id="ft-hesaa" className="text-md font-semibold text-slate-900 mb-3">
               HESAA
             </h3>
-            <ul className="space-y-2 text-slate-800">
+            <ul className="space-y-2 text-slate-800 text-[13px]">
               <li><a href="/Pages/Careers.aspx" className="hover:text-blue-700 hover:underline">Careers</a></li>
               <li><a href="/Pages/PrivacyPolicy.aspx" className="hover:text-blue-700 hover:underline">Privacy Policy</a></li>
               <li><a href="/Pages/WebsiteTerms.aspx" className="hover:text-blue-700 hover:underline">Website T &amp; C</a></li>
@@ -68,10 +68,10 @@ export default function Footer() {
 
           {/* Grants & Scholarships */}
           <nav aria-labelledby="ft-grants">
-            <h3 id="ft-grants" className="text-lg font-semibold text-slate-900 mb-3">
+            <h3 id="ft-grants" className="text-md font-semibold text-slate-900 mb-3">
               Grants &amp; Scholarships
             </h3>
-            <ul className="space-y-2 text-slate-800">
+            <ul className="space-y-2 text-slate-800 text-[13px]">
               <li><a href="https://njfams.hesaa.org" target="_blank" rel="noopener noreferrer" className="hover:text-blue-700 hover:underline">NJFAMS Account</a></li>
               <li><a href="/Pages/StateApplicationDeadlines.aspx" className="hover:text-blue-700 hover:underline">Application Deadlines</a></li>
             </ul>
@@ -79,10 +79,10 @@ export default function Footer() {
 
           {/* NJCLASS */}
           <nav aria-labelledby="ft-njclass">
-            <h3 id="ft-njclass" className="text-lg font-semibold text-slate-900 mb-3">
+            <h3 id="ft-njclass" className="text-md font-semibold text-slate-900 mb-3">
               NJCLASS
             </h3>
-            <ul className="space-y-2 text-slate-800">
+            <ul className="space-y-2 text-slate-800 text-[13px]">
               <li><a href="/Pages/NJCLASSHome.aspx" className="hover:text-blue-700 hover:underline">Apply Now</a></li>
               <li><a href="https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp" target="_blank" rel="noopener noreferrer" className="hover:text-blue-700 hover:underline">Login</a></li>
               <li><a href="/Pages/NJCLASSMakePayment.aspx" className="hover:text-blue-700 hover:underline">Make a Payment</a></li>
