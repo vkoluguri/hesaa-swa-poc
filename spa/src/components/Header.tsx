@@ -560,10 +560,12 @@ function NavItem({ item }: { item: NavNode }) {
           aria-expanded={open}
           aria-controls={submenuId}
           className={[
-            "px-4 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
-            `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
-            (open || isActive) ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
-          ].join(" ")}
+  "px-4 py-2 rounded-md transition-colors font-semibold",  // <-- added font-semibold here
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+  `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
+  (open || isActive) ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
+].join(" ")}
+
         >
           <span className="font-semibold">{item.label}</span>
           <ChevronDown
@@ -575,25 +577,25 @@ function NavItem({ item }: { item: NavNode }) {
         <a
           href={item.href || "#"}
           className={[
-            "px-4 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+            "px-4 py-2 rounded-md transition-colors font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
             `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
             isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
           ].join(" ")}
           aria-current={isActive ? "page" : undefined}
         >
-          <span className="font-semibold">{item.label}</span>
+          <span>{item.label}</span>
         </a>
       )}
 
  {hasChildren && open && (
-   <div className="absolute left-1/2 -translate-x-1/2 top-full translate-y-2 z-40">
-          <ul
-            id={submenuId}
-            role="menu"
-            className="min-w-[26rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl nav-dropdown"
-            onMouseEnter={() => armOpen(0)}
-            onMouseLeave={() => armClose(160)}
-          >
+   <ul
+     id={submenuId}
+     role="menu"
+     className="absolute left-1/2 -translate-x-1/2 top-full mt-2 min-w-[26rem]
+                rounded-md border border-slate-200 bg-white p-2 shadow-2xl z-40 nav-dropdown"
+     onMouseEnter={() => armOpen(0)}
+     onMouseLeave={() => armClose(160)}
+   >
             {item.children!.map((child) =>
               isGroup(child) ? (
                 <li key={child.label} className="relative group" role="none">
@@ -640,9 +642,8 @@ function NavItem({ item }: { item: NavNode }) {
                 </li>
               )
             )}
-          </ul>
-        </div>
-      )}
+         </ul>
+ )}
     </li>
   );
 }
