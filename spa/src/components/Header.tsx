@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Menu, Search, Globe, ChevronDown, ChevronRight } from "lucide-react";
 
+const TOP_ACTIVE_BG = "bg-[#357ae8]";   // the solid highlight you liked
+const TOP_ACTIVE_TEXT = "text-white";
+const TOP_HOVER_BG = "hover:bg-[#cfe0ff]";
+const TOP_HOVER_TEXT = "hover:text-blue-900";
+
 /* =========================
    NAV DATA (yours)
    ========================= */
@@ -488,22 +493,28 @@ function NavItem({ item }: { item: NavNode }) {
       <a
         href={item.href || "#"}
         className={[
-          "px-4 py-2 rounded-md transition-colors",
-          // hover + focus
-          "text-slate-900 hover:bg-[#cfe0ff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
-          // active tab (and keep while dropdown is open)
-          (isActive || open) ? "bg-[#357ae8] text-white border-b-2 border-blue-700" : ""
+          "px-4 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+          // default look
+          `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
+          // if it's a parent AND open/active: solid highlight
+          hasChildren && (open || isActive) ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : "",
+          // if it's an active leaf (no children), also highlight
+          !hasChildren && isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
         ].join(" ")}
         aria-haspopup={hasChildren ? "true" : undefined}
         aria-expanded={hasChildren ? open : undefined}
         aria-current={isActive ? "page" : undefined}
-        onFocus={() => setOpen(true)}
-        onBlur={(e) => {
-          if (!(e.currentTarget.parentElement?.contains(document.activeElement))) setOpen(false);
-        }}
       >
         <span className="font-medium">{item.label}</span>
-        {hasChildren && <ChevronDown className="inline size-4 ml-1" aria-hidden />}
+        {hasChildren && (
+          <ChevronDown
+            className={[
+              "inline size-4 ml-1 transition-colors",
+              open || isActive ? "text-white" : "text-slate-500"
+            ].join(" ")}
+            aria-hidden
+          />
+        )}
       </a>
 
       {hasChildren && open && (
@@ -564,15 +575,31 @@ function NavItem({ item }: { item: NavNode }) {
 function MobileItem({ item }: { item: NavNode }) {
   const [open, setOpen] = useState<boolean>(false);
   const hasChildren = !!item.children?.length;
+
+   // match active section like desktop
+  const activeTop = useActiveTopLabel();
+  const isActive = activeTop === item.label;
+
   return (
     <div className="px-1">
       <button
-        className="w-full flex items-center justify-between rounded-md px-3 py-2 text-left hover:bg-white text-[16px]"
+        className={[
+          "w-full flex items-center justify-between rounded-md px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+          open || isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : "text-slate-900"
+        ].join(" ")}
         onClick={() => (hasChildren ? setOpen((v) => !v) : (window.location.href = item.href || "#"))}
         aria-expanded={open}
+        aria-current={isActive ? "page" : undefined}
       >
-        <span className="font-normal">{item.label}</span>
-        {hasChildren && <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />}
+        <span className="font-medium">{item.label}</span>
+        {hasChildren && (
+          <ChevronDown
+            className={`size-4 transition-transform ${open ? "rotate-180" : ""} ${
+              open || isActive ? "text-white" : "text-slate-500"
+            }`}
+            aria-hidden
+          />
+        )}
       </button>
 
       {/* Only render second level when open */}
