@@ -552,100 +552,114 @@ function NavItem({ item }: { item: NavNode }) {
   return (
     <li className="relative" onMouseEnter={() => armOpen(120)} onMouseLeave={() => armClose(200)}>
       {hasChildren ? (
-        <button
-          type="button"
-          onKeyDown={onKeyDown}
-          onClick={() => setOpen((v) => !v)}
-          aria-haspopup="true"
-          aria-expanded={open}
-          aria-controls={submenuId}
-          className={[
-  "px-4 py-2 rounded-md transition-colors font-semibold",  // <-- added font-semibold here
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
-  `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
-  (open || isActive) ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
-].join(" ")}
-
-        >
-          <span>{item.label}</span>
+// parent with children (button)
+<button
+  type="button"
+  role="menuitem"
+  aria-haspopup="true"
+  aria-expanded={open}
+  aria-controls={submenuId}
+  className={[
+    "px-4 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+    "font-semibold",                        // class
+    `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
+    (open || isActive) ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
+  ].join(" ")}
+  style={{ fontWeight: 600 }}               // inline for belt & suspenders
+>
+  <span className="font-semibold" style={{ fontWeight: 600 }}>
+    {item.label}
+  </span>
           <ChevronDown
             className={`inline size-4 ml-1 transition-colors ${open || isActive ? "text-white" : "text-slate-500"}`}
             aria-hidden
           />
         </button>
       ) : (
-        <a
-          href={item.href || "#"}
-          className={[
-            "px-4 py-2 rounded-md transition-colors font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
-            `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
-            isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
-          ].join(" ")}
-          aria-current={isActive ? "page" : undefined}
-        >
-          <span>{item.label}</span>
-        </a>
+// simple link (no children)
+<a
+  role="menuitem"
+  href={item.href || "#"}
+  className={[
+    "px-4 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+    "font-semibold",
+    `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
+    isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
+  ].join(" ")}
+  style={{ fontWeight: 600 }}
+  aria-current={isActive ? "page" : undefined}
+>
+  <span className="font-semibold" style={{ fontWeight: 600 }}>{item.label}</span>
+</a>
       )}
 
- {hasChildren && open && (
-<ul
-     id={submenuId}
-     role="menu"
-     className="absolute left-1/2 -translate-x-1/2 top-full mt-2 min-w-[26rem]
-                rounded-md border border-slate-200 bg-white p-2 shadow-2xl z-40 nav-dropdown"
-     onMouseEnter={() => armOpen(0)}
-     onMouseLeave={() => armClose(160)}
-   >
+{hasChildren && open && (
+  <ul
+    id={submenuId}
+    role="menu"
+    aria-label={`${item.label} submenu`}
+    className="absolute left-1/2 -translate-x-1/2 top-full mt-2 min-w-[26rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl z-40 nav-dropdown"
+    onMouseEnter={() => armOpen(0)}
+    onMouseLeave={() => armClose(200)}   // <-- close only when leaving the whole submenu
+  >
+    {/* bridge: removes the 2px gap between top tab and submenu */}
     <div className="pointer-events-auto absolute -top-2 left-0 right-0 h-2" />
-            {item.children!.map((child) =>
-              isGroup(child) ? (
-                <li key={child.label} className="relative group" role="none">
-                  <div
-                    className="group-header flex items-center justify-between rounded-md px-3 py-2 hover:bg-[#e3ecff] text-slate-900 text-[16px] font-normal"
-                    role="menuitem"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                  >
-                    <span>{child.label}</span>
-                    <ChevronRight className="size-4 text-slate-400" aria-hidden />
-                  </div>
 
-                  <ul
-                    role="menu"
-                    className="absolute top-0 left-full min-w-[20rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl hidden group-hover:block"
-                    onMouseEnter={() => armOpen(0)}
-                    onMouseLeave={() => armClose(160)}
-                  >
-                    <div className="pointer-events-auto absolute -left-2 top-0 h-full w-2" />
-                    {child.children!.map((leaf) => (
-                      <li key={leaf.label} role="none">
-                        <a
-                          role="menuitem"
-                          href={leaf.href}
-                          target={leaf.target}
-                          className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#e3ecff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-                        >
-                          {leaf.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ) : (
-                <li key={child.label} role="none">
-                  <a
-                    role="menuitem"
-                    href={child.href}
-                    target={child.target}
-                    className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#dbe5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-                  >
-                    {child.label}
-                  </a>
-                </li>
-              )
-            )}
-         </ul>
- )}
+    {item.children!.map((child) =>
+      isGroup(child) ? (
+        <li key={child.label} className="relative group" role="none">
+          <div
+            className="group-header flex items-center justify-between rounded-md px-3 py-2 hover:bg-[#e3ecff] text-slate-900 text-[16px]"
+            role="menuitem"
+            aria-haspopup="true"
+            aria-expanded="false"
+            tabIndex={-1}
+          >
+            <span>{child.label}</span>
+            <ChevronRight className="size-4 text-slate-400" aria-hidden />
+          </div>
+
+          <ul
+            role="menu"
+            aria-label={`${child.label} submenu`}
+            className="absolute top-0 left-full min-w-[20rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl hidden group-hover:block"
+            // IMPORTANT: no armClose here — outer UL handles leave/close
+            onMouseEnter={() => armOpen(0)}
+          >
+            {/* bridge: keeps hover when moving back from flyout to column */}
+            <div className="pointer-events-auto absolute -left-2 top-0 h-full w-2" />
+            {child.children!.map((leaf) => (
+              <li key={leaf.label} role="none">
+                <a
+                  role="menuitem"
+                  href={leaf.href}
+                  target={leaf.target}
+                  className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#e3ecff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                  tabIndex={-1}
+                >
+                  {leaf.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </li>
+      ) : (
+        <li key={child.label} role="none">
+          <a
+            role="menuitem"
+            href={child.href}
+            target={child.target}
+            className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#dbe5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            tabIndex={-1}
+          >
+            {child.label}
+          </a>
+        </li>
+      )
+    )}
+  </ul>
+)}
+
     </li>
   );
 }
@@ -872,13 +886,12 @@ export default function Header() {
       {/* Main nav row */}
       <div className="w-full border-t border-slate-200 mt-3" style={{ backgroundColor: "#dbe5f9" }}>
         <div className="max-w-[85rem] mx-auto px-4">
-          <nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-2">
-            <ul className="flex items-center gap-2 text-[18px] font-medium">
-              {NAV.map((item) => (
-                <NavItem key={item.label} item={item} />
-              ))}
-            </ul>
-          </nav>
+<nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-2">
+  <ul role="menubar" className="flex items-center gap-2 text-[18px] font-medium">
+    {NAV.map((item) => <NavItem key={item.label} item={item} />)}
+  </ul>
+</nav>
+
         </div>
 
         {/* Mobile panel */}
