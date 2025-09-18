@@ -2,7 +2,7 @@ import React from "react";
 
 const year = new Date().getFullYear();
 
-// Small helper so top and bottom rows share identical width/centering
+// keep header+footer content the same width and centered
 const CONTAINER = "max-w-[72rem] mx-auto px-4";
 
 // ---- Solid, accessible social icons (currentColor) ----
@@ -59,22 +59,22 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2 text-slate-800">
               <li>
-                <a href="/Pages/Careers.aspx" className="hover:text-blue-700 focus:text-blue-700 focus:outline-none">
+                <a href="/Pages/Careers.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">
                   Careers
                 </a>
               </li>
               <li>
-                <a href="/Pages/PrivacyPolicy.aspx" className="hover:text-blue-700 focus:text-blue-700 focus:outline-none">
+                <a href="/Pages/PrivacyPolicy.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">
                   Privacy Policy
                 </a>
               </li>
               <li>
-                <a href="/Pages/WebsiteTerms.aspx" className="hover:text-blue-700 focus:text-blue-700 focus:outline-none">
+                <a href="/Pages/WebsiteTerms.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">
                   Website T &amp; C
                 </a>
               </li>
               <li>
-                <a href="/Pages/SiteMap.aspx" className="hover:text-blue-700 focus:text-blue-700 focus:outline-none">
+                <a href="/Pages/SiteMap.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">
                   Sitemap
                 </a>
               </li>
@@ -91,7 +91,7 @@ export default function Footer() {
                   href="https://njfams.hesaa.org"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-blue-700 focus:text-blue-700 focus:outline-none"
+                  className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none"
                 >
                   NJFAMS Account
                 </a>
@@ -99,7 +99,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/Pages/StateApplicationDeadlines.aspx"
-                  className="hover:text-blue-700 focus:text-blue-700 focus:outline-none"
+                  className="hover:text-blue-700 focus:text-blue-700 hover:underline focus:outline-none"
                 >
                   Application Deadlines
                 </a>
@@ -113,7 +113,7 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2 text-slate-800">
               <li>
-                <a href="/Pages/NJCLASSHome.aspx" className="hover:text-blue-700 focus:text-blue-700 focus:outline-none">
+                <a href="/Pages/NJCLASSHome.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">
                   Apply Now
                 </a>
               </li>
@@ -122,13 +122,13 @@ export default function Footer() {
                   href="https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-blue-700 focus:text-blue-700 focus:outline-none"
+                  className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none"
                 >
                   Login
                 </a>
               </li>
               <li>
-                <a href="/Pages/NJCLASSMakePayment.aspx" className="hover:text-blue-700 focus:text-blue-700 focus:outline-none">
+                <a href="/Pages/NJCLASSMakePayment.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">
                   Make a Payment
                 </a>
               </li>
@@ -157,15 +157,19 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Bottom row uses the SAME centered width for perfect alignment */}
+      {/* Bottom row now uses the SAME 4-column grid, so items align to columns 1 & 4 */}
       <div className={`${CONTAINER} pb-8`}>
-        <div className="flex items-center justify-between">
-          <p className="text-slate-800">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-center">
+          <p className="col-span-1 justify-self-start text-slate-800">
             © {year} Higher Education Student Assistance Authority
           </p>
+
+          {/* spacer keeps column structure on lg; collapses naturally on smaller screens */}
+          <div className="hidden lg:block lg:col-span-2" />
+
           <a
             href="/Pages/OpenPublicRecordsAct.aspx"
-            className="block focus:outline-none focus:ring-2 focus:ring-blue-600/40 rounded"
+            className="col-span-1 justify-self-end block focus:outline-none focus:ring-2 focus:ring-blue-600/40 rounded"
           >
             <img
               src="/assets/OPRA.jpg"
