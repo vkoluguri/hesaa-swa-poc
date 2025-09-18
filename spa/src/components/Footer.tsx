@@ -109,7 +109,7 @@ export default function Footer() {
 
       {/* Bottom row: OPRA left, copyright right */}
       <div className={`${CONTAINER} pb-8`}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center mt-2 justify-between">
           <a href="/Pages/OpenPublicRecordsAct.aspx" className="block">
             <img
               src="/assets/OPRA.jpg"
