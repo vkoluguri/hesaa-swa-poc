@@ -1,10 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Menu, Search, Globe, ChevronDown, ChevronRight } from "lucide-react";
 
-const TOP_ACTIVE_BG = "bg-[#357ae8]";   // the solid highlight you liked
+const TOP_ACTIVE_BG = "bg-[#357ae8]";   // the solid highlight
 const TOP_ACTIVE_TEXT = "text-white";
 const TOP_HOVER_BG = "hover:bg-[#cfe0ff]";
 const TOP_HOVER_TEXT = "hover:text-blue-900";
+
+
+function useUID(prefix: string) {
+  const [id] = React.useState(() => `${prefix}-${Math.random().toString(36).slice(2, 8)}`);
+  return id;
+}
 
 /* =========================
    NAV DATA (yours)
@@ -318,6 +324,8 @@ function TranslatePopover({
   anchorRef: React.RefObject<HTMLElement | null>;
 }) {
   const poweredSlotRef = useRef<HTMLSpanElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+  const lastTrigger = useRef<HTMLElement | null>(null);
 
   // Position under the trigger, responsive width
   const style = React.useMemo(() => {
@@ -334,10 +342,31 @@ function TranslatePopover({
   // ESC to close
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+
+  // Move focus into the dialog on open; return focus to trigger on close
+  useEffect(() => {
+    if (!open) return;
+    lastTrigger.current = (anchorRef.current as HTMLElement) || null;
+
+    const firstFocusable =
+      popRef.current?.querySelector<HTMLElement>(
+        "button, [href], select, input, textarea, [tabindex]:not([tabindex='-1'])"
+      ) || null;
+
+    // Defer to next frame so the node exists
+    const id = requestAnimationFrame(() => firstFocusable?.focus());
+    return () => {
+      cancelAnimationFrame(id);
+      // return focus to the control that opened the dialog
+      lastTrigger.current?.focus();
+    };
+  }, [open, anchorRef]);
 
   // Mount (and re-mount) the widget every time the popover opens
   useEffect(() => {
@@ -352,12 +381,10 @@ function TranslatePopover({
       if (cancelled) return;
       const g = (window as any).google;
       if (!g?.translate?.TranslateElement) {
-        // Try again shortly (Google script still initializing)
         if (retries++ < 12) retryId = window.setTimeout(mount, 250);
         return;
       }
 
-      // Clear old widget & mount fresh
       const host = document.getElementById("gt-container");
       if (host) host.innerHTML = "";
 
@@ -371,11 +398,9 @@ function TranslatePopover({
         "gt-container"
       );
 
-      // Observe until the <select> appears, then style + move brand
       mo = new MutationObserver(() => {
         const sel = document.querySelector<HTMLSelectElement>("#gt-container select.goog-te-combo");
         if (sel) {
-          // Force visible styling (works even if site CSS loads late)
           sel.style.display = "block";
           sel.style.width = "100%";
           sel.style.border = "1px solid rgb(203 213 225)";
@@ -406,12 +431,20 @@ function TranslatePopover({
 
   return (
     <div
+      ref={popRef}
       id="translate-pop"
       role="dialog"
       aria-modal="true"
-      className={`fixed z-[100] rounded-md border border-slate-300 bg-white shadow-xl ${open ? "block" : "hidden"}`}
+      aria-labelledby="translate-pop-title"
+      className={`fixed z-[100] rounded-md border border-slate-300 bg-white shadow-xl ${
+        open ? "block" : "hidden"
+      }`}
       style={style}
     >
+      <h2 id="translate-pop-title" className="sr-only">
+        Language selection
+      </h2>
+
       {/* Close bar */}
       <button
         type="button"
@@ -423,9 +456,10 @@ function TranslatePopover({
       </button>
 
       <div className="p-3 space-y-3">
-        {/* Small placeholder so the box never looks empty while loading */}
         <div id="gt-container" className="gt-popover min-h-[40px]">
-          <div className="text-[12px] text-slate-500" aria-live="polite">Loading languages…</div>
+          <div className="text-[12px] text-slate-500" aria-live="polite">
+            Loading languages…
+          </div>
         </div>
 
         <div className="flex items-center justify-end">
@@ -433,6 +467,7 @@ function TranslatePopover({
         </div>
 
         <div className="text-[12px] text-slate-700 leading-snug">
+          {/* disclosure text unchanged */}
           The State of NJ site may contain optional links, information, services and/or content from other websites
           operated by third parties that are provided as a convenience, such as Google™ Translate. Google™ Translate is
           an online service for which the user pays nothing to obtain a purported language translation. The user is on
@@ -452,6 +487,7 @@ function TranslatePopover({
     </div>
   );
 }
+
 
 
 /* ---------------- Active top item helper ---------------- */
@@ -475,6 +511,7 @@ function NavItem({ item }: { item: NavNode }) {
   const [open, setOpen] = useState(false);
   const openTimer = useRef<number | null>(null);
   const closeTimer = useRef<number | null>(null);
+  const submenuId = useUID(`submenu-${item.label.replace(/\s+/g, "-").toLowerCase()}`);
 
   const activeTop = useActiveTopLabel();
   const isActive = activeTop === item.label;
@@ -488,60 +525,98 @@ function NavItem({ item }: { item: NavNode }) {
     closeTimer.current = window.setTimeout(() => setOpen(false), delay);
   }
 
+  // keyboard: Enter/Space/ArrowDown open; Esc closes; ArrowLeft/Right move focus between top items (basic)
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (!hasChildren) return;
+    switch (e.key) {
+      case "Enter":
+      case " ":
+      case "ArrowDown":
+        e.preventDefault();
+        setOpen(true);
+        // focus first item in submenu soon
+        requestAnimationFrame(() => {
+          const first = document.querySelector<HTMLAnchorElement>(`#${submenuId} a, #${submenuId} button`);
+          first?.focus();
+        });
+        break;
+      case "Escape":
+        setOpen(false);
+        (e.currentTarget as HTMLElement).focus();
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <li className="relative" onMouseEnter={() => armOpen(120)} onMouseLeave={() => armClose(200)}>
-      <a
-        href={item.href || "#"}
-        className={[
-          "px-4 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
-          // default look
-          `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
-          // if it's a parent AND open/active: solid highlight
-          hasChildren && (open || isActive) ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : "",
-          // if it's an active leaf (no children), also highlight
-          !hasChildren && isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
-        ].join(" ")}
-        aria-haspopup={hasChildren ? "true" : undefined}
-        aria-expanded={hasChildren ? open : undefined}
-        aria-current={isActive ? "page" : undefined}
-      >
-        <span className="font-medium">{item.label}</span>
-        {hasChildren && (
+      {hasChildren ? (
+        <button
+          type="button"
+          onKeyDown={onKeyDown}
+          onClick={() => setOpen((v) => !v)}
+          aria-haspopup="true"
+          aria-expanded={open}
+          aria-controls={submenuId}
+          className={[
+            "px-4 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+            `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
+            (open || isActive) ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
+          ].join(" ")}
+        >
+          <span className="font-semibold">{item.label}</span>
           <ChevronDown
-            className={[
-              "inline size-4 ml-1 transition-colors",
-              open || isActive ? "text-white" : "text-slate-500"
-            ].join(" ")}
+            className={`inline size-4 ml-1 transition-colors ${open || isActive ? "text-white" : "text-slate-500"}`}
             aria-hidden
           />
-        )}
-      </a>
+        </button>
+      ) : (
+        <a
+          href={item.href || "#"}
+          className={[
+            "px-4 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+            `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
+            isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
+          ].join(" ")}
+          aria-current={isActive ? "page" : undefined}
+        >
+          <span className="font-semibold">{item.label}</span>
+        </a>
+      )}
 
-      {hasChildren && open && (
-        <div className="absolute left-1/2 -translate-x-1/2 top-[calc(100%+8px)] z-40">
+ {hasChildren && open && (
+   <div className="absolute left-1/2 -translate-x-1/2 top-full translate-y-2 z-40">
           <ul
+            id={submenuId}
+            role="menu"
             className="min-w-[26rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl nav-dropdown"
             onMouseEnter={() => armOpen(0)}
             onMouseLeave={() => armClose(160)}
           >
             {item.children!.map((child) =>
               isGroup(child) ? (
-                <li key={child.label} className="relative group">
-                  {/* not bold now */}
-                  <div className="group-header flex items-center justify-between rounded-md px-3 py-2 hover:bg-[#e3ecff] text-slate-900 text-[16px] font-normal">
+                <li key={child.label} className="relative group" role="none">
+                  <div
+                    className="group-header flex items-center justify-between rounded-md px-3 py-2 hover:bg-[#e3ecff] text-slate-900 text-[16px] font-normal"
+                    role="menuitem"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                  >
                     <span>{child.label}</span>
                     <ChevronRight className="size-4 text-slate-400" aria-hidden />
                   </div>
 
-                  {/* level-2 flyout — butt edges so the cursor never crosses a gap */}
                   <ul
+                    role="menu"
                     className="absolute top-0 left-[calc(100%-1px)] min-w-[20rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl hidden group-hover:block"
                     onMouseEnter={() => armOpen(0)}
                     onMouseLeave={() => armClose(160)}
                   >
                     {child.children!.map((leaf) => (
-                      <li key={leaf.label}>
+                      <li key={leaf.label} role="none">
                         <a
+                          role="menuitem"
                           href={leaf.href}
                           target={leaf.target}
                           className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#e3ecff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
@@ -553,8 +628,9 @@ function NavItem({ item }: { item: NavNode }) {
                   </ul>
                 </li>
               ) : (
-                <li key={child.label}>
+                <li key={child.label} role="none">
                   <a
+                    role="menuitem"
                     href={child.href}
                     target={child.target}
                     className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#dbe5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
@@ -570,6 +646,7 @@ function NavItem({ item }: { item: NavNode }) {
     </li>
   );
 }
+
 
 /* ---------------- Mobile item (accordion; closed by default) ---------------- */
 function MobileItem({ item }: { item: NavNode }) {
@@ -818,7 +895,7 @@ export default function Header() {
                 <input
                   type="search"
                   placeholder="Search..."
-                  className="w-full rounded-full border border-black/25 py-2 pl-9 pr-3 text-[13px] placeholder:text-black/50 text-slate-900 bg-white/80"
+                  className="w-full rounded-full border border-black/25 py-2 pl-9 pr-3 text-[16px] leading-6 md:text-base placeholder:text-black/50 text-slate-900 bg-white/80"
                 />
                 <Search className="absolute left-2.5 top-2.5 size-4 text-black/40" aria-hidden="true" />
               </label>

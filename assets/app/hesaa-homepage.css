@@ -1634,3 +1634,16 @@
 #targetLanguage{
   border: 1px solid black !important;
 }
+.header-search input,
+.header-search select,
+.header-search textarea,
+.header-search button { font-size: 16px; }
+/* Keep iOS from auto-zooming inputs on focus */
+html { -webkit-text-size-adjust: 100%; }
+
+/* Ensure focused form controls are >=16px on iOS */
+@supports (-webkit-touch-callout: none) {
+  input, select, textarea, button {
+    font-size: 16px;   /* Do not use smaller than this on mobile */
+  }
+}
