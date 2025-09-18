@@ -2,7 +2,10 @@ import React from "react";
 
 const year = new Date().getFullYear();
 
-// ---- Solid, accessible social icons (use currentColor) ----
+// Small helper so top and bottom rows share identical width/centering
+const CONTAINER = "max-w-[72rem] mx-auto px-4";
+
+// ---- Solid, accessible social icons (currentColor) ----
 function IconFacebook(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
@@ -47,44 +50,31 @@ function IconLinkedIn(props: React.SVGProps<SVGSVGElement>) {
 export default function Footer() {
   return (
     <footer className="w-full bg-[#dbe5f9]">
-      {/* same centered width as header/nav */}
-      <div className="max-w-[120rem] mx-auto px-4 py-10">
-        {/* Top: four columns */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+      {/* Top: four columns (closer & centered) */}
+      <div className={`${CONTAINER} py-10`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 justify-items-start">
           <nav aria-labelledby="ft-hesaa">
             <h3 id="ft-hesaa" className="text-lg font-semibold text-slate-900 mb-3">
               HESAA
             </h3>
             <ul className="space-y-2 text-slate-800">
               <li>
-                <a
-                  href="/Pages/Careers.aspx"
-                  className="hover:text-blue-700 focus:text-blue-700 focus:outline-none"
-                >
+                <a href="/Pages/Careers.aspx" className="hover:text-blue-700 focus:text-blue-700 focus:outline-none">
                   Careers
                 </a>
               </li>
               <li>
-                <a
-                  href="/Pages/PrivacyPolicy.aspx"
-                  className="hover:text-blue-700 focus:text-blue-700 focus:outline-none"
-                >
+                <a href="/Pages/PrivacyPolicy.aspx" className="hover:text-blue-700 focus:text-blue-700 focus:outline-none">
                   Privacy Policy
                 </a>
               </li>
               <li>
-                <a
-                  href="/Pages/WebsiteTerms.aspx"
-                  className="hover:text-blue-700 focus:text-blue-700 focus:outline-none"
-                >
+                <a href="/Pages/WebsiteTerms.aspx" className="hover:text-blue-700 focus:text-blue-700 focus:outline-none">
                   Website T &amp; C
                 </a>
               </li>
               <li>
-                <a
-                  href="/Pages/SiteMap.aspx"
-                  className="hover:text-blue-700 focus:text-blue-700 focus:outline-none"
-                >
+                <a href="/Pages/SiteMap.aspx" className="hover:text-blue-700 focus:text-blue-700 focus:outline-none">
                   Sitemap
                 </a>
               </li>
@@ -123,10 +113,7 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2 text-slate-800">
               <li>
-                <a
-                  href="/Pages/NJCLASSHome.aspx"
-                  className="hover:text-blue-700 focus:text-blue-700 focus:outline-none"
-                >
+                <a href="/Pages/NJCLASSHome.aspx" className="hover:text-blue-700 focus:text-blue-700 focus:outline-none">
                   Apply Now
                 </a>
               </li>
@@ -141,10 +128,7 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a
-                  href="/Pages/NJCLASSMakePayment.aspx"
-                  className="hover:text-blue-700 focus:text-blue-700 focus:outline-none"
-                >
+                <a href="/Pages/NJCLASSMakePayment.aspx" className="hover:text-blue-700 focus:text-blue-700 focus:outline-none">
                   Make a Payment
                 </a>
               </li>
@@ -155,47 +139,30 @@ export default function Footer() {
             <h3 id="ft-contact" className="text-lg font-semibold text-slate-900 mb-3">
               CONTACT US
             </h3>
-
-            {/* Solid black social icons */}
             <div className="flex items-center gap-5">
-              <a
-                href="#"
-                aria-label="HESAA on Facebook"
-                className="text-slate-900 hover:text-blue-700 focus:text-blue-700 focus:outline-none"
-              >
+              <a href="#" aria-label="HESAA on Facebook" className="text-slate-900 hover:text-blue-700 focus:text-blue-700 focus:outline-none">
                 <IconFacebook className="h-7 w-7" />
               </a>
-              <a
-                href="#"
-                aria-label="HESAA on YouTube"
-                className="text-slate-900 hover:text-blue-700 focus:text-blue-700 focus:outline-none"
-              >
+              <a href="#" aria-label="HESAA on YouTube" className="text-slate-900 hover:text-blue-700 focus:text-blue-700 focus:outline-none">
                 <IconYouTube className="h-7 w-7" />
               </a>
-              <a
-                href="#"
-                aria-label="HESAA on X"
-                className="text-slate-900 hover:text-blue-700 focus:text-blue-700 focus:outline-none"
-              >
+              <a href="#" aria-label="HESAA on X" className="text-slate-900 hover:text-blue-700 focus:text-blue-700 focus:outline-none">
                 <IconX className="h-7 w-7" />
               </a>
-              <a
-                href="#"
-                aria-label="HESAA on LinkedIn"
-                className="text-slate-900 hover:text-blue-700 focus:text-blue-700 focus:outline-none"
-              >
+              <a href="#" aria-label="HESAA on LinkedIn" className="text-slate-900 hover:text-blue-700 focus:text-blue-700 focus:outline-none">
                 <IconLinkedIn className="h-7 w-7" />
               </a>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Bottom: aligned to the SAME width as columns */}
-        <div className="mt-10 flex items-center justify-between">
+      {/* Bottom row uses the SAME centered width for perfect alignment */}
+      <div className={`${CONTAINER} pb-8`}>
+        <div className="flex items-center justify-between">
           <p className="text-slate-800">
             © {year} Higher Education Student Assistance Authority
           </p>
-
           <a
             href="/Pages/OpenPublicRecordsAct.aspx"
             className="block focus:outline-none focus:ring-2 focus:ring-blue-600/40 rounded"
