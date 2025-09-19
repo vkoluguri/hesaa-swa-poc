@@ -6,6 +6,8 @@ const TOP_ACTIVE_TEXT = "text-white";
 const TOP_HOVER_BG = "hover:bg-[#cfe0ff]";
 const TOP_HOVER_TEXT = "hover:text-blue-900";
 
+const CURR_PATH = typeof window !== "undefined" ? window.location.pathname.toLowerCase() : "";
+
 
 function useUID(prefix: string) {
   const [id] = React.useState(() => `${prefix}-${Math.random().toString(36).slice(2, 8)}`);
@@ -283,7 +285,13 @@ function useBanner() {
 function SiteBanner() {
   const { msg, toneClass } = useBanner();
   if (!msg) return null;
-  return <div className={`w-full border ${toneClass} text-center text-lg py-2`}>{msg}</div>;
+  return <div
+      className={`w-full border ${toneClass} text-center text-lg py-2`}
+      role="status"
+      aria-live="polite"
+    >
+      {msg}
+    </div>;
 }
 
 /* ---------------- Translate popover (shared for desktop+mobile) --------------- */
@@ -526,28 +534,54 @@ function NavItem({ item }: { item: NavNode }) {
   }
 
   // keyboard: Enter/Space/ArrowDown open; Esc closes; ArrowLeft/Right move focus between top items (basic)
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (!hasChildren) return;
-    switch (e.key) {
-      case "Enter":
-      case " ":
-      case "ArrowDown":
-        e.preventDefault();
-        setOpen(true);
-        // focus first item in submenu soon
-        requestAnimationFrame(() => {
-          const first = document.querySelector<HTMLAnchorElement>(`#${submenuId} a, #${submenuId} button`);
-          first?.focus();
-        });
-        break;
-      case "Escape":
-        setOpen(false);
-        (e.currentTarget as HTMLElement).focus();
-        break;
-      default:
-        break;
-    }
+const onKeyDown = (e: React.KeyboardEvent) => {
+  const current = e.currentTarget as HTMLElement;
+
+  // Helper: move focus to previous/next top item
+  const moveHoriz = (dir: -1 | 1) => {
+    const all = Array.from(current.closest("[role='menubar']")!.querySelectorAll<HTMLElement>("[role='menuitem']"));
+    const i = all.indexOf(current);
+    const next = all[(i + dir + all.length) % all.length];
+    next?.focus();
   };
+
+  switch (e.key) {
+    case "Enter":
+    case " ":
+    case "ArrowDown":
+      e.preventDefault();
+      setOpen(true);
+      requestAnimationFrame(() => {
+        const first = document.querySelector<HTMLAnchorElement>(`#${submenuId} a, #${submenuId} button`);
+        first?.focus();
+      });
+      break;
+    case "ArrowUp":
+      if (hasChildren && open) {
+        e.preventDefault();
+        const items = Array.from(
+          document.querySelectorAll<HTMLElement>(`#${submenuId} a, #${submenuId} button`)
+        );
+        items[items.length - 1]?.focus();
+      }
+      break;
+    case "ArrowRight":
+      e.preventDefault();
+      moveHoriz(1);
+      break;
+    case "ArrowLeft":
+      e.preventDefault();
+      moveHoriz(-1);
+      break;
+    case "Escape":
+      setOpen(false);
+      current.focus();
+      break;
+    default:
+      break;
+  }
+};
+
 
   return (
     <li className="relative" onMouseEnter={() => armOpen(120)} onMouseLeave={() => armClose(200)}>
@@ -559,8 +593,11 @@ function NavItem({ item }: { item: NavNode }) {
   aria-haspopup="true"
   aria-expanded={open}
   aria-controls={submenuId}
+  onFocus={() => armOpen(0)}
+  onBlur={() => armClose(200)}
+  onKeyDown={onKeyDown}
   className={[
-    "px-4 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+    "px-3 xl:px-4 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 whitespace-nowrap lg:text-[16px] xl:text-[18px]",
     "font-semibold",                        // class
     `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
     (open || isActive) ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
@@ -577,20 +614,20 @@ function NavItem({ item }: { item: NavNode }) {
         </button>
       ) : (
 // simple link (no children)
-<a
-  role="menuitem"
-  href={item.href || "#"}
-  className={[
-    "px-4 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
-    "font-semibold",
-    `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
-    isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
-  ].join(" ")}
-  style={{ fontWeight: 600 }}
-  aria-current={isActive ? "page" : undefined}
->
-  <span className="font-semibold" style={{ fontWeight: 600 }}>{item.label}</span>
-</a>
+      <a
+        role="menuitem"
+        href={item.href || "#"}
+        className={[
+          "px-3 xl:px-4 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 whitespace-nowrap lg:text-[16px] xl:text-[18px]",
+          "font-semibold",
+          `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
+          isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
+        ].join(" ")}
+        style={{ fontWeight: 600 }}
+        aria-current={isActive ? "page" : undefined}
+      >
+      <span className="font-semibold" style={{ fontWeight: 600 }}>{item.label}</span>
+      </a>
       )}
 
 {hasChildren && open && (
@@ -608,16 +645,17 @@ function NavItem({ item }: { item: NavNode }) {
     {item.children!.map((child) =>
       isGroup(child) ? (
         <li key={child.label} className="relative group" role="none">
-          <div
+            <button
+            type="button"
             className="group-header flex items-center justify-between rounded-md px-3 py-2 hover:bg-[#e3ecff] text-slate-900 text-[16px]"
             role="menuitem"
-            aria-haspopup="true"
+            aria-haspopup="menu"
             aria-expanded="false"
             tabIndex={-1}
-          >
+            >
             <span>{child.label}</span>
             <ChevronRight className="size-4 text-slate-400" aria-hidden />
-          </div>
+          </button>
 
           <ul
             role="menu"
@@ -634,6 +672,13 @@ function NavItem({ item }: { item: NavNode }) {
                   role="menuitem"
                   href={leaf.href}
                   target={leaf.target}
+                  rel={leaf.target === "_blank" ? "noopener noreferrer" : undefined}
+                  aria-current={
+                  CURR_PATH && (leaf.href || "").toLowerCase() &&
+                  CURR_PATH.startsWith((leaf.href || "").toLowerCase())
+                    ? "page"
+                    : undefined
+                }
                   className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#e3ecff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                   tabIndex={-1}
                 >
@@ -649,6 +694,13 @@ function NavItem({ item }: { item: NavNode }) {
             role="menuitem"
             href={child.href}
             target={child.target}
+            rel={child.target === "_blank" ? "noopener noreferrer" : undefined}
+            aria-current={
+            CURR_PATH && (child.href || "").toLowerCase() &&
+            CURR_PATH.startsWith((child.href || "").toLowerCase())
+              ? "page"
+              : undefined
+          }
             className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#dbe5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
             tabIndex={-1}
           >
@@ -701,20 +753,20 @@ function MobileItem({ item }: { item: NavNode }) {
         <ul className="ml-2 mt-1 space-y-1">
           {item.children!.map((child) =>
             isGroup(child) ? (
-<li key={child.label} className="rounded-md bg-[#eef3ff]">
-  <button
-    className="w-full flex items-center justify-between px-3 py-2 text-[16px]"
-    onClick={(e) => {
-      e.preventDefault();
-      const next = (e.currentTarget as HTMLButtonElement).nextElementSibling as HTMLElement | null;
-      if (next) next.classList.toggle("hidden");
-      e.currentTarget.querySelector("svg")?.classList.toggle("rotate-180");
-    }}
-    aria-expanded={false}
-  >
-    <span>{child.label}</span>
-    <ChevronDown className="size-4 transition-transform" />
-  </button>
+      <li key={child.label} className="rounded-md bg-[#eef3ff]">
+      <button
+        className="w-full flex items-center justify-between px-3 py-2 text-[16px]"
+        onClick={(e) => {
+          e.preventDefault();
+          const next = (e.currentTarget as HTMLButtonElement).nextElementSibling as HTMLElement | null;
+          if (next) next.classList.toggle("hidden");
+          e.currentTarget.querySelector("svg")?.classList.toggle("rotate-180");
+        }}
+        aria-expanded={false}
+      >
+        <span>{child.label}</span>
+        <ChevronDown className="size-4 transition-transform" />
+      </button>
 
   {/* REMOVE the border-left here */}
   <ul className="mb-2 pl-0 pt-1 hidden">
@@ -723,6 +775,13 @@ function MobileItem({ item }: { item: NavNode }) {
         <a
           href={leaf.href}
           target={leaf.target}
+          rel={leaf.target === "_blank" ? "noopener noreferrer" : undefined}
+            aria-current={
+            CURR_PATH && (leaf.href || "").toLowerCase() &&
+            CURR_PATH.startsWith((leaf.href || "").toLowerCase())
+              ? "page"
+              : undefined
+          }
           className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#e3ecff] hover:text-blue-900 hover:border-l-2 hover:border-blue-600"
         >
           {leaf.label}
@@ -737,6 +796,13 @@ function MobileItem({ item }: { item: NavNode }) {
                 <a
                   href={child.href}
                   target={child.target}
+                  rel={child.target === "_blank" ? "noopener noreferrer" : undefined}
+                    aria-current={
+                  CURR_PATH && (child.href || "").toLowerCase() &&
+                  CURR_PATH.startsWith((child.href || "").toLowerCase())
+                    ? "page"
+                    : undefined
+                }
                   className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#dbe5f9] ont-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                 >
                   {child.label}
@@ -857,6 +923,7 @@ export default function Header() {
                 <ChevronDown className="size-4" />
               </button>
 
+              <div role="search" aria-label="Site search">
               <label className="relative">
                 <span className="sr-only">Search</span>
                 <input
@@ -866,6 +933,7 @@ export default function Header() {
                 />
                 <Search className="absolute left-2.5 top-1.5 size-4 text-slate-400" aria-hidden="true" />
               </label>
+              </div>
             </div>
           </div>
 
@@ -875,7 +943,7 @@ export default function Header() {
             onClick={() => setMenuOpen((v) => !v)}
             aria-expanded={menuOpen}
             aria-controls="mobile-panel"
-            className="md:hidden inline-flex flex-col items-center justify-center rounded-lg px-3 py-2 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            className="lg:hidden inline-flex flex-col items-center justify-center rounded-lg px-3 py-2 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
           >
             <Menu className="size-6" aria-hidden />
             <span className="text-xs mt-1">Menu</span>
@@ -886,16 +954,16 @@ export default function Header() {
       {/* Main nav row */}
       <div className="w-full border-t border-slate-200 mt-3" style={{ backgroundColor: "#dbe5f9" }}>
         <div className="max-w-[85rem] mx-auto px-4">
-<nav aria-label="Primary" className="hidden md:flex items-stretch justify-center gap-2 py-2">
-  <ul role="menubar" className="flex items-center gap-2 text-[18px] font-medium">
-    {NAV.map((item) => <NavItem key={item.label} item={item} />)}
-  </ul>
-</nav>
+        <nav aria-label="Primary" className="hidden lg:flex items-stretch justify-center gap-2 py-2">
+          <ul role="menubar" className="flex items-center gap-2 text-[18px] font-medium">
+            {NAV.map((item) => <NavItem key={item.label} item={item} />)}
+          </ul>
+        </nav>
 
         </div>
 
         {/* Mobile panel */}
-        <div id="mobile-panel" className={`md:hidden ${menuOpen ? "block" : "hidden"}`}>
+        <div id="mobile-panel" className={`lg:hidden ${menuOpen ? "block" : "hidden"}`}>
           <div className="px-4 pb-4 space-y-2">
             <div className="pt-3 pb-2 flex items-center gap-2">
               <button
@@ -906,6 +974,7 @@ export default function Header() {
                 <Globe className="size-4" />
                 Translate
               </button>
+              <div role="search" aria-label="Site search">
               <label className="relative flex-1">
                 <span className="sr-only">Search</span>
                 <input
@@ -915,6 +984,7 @@ export default function Header() {
                 />
                 <Search className="absolute left-2.5 top-2.5 size-4 text-black/40" aria-hidden="true" />
               </label>
+              </div>
             </div>
 
             <div className="border-t border-slate-200" />
@@ -930,7 +1000,7 @@ export default function Header() {
       <TranslatePopover
         open={translateOpen}
         onClose={() => setTranslateOpen(false)}
-        anchorRef={useIsMobile() ? mobileTranslateBtnRef : desktopTranslateBtnRef}
+        anchorRef={isMobile ? mobileTranslateBtnRef : desktopTranslateBtnRef}
       />
     </header>
   );
