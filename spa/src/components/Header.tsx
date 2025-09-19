@@ -645,8 +645,7 @@ const onKeyDown = (e: React.KeyboardEvent) => {
     {item.children!.map((child) =>
       isGroup(child) ? (
         <li key={child.label} className="relative group" role="none">
-            <button
-            type="button"
+            <div
             className="group-header flex items-center justify-between rounded-md px-3 py-2 text-slate-900 text-[16px] hover:bg-[#e3ecff] hover:text-blue-900 cursor-pointer"
             role="menuitem"
             aria-haspopup="menu"
@@ -658,7 +657,7 @@ const onKeyDown = (e: React.KeyboardEvent) => {
               className="ml-2 size-4 shrink-0 text-slate-400 group-hover:text-blue-700"
               aria-hidden="true"
             />
-          </button>
+          </div>
 
           <ul
             role="menu"
