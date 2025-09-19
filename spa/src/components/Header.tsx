@@ -647,14 +647,17 @@ const onKeyDown = (e: React.KeyboardEvent) => {
         <li key={child.label} className="relative group" role="none">
             <button
             type="button"
-            className="group-header flex items-center justify-between rounded-md px-3 py-2 hover:bg-[#e3ecff] text-slate-900 text-[16px]"
+            className="group-header flex items-center justify-between rounded-md px-3 py-2 text-slate-900 text-[16px] hover:bg-[#e3ecff] hover:text-blue-900 cursor-pointer"
             role="menuitem"
             aria-haspopup="menu"
             aria-expanded="false"
             tabIndex={-1}
             >
-            <span>{child.label}</span>
-            <ChevronRight className="size-4 text-slate-400" aria-hidden />
+            <span className="flex-1">{child.label}</span>
+            <ChevronRight
+              className="ml-2 size-4 shrink-0 text-slate-400 group-hover:text-blue-700"
+              aria-hidden="true"
+            />
           </button>
 
           <ul
@@ -861,7 +864,7 @@ export default function Header() {
 
       {/* Logo + right-links */}
       <div className="bg-white">
-        <div className="max-w-[85rem] mx-auto px-4 py-1 flex items-start justify-between">
+        <div className="max-w-[120rem] mx-auto px-4 py-1 flex items-start justify-between">
           {/* HESAA logo */}
           <a href="/" aria-label="HESAA Home" className="pt-1">
             <img
