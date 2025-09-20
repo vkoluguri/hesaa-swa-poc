@@ -352,7 +352,7 @@ function SpotlightCard({
           {alt}
         </span>
 
-// "Learn more" button in SpotlightCard
+
 <a
   href={href}
   aria-describedby={`spot-${idx}-title`}
@@ -426,7 +426,6 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
                     href={q.href}
                     className={`group ${q.color} text-white w-full inline-flex items-center justify-between rounded-lg px-4 py-4 shadow hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-600`}
                   >
-                    // Quick Links label (make a little larger)
 <span className="font-semibold text-[18px] md:text-[22px] leading-tight">{q.label}</span>
 
                     <ExternalLink className="size-4 opacity-90 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
