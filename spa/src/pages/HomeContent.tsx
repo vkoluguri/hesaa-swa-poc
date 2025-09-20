@@ -14,6 +14,17 @@ import {
    Shared container (80rem) to match Footer
    ========================= */
 const CONTAINER = "max-w-[120rem] mx-auto px-4";
+// Neutral beige card (AA friendly with slate/dark text)
+const CARD_BG = "bg-[#f8f4ec]";            // ≈ Tailwind warm “paper”
+const CARD_BORDER = "border border-[#e8dfcf]";
+
+// Section backdrop for contrast (cool, subtle; AA with headings)
+const SECTION_CONTRAST_BG = "bg-[#eff4ff]"; // soft blue-gray (~blue-50)
+
+// Headings color that passes on both backgrounds
+const HEAD_COLOR = "text-amber-800";       // already in use & AA on both
+const BODY_TEXT = "text-slate-900";        // 7:1+ on CARD_BG and on SECTION_CONTRAST_BG
+
 
 /* =========================
    Slides
@@ -287,31 +298,22 @@ function SpotlightCard({
 }) {
   return (
     <article
-      className="h-full rounded-xl bg-[#F6F1E7] shadow hover:shadow-md transition focus-within:shadow-md"
+      className={`h-full rounded-xl ${CARD_BG} ${CARD_BORDER} shadow hover:shadow-md transition focus-within:shadow-md`}
       aria-labelledby={`spot-${idx}-title`}
     >
-      {/* Fixed responsive media area */}
-      <div
-        className="
-          w-full overflow-hidden
-          h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px]
-          flex items-center justify-center
-        "
-      >
+      {/* Media well with no extra white bands */}
+      <div className="w-full overflow-hidden h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px] flex items-center justify-center">
         <img
           src={img}
           alt={alt}
           decoding="async"
           loading="lazy"
-          className="max-h-full max-w-full object-contain"
+          className="max-h-full w-auto h-auto object-contain"
         />
       </div>
 
       <div className="p-4">
-        <span id={`spot-${idx}-title`} className="sr-only">
-          {alt}
-        </span>
-
+        <span id={`spot-${idx}-title`} className="sr-only">{alt}</span>
         <a
           href={href}
           aria-describedby={`spot-${idx}-title`}
@@ -398,17 +400,14 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
       </section>
 
 {/* News + Events */}
-<section className="mt-12 py-10 bg-[#F6F1E7]" aria-labelledby="news-and-events">
-  <h2 id="news-and-events" className="sr-only">
-    News and Events
-  </h2>
+<section className={`mt-12 py-10 ${SECTION_CONTRAST_BG}`} aria-labelledby="news-and-events">
+  <h2 id="news-and-events" className="sr-only">News and Events</h2>
+
   <div className={`${CONTAINER} grid lg:grid-cols-2 gap-8`}>
-    {/* News */}
+    {/* Recent News */}
     <div aria-labelledby="recent-news-title">
-      <h3
-        id="recent-news-title"
-        className="flex items-center justify-center gap-2 text-2xl md:text-3xl font-semibold text-amber-800 mb-4"
-      >
+      <h3 id="recent-news-title"
+          className={`flex items-center justify-center gap-2 text-2xl md:text-3xl font-semibold ${HEAD_COLOR} mb-4`}>
         <Newspaper className="size-7 md:size-8" aria-hidden="true" /> Recent News
       </h3>
       <ul className="space-y-3" role="list">
@@ -423,13 +422,13 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
             <li key={n.title}>
               <a
                 href={n.href}
-                className="flex items-center gap-4 rounded-xl bg-[#F6F1E7] px-5 py-4 shadow hover:shadow-md hover:bg-[#e9e0d4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER} px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
               >
                 <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
                   <div className="text-[18px] font-bold">{mon}</div>
                   <div className="text-[18px] opacity-90">{day}</div>
                 </div>
-                <div className="font-medium text-slate-900 text-base md:text-[18px] leading-snug">
+                <div className={`font-medium ${BODY_TEXT} text-base md:text-[18px] leading-snug`}>
                   {n.title}
                 </div>
               </a>
@@ -441,10 +440,8 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
 
     {/* Events */}
     <div aria-labelledby="events-title">
-      <h3
-        id="events-title"
-        className="flex items-center justify-center gap-2 text-2xl md:text-3xl font-semibold text-amber-800 mb-4"
-      >
+      <h3 id="events-title"
+          className={`flex items-center justify-center gap-2 text-2xl md:text-3xl font-semibold ${HEAD_COLOR} mb-4`}>
         <CalendarDays className="size-7 md:size-8" aria-hidden="true" /> Events
       </h3>
       <ul className="space-y-3" role="list">
@@ -456,13 +453,13 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
           <li key={e.title}>
             <a
               href={e.href}
-              className="flex items-center gap-4 rounded-xl bg-[#F6F1E7] px-5 py-4 shadow hover:shadow-md hover:bg-[#e9e0d4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER} px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
             >
               <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
                 <div className="text-[18px] font-bold">{e.m}</div>
                 <div className="text-[18px] opacity-90">{e.d}</div>
               </div>
-              <div className="font-medium text-slate-900 text-base md:text-[18px] leading-snug">
+              <div className={`font-medium ${BODY_TEXT} text-base md:text-[18px] leading-snug`}>
                 {e.title}
               </div>
             </a>
@@ -472,6 +469,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
     </div>
   </div>
 </section>
+
 
     </main>
   );
