@@ -332,14 +332,17 @@ function SpotlightCard({
 }) {
   return (
     <article
-      className="h-full rounded-xl bg-[#fdfaf5] border border-slate-200 shadow hover:shadow-md transition focus-within:shadow-md"
+      // drop h-full on mobile so the card can shrink to content; keep equal-height from md+
+      className="rounded-xl md:h-full bg-[#fdfaf5] border border-slate-200 shadow hover:shadow-md transition focus-within:shadow-md overflow-hidden"
       aria-labelledby={`spot-${idx}-title`}
     >
-      {/* Fixed responsive media area */}
+      {/* Media: aspect on mobile, fixed heights only from md+ */}
       <div
         className="
-          w-full overflow-hidden 
-          h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px]
+          w-full overflow-hidden
+          aspect-[16/9] sm:aspect-[2/1]           /* no fixed height on small screens */
+          md:aspect-auto md:h-[320px] lg:h-[360px] /* equal height from md+ */
+          flex items-center justify-center
         "
       >
         <img
@@ -347,28 +350,28 @@ function SpotlightCard({
           alt={alt}
           decoding="async"
           loading="lazy"
-          className="max-h-full w-auto h-auto object-contain"
+          className="max-h-full max-w-full w-auto h-auto object-contain block"
         />
       </div>
 
-      <div className="p-4">
+      <div className="p-3 sm:p-4">
         <span id={`spot-${idx}-title`} className="sr-only">
           {alt}
         </span>
 
-
-<a
-  href={href}
-  aria-describedby={`spot-${idx}-title`}
-  className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3.5 py-2.5 text-[16px] md:text-[17px] text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
->
-  Learn more <ArrowRight className="size-5" aria-hidden="true" />
-</a>
-
+        <a
+          href={href}
+          aria-describedby={`spot-${idx}-title`}
+          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3.5 py-2.5 text-[16px] md:text-[17px] text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+        >
+          Learn more
+          <ArrowRight className="size-5" aria-hidden="true" />
+        </a>
       </div>
     </article>
   );
 }
+
 
 
 /* =========================

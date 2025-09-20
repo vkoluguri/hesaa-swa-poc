@@ -2,7 +2,7 @@ import React from "react";
 
 const year = new Date().getFullYear();
 
-// Keep footer aligned with the rest of the site (80rem rail)
+// Match site rail (footer typically slightly narrower for comfort)
 const CONTAINER = "max-w-[85rem] mx-auto px-4";
 
 // ---- Solid, accessible social icons (currentColor) ----
@@ -49,87 +49,188 @@ function IconLinkedIn(props: React.SVGProps<SVGSVGElement>) {
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-[#dbe5f9]">
-      {/* Top: four columns (closer & centered) */}
+    <footer className="w-full bg-[#dbe5f9]" role="contentinfo">
+      {/* Top: four columns */}
       <div className={`${CONTAINER} py-10`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 justify-items-start">
+          {/* Column 1 */}
           <nav aria-labelledby="ft-hesaa">
-            <h3 id="ft-hesaa" className="text-md font-semibold text-slate-900 mb-3">
+            <h2 id="ft-hesaa" className="text-[16px] font-semibold text-slate-900 mb-3">
               HESAA
-            </h3>
-            <ul className="space-y-1 text-[13px] text-slate-800">
-              <li><a href="/Pages/Careers.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">Careers</a></li>
-              <li><a href="/Pages/PrivacyPolicy.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">Privacy Policy</a></li>
-              <li><a href="/Pages/WebsiteTerms.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">Website T &amp; C</a></li>
-              <li><a href="/Pages/SiteMap.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">Sitemap</a></li>
+            </h2>
+            <ul className="space-y-1 text-[14px] leading-6 text-slate-800">
+              <li>
+                <a
+                  href="/Pages/Careers.aspx"
+                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                >
+                  Careers
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/Pages/PrivacyPolicy.aspx"
+                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                >
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/Pages/WebsiteTerms.aspx"
+                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                >
+                  Website T&nbsp;&amp;&nbsp;C
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/Pages/SiteMap.aspx"
+                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                >
+                  Sitemap
+                </a>
+              </li>
             </ul>
           </nav>
 
+          {/* Column 2 */}
           <nav aria-labelledby="ft-grants">
-            <h3 id="ft-grants" className="text-md font-semibold text-slate-900 mb-3">
+            <h2 id="ft-grants" className="text-[16px] font-semibold text-slate-900 mb-3">
               Grants &amp; Scholarships
-            </h3>
-            <ul className="space-y-1 text-[13px] text-slate-800">
-              <li><a href="https://njfams.hesaa.org" target="_blank" rel="noopener noreferrer" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">NJFAMS Account</a></li>
-              <li><a href="/Pages/StateApplicationDeadlines.aspx" className="hover:text-blue-700 focus:text-blue-700 hover:underline focus:outline-none">Application Deadlines</a></li>
+            </h2>
+            <ul className="space-y-1 text-[14px] leading-6 text-slate-800">
+              <li>
+                <a
+                  href="https://njfams.hesaa.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                  aria-label="NJFAMS Account (opens in a new tab)"
+                >
+                  NJFAMS Account
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/Pages/StateApplicationDeadlines.aspx"
+                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                >
+                  Application Deadlines
+                </a>
+              </li>
             </ul>
           </nav>
 
+          {/* Column 3 */}
           <nav aria-labelledby="ft-njclass">
-            <h3 id="ft-njclass" className="text-md font-semibold text-slate-900 mb-3">
+            <h2 id="ft-njclass" className="text-[16px] font-semibold text-slate-900 mb-3">
               NJCLASS
-            </h3>
-            <ul className="space-y-1 text-[13px] text-slate-800">
-              <li><a href="/Pages/NJCLASSHome.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">Apply Now</a></li>
-              <li><a href="https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp" target="_blank" rel="noopener noreferrer" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">Login</a></li>
-              <li><a href="/Pages/NJCLASSMakePayment.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">Make a Payment</a></li>
+            </h2>
+            <ul className="space-y-1 text-[14px] leading-6 text-slate-800">
+              <li>
+                <a
+                  href="/Pages/NJCLASSHome.aspx"
+                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                >
+                  Apply Now
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                  aria-label="NJCLASS Login (opens in a new tab)"
+                >
+                  Login
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/Pages/NJCLASSMakePayment.aspx"
+                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                >
+                  Make a Payment
+                </a>
+              </li>
             </ul>
           </nav>
 
-          <div aria-labelledby="ft-contact">
-            <h3 id="ft-contact" className="text-md font-semibold text-slate-900 mb-3">
-              CONTACT US
-            </h3>
-            <div className="flex items-center gap-5">
-              <a href="#" aria-label="HESAA on Facebook" className="text-slate-900 hover:text-blue-700 focus:text-blue-700 focus:outline-none">
-                <IconFacebook className="h-7 w-7" />
-              </a>
-              <a href="#" aria-label="HESAA on YouTube" className="text-slate-900 hover:text-blue-700 focus:text-blue-700 focus:outline-none">
-                <IconYouTube className="h-7 w-7" />
-              </a>
-              <a href="#" aria-label="HESAA on X" className="text-slate-900 hover:text-blue-700 focus:text-blue-700 focus:outline-none">
-                <IconX className="h-7 w-7" />
-              </a>
-              <a href="#" aria-label="HESAA on LinkedIn" className="text-slate-900 hover:text-blue-700 focus:text-blue-700 focus:outline-none">
-                <IconLinkedIn className="h-7 w-7" />
-              </a>
-            </div>
-          </div>
+          {/* Column 4: Contact / Social */}
+          <section aria-labelledby="ft-contact">
+            <h2 id="ft-contact" className="text-[16px] font-semibold text-slate-900 mb-3">
+              Contact Us
+            </h2>
+            <ul className="flex items-center gap-5">
+              <li>
+                <a
+                  href="#"
+                  aria-label="HESAA on Facebook"
+                  className="text-slate-900 hover:text-blue-700 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60"
+                >
+                  <IconFacebook className="h-7 w-7" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  aria-label="HESAA on YouTube"
+                  className="text-slate-900 hover:text-blue-700 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60"
+                >
+                  <IconYouTube className="h-7 w-7" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  aria-label="HESAA on X"
+                  className="text-slate-900 hover:text-blue-700 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60"
+                >
+                  <IconX className="h-7 w-7" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  aria-label="HESAA on LinkedIn"
+                  className="text-slate-900 hover:text-blue-700 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60"
+                >
+                  <IconLinkedIn className="h-7 w-7" />
+                </a>
+              </li>
+            </ul>
+          </section>
         </div>
       </div>
 
-      {/* Divider above bottom row */}
+      {/* Divider */}
       <div className={`${CONTAINER}`}>
-        <hr className="border-slate-300" />
+        <hr className="border-slate-300" aria-hidden="true" />
       </div>
 
-      {/* Bottom row — STACK on mobile to prevent horizontal scroll */}
+      {/* Bottom row (no overflow on small screens) */}
       <div className={`${CONTAINER} py-6`}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-2 gap-4">
-          {/* OPRA left (stays left on all breakpoints) */}
+          {/* OPRA badge (left) */}
           <a
             href="/Pages/OpenPublicRecordsAct.aspx"
-            className="block focus:outline-none focus:ring-2 focus:ring-blue-600/40 rounded"
+            className="block rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60"
           >
             <img
               src="/assets/OPRA.jpg"
+              width={120}
+              height={32}
               alt="OPRA — Open Public Records Act"
               className="h-8 w-auto"
             />
           </a>
 
-          {/* Copyright — wraps on small screens, no overflow */}
-          <p className="text-slate-800 text-sm sm:text-base leading-snug sm:leading-6 break-words whitespace-normal max-w-full">
+          {/* Copyright (wraps gracefully) */}
+          <p className="text-slate-800 text-[14px] sm:text-[15px] leading-snug sm:leading-6 break-words whitespace-normal max-w-full">
             © {year} Higher Education Student Assistance Authority
           </p>
         </div>
