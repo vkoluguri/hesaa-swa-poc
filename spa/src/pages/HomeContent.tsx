@@ -24,6 +24,11 @@ const SECTION_CONTRAST_BG = "bg-[#eff4ff]"; // soft blue-gray (~blue-50)
 // Headings color that passes on both backgrounds
 const HEAD_COLOR = "text-amber-800";       // already in use & AA on both
 const BODY_TEXT = "text-slate-900";        // 7:1+ on CARD_BG and on SECTION_CONTRAST_BG
+// put this near the top of the file (outside the component)
+const MONTH_TO_NUM: Record<string, string> = {
+  Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
+  Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
+};
 
 
 /* =========================
@@ -333,9 +338,8 @@ function SpotlightCard({
       {/* Fixed responsive media area */}
       <div
         className="
-          w-full overflow-hidden
+          w-full overflow-hidden 
           h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px]
-          flex items-center justify-center
         "
       >
         <img
@@ -439,37 +443,46 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
 
 {/* News + Events */}
 <section className="mt-12 py-10" aria-labelledby="news-and-events">
-
-{/* <h3 id="recent-news-title" className="flex items-center justify-center gap-2 text-3xl md:text-4xl font-semibold text-amber-800 mb-4">
-  <Newspaper className="size-7 md:size-8" aria-hidden="true" /> Recent News
-</h3> */}
+  {/* Section heading for label/landmark */}
+  <h2 id="news-and-events" className="sr-only">News and Events</h2>
 
   <div className={`${CONTAINER} grid lg:grid-cols-2 gap-8`}>
     {/* Recent News */}
     <div aria-labelledby="recent-news-title">
-      <h3 id="recent-news-title"
-          className={`flex items-center justify-center gap-2 text-2xl md:text-3xl font-semibold ${HEAD_COLOR} mb-4`}>
-        <Newspaper className="size-7 md:size-8" aria-hidden="true" /> Recent News
+      <h3
+        id="recent-news-title"
+        className={`flex items-center justify-center gap-2 text-3xl md:text-4xl font-semibold ${HEAD_COLOR} mb-4`}
+      >
+        <Newspaper className="size-7 md:size-8" aria-hidden="true" />
+        Recent News
       </h3>
-      <ul className="space-y-3" role="list">
+
+      <ul className="space-y-3">
         {[
           { date: "Aug 14, 2025", title: "RFP Depository Banking Services", href: "#" },
           { date: "Jul 18, 2025", title: "HESAA Board Meeting Notice", href: "#" },
           { date: "Jul 16, 2025", title: "WTC Scholarship Fund Board Meeting", href: "#" },
           { date: "Jun 14, 2025", title: "NJBEST 529 & Financial Aid in NJ", href: "#" },
         ].map((n) => {
-          const [mon, day] = n.date.replace(",", "").split(" ");
+          // Build ISO date for <time datetime="">
+          const [mon, dayComma, year] = n.date.split(" ");
+          const day = dayComma.replace(",", "");
+          const iso = `${year}-${MONTH_TO_NUM[mon]}-${day.padStart(2, "0")}`;
           return (
             <li key={n.title}>
               <a
                 href={n.href}
                 className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER} px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
               >
+                {/* semantic date */}
                 <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
                   <div className="text-[20px] font-bold">{mon}</div>
-                  <div className="text-[20px] opacity-90">{day}</div>
+                  <time className="text-[20px] opacity-90 block" dateTime={iso}>
+                    {day}
+                  </time>
                 </div>
-                <div className={`font-medium text-slate-900 text-[17px] md:text-[19px] leading-snug`}>
+
+                <div className="font-medium text-slate-900 text-[17px] md:text-[19px] leading-snug">
                   {n.title}
                 </div>
               </a>
@@ -481,36 +494,45 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
 
     {/* Events */}
     <div aria-labelledby="events-title">
-<h3 id="events-title"
-  className="flex items-center justify-center gap-2 text-3xl md:text-4xl font-semibold text-amber-800 mb-4">
-  <CalendarDays className="size-7 md:size-8" aria-hidden="true" /> Events
-</h3>
-      <ul className="space-y-3" role="list">
+      <h3
+        id="events-title"
+        className={`flex items-center justify-center gap-2 text-3xl md:text-4xl font-semibold ${HEAD_COLOR} mb-4`}
+      >
+        <CalendarDays className="size-7 md:size-8" aria-hidden="true" />
+        Events
+      </h3>
+
+      <ul className="space-y-3">
         {[
-          { m: "Sep", d: "15", title: "FA Application Deadline for Renewal Students", href: "#" },
-          { m: "Oct", d: "02", title: "School Counselor Workshop", href: "#" },
-          { m: "Oct", d: "20", title: "Financial Aid Session — Newark", href: "#" },
-        ].map((e) => (
-          <li key={e.title}>
-            <a
-              href={e.href}
-              className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER} px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
-            >
-              <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
-                <div className="text-[18px] font-bold">{e.m}</div>
-                <div className="text-[18px] opacity-90">{e.d}</div>
-              </div>
-              <div className={`font-medium text-slate-900 text-[17px] md:text-[19px] leading-snug`}>
-                {e.title}
-              </div>
-            </a>
-          </li>
-        ))}
+          { m: "Sep", d: "15", y: "2025", title: "FA Application Deadline for Renewal Students", href: "#" },
+          { m: "Oct", d: "02", y: "2025", title: "School Counselor Workshop", href: "#" },
+          { m: "Oct", d: "20", y: "2025", title: "Financial Aid Session — Newark", href: "#" },
+        ].map((e) => {
+          const iso = `${e.y}-${MONTH_TO_NUM[e.m]}-${e.d}`;
+          return (
+            <li key={e.title}>
+              <a
+                href={e.href}
+                className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER} px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
+              >
+                <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
+                  <div className="text-[18px] font-bold">{e.m}</div>
+                  <time className="text-[18px] opacity-90 block" dateTime={iso}>
+                    {e.d}
+                  </time>
+                </div>
+
+                <div className="font-medium text-slate-900 text-[17px] md:text-[19px] leading-snug">
+                  {e.title}
+                </div>
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </div>
   </div>
 </section>
-
 
     </main>
   );
