@@ -269,13 +269,13 @@ function Carousel() {
   className="
     absolute left-3 md:left-5 top-1/2 -translate-y-1/2 z-10
     inline-flex items-center justify-center rounded-full
-    h-10 w-10 md:h-14 md:w-14
+    h-10 w-10 lg:h-16 lg:w-16
     bg-black/55 hover:bg-black/65 text-white
     backdrop-blur-[1px] shadow
     focus:outline-none focus-visible:ring-2 focus-visible:ring-white
   "
 >
-  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 md:h-7 md:w-7">
+  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 lg:h-8 lg:w-8">
     <path fill="currentColor" d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
   </svg>
   <span className="sr-only">Previous</span>
@@ -287,13 +287,13 @@ function Carousel() {
   className="
     absolute right-3 md:right-5 top-1/2 -translate-y-1/2 z-10
     inline-flex items-center justify-center rounded-full
-    h-10 w-10 md:h-14 md:w-14
+    h-10 w-10 lg:h-16 lg:w-16
     bg-black/55 hover:bg-black/65 text-white
     backdrop-blur-[1px] shadow
     focus:outline-none focus-visible:ring-2 focus-visible:ring-white
   "
 >
-  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 md:h-7 md:w-7">
+  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 lg:h-8 lg:w-8">
     <path fill="currentColor" d="m8.59 16.59 1.41 1.41 6-6-6-6-1.41 1.41L13.17 12z"/>
   </svg>
   <span className="sr-only">Next</span>
