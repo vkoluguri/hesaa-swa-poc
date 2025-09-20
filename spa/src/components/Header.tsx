@@ -645,19 +645,17 @@ const onKeyDown = (e: React.KeyboardEvent) => {
     {item.children!.map((child) =>
       isGroup(child) ? (
         <li key={child.label} className="relative group" role="none">
-            <div
-            className="group-header flex items-center justify-between rounded-md px-3 py-2 text-slate-900 text-[16px] hover:bg-[#e3ecff] hover:text-blue-900 cursor-pointer"
-            role="menuitem"
-            aria-haspopup="menu"
-            aria-expanded="false"
-            tabIndex={-1}
-            >
-            <span className="flex-1">{child.label}</span>
-            <ChevronRight
-              className="ml-2 size-4 shrink-0 text-slate-400 group-hover:text-blue-700"
-              aria-hidden="true"
-            />
-          </div>
+        <button
+          type="button"
+          className="group-header w-full flex items-center justify-between rounded-md px-3 py-2 text-left text-[16px] text-slate-900 hover:bg-[#e3ecff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+          role="menuitem"
+          aria-haspopup="menu"
+          aria-expanded="false"
+          tabIndex={-1}
+        >
+          <span className="flex-1">{child.label}</span>
+          <ChevronRight className="ml-2 size-4 shrink-0 text-slate-400 group-hover:text-blue-700" aria-hidden="true" />
+        </button>
 
           <ul
             role="menu"
@@ -675,6 +673,11 @@ const onKeyDown = (e: React.KeyboardEvent) => {
                   href={leaf.href}
                   target={leaf.target}
                   rel={leaf.target === "_blank" ? "noopener noreferrer" : undefined}
+                  aria-label={
+                    leaf.target === "_blank"
+                      ? `${leaf.label} (opens in a new tab)`
+                      : undefined
+                  }
                   aria-current={
                   CURR_PATH && (leaf.href || "").toLowerCase() &&
                   CURR_PATH.startsWith((leaf.href || "").toLowerCase())
@@ -697,6 +700,11 @@ const onKeyDown = (e: React.KeyboardEvent) => {
             href={child.href}
             target={child.target}
             rel={child.target === "_blank" ? "noopener noreferrer" : undefined}
+            aria-label={
+                    child.target === "_blank"
+                      ? `${child.label} (opens in a new tab)`
+                      : undefined
+            }
             aria-current={
             CURR_PATH && (child.href || "").toLowerCase() &&
             CURR_PATH.startsWith((child.href || "").toLowerCase())
@@ -778,6 +786,11 @@ function MobileItem({ item }: { item: NavNode }) {
           href={leaf.href}
           target={leaf.target}
           rel={leaf.target === "_blank" ? "noopener noreferrer" : undefined}
+          aria-label={
+            leaf.target === "_blank"
+              ? `${leaf.label} (opens in a new tab)`
+              : undefined
+          }
             aria-current={
             CURR_PATH && (leaf.href || "").toLowerCase() &&
             CURR_PATH.startsWith((leaf.href || "").toLowerCase())
@@ -799,6 +812,11 @@ function MobileItem({ item }: { item: NavNode }) {
                   href={child.href}
                   target={child.target}
                   rel={child.target === "_blank" ? "noopener noreferrer" : undefined}
+                  aria-label={
+                  child.target === "_blank"
+                    ? `${child.label} (opens in a new tab)`
+                    : undefined
+                }
                     aria-current={
                   CURR_PATH && (child.href || "").toLowerCase() &&
                   CURR_PATH.startsWith((child.href || "").toLowerCase())
@@ -925,17 +943,19 @@ export default function Header() {
                 <ChevronDown className="size-4" />
               </button>
 
-              <div role="search" aria-label="Site search">
-              <label className="relative">
-                <span className="sr-only">Search</span>
-                <input
-                  type="search"
-                  placeholder="Search..."
-                  className="w-60 rounded-full border border-slate-300 py-1.5 pl-9 pr-3 text-[13px] placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
-                />
-                <Search className="absolute left-2.5 top-1.5 size-4 text-slate-400" aria-hidden="true" />
-              </label>
-              </div>
+          <form role="search" aria-label="Site search" action="/search" method="get" className="relative">
+            <label className="sr-only" htmlFor="site-search">Search the site</label>
+            <input
+              id="site-search"
+              name="q"
+              type="search"
+              placeholder="Search..."
+              className="w-60 rounded-full border border-slate-300 py-1.5 pl-9 pr-9 text-[13px] placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
+            />
+            <Search className="absolute left-2.5 top-1.5 size-4 text-slate-400" aria-hidden="true" />
+            <button type="submit" className="sr-only">Submit search</button>
+          </form>
+
             </div>
           </div>
 
@@ -955,7 +975,7 @@ export default function Header() {
 
       {/* Main nav row */}
       <div className="w-full border-t border-slate-200 mt-3" style={{ backgroundColor: "#dbe5f9" }}>
-        <div className="max-w-[85rem] mx-auto px-4">
+        <div className="max-w-[120rem] mx-auto px-4">
         <nav aria-label="Primary" className="hidden lg:flex items-stretch justify-center gap-2 py-2">
           <ul role="menubar" className="flex items-center gap-2 text-[18px] font-medium">
             {NAV.map((item) => <NavItem key={item.label} item={item} />)}
@@ -976,17 +996,19 @@ export default function Header() {
                 <Globe className="size-4" />
                 Translate
               </button>
-              <div role="search" aria-label="Site search">
-              <label className="relative flex-1">
-                <span className="sr-only">Search</span>
-                <input
-                  type="search"
-                  placeholder="Search..."
-                  className="w-full rounded-full border border-black/25 py-2 pl-9 pr-3 text-[16px] leading-6 md:text-base placeholder:text-black/50 text-slate-900 bg-white/80"
-                />
-                <Search className="absolute left-2.5 top-2.5 size-4 text-black/40" aria-hidden="true" />
-              </label>
-              </div>
+          <form role="search" aria-label="Site search" action="/search" method="get" className="relative flex-1">
+            <label className="sr-only" htmlFor="m-site-search">Search the site</label>
+            <input
+              id="m-site-search"
+              name="q"
+              type="search"
+              placeholder="Search..."
+              className="w-full rounded-full border border-black/25 py-2 pl-9 pr-9 text-[16px] leading-6 md:text-base placeholder:text-black/50 text-slate-900 bg-white/80"
+            />
+            <Search className="absolute left-2.5 top-2.5 size-4 text-black/40" aria-hidden="true" />
+            <button type="submit" className="sr-only">Submit search</button>
+          </form>
+
             </div>
 
             <div className="border-t border-slate-200" />
