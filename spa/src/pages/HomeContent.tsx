@@ -1,14 +1,23 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, ExternalLink, CalendarDays, Newspaper, Pause, Play } from "lucide-react";
+import {
+  ArrowRight,
+  ExternalLink,
+  CalendarDays,
+  Newspaper,
+  Pause,
+  Play,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 /* =========================
    Shared container (80rem) to match Footer
    ========================= */
 const CONTAINER = "max-w-[120rem] mx-auto px-4";
+
 /* =========================
    Slides
    ========================= */
-
 type Slide = { src: string; alt: string; href?: string };
 const SLIDES: Slide[] = [
   { src: "/assets/Grants-Scholarships-Banner2.jpg", alt: "Learn about New Jersey Grants and Scholarships" },
@@ -20,7 +29,6 @@ const SLIDES: Slide[] = [
 /* =========================
    Helpers
    ========================= */
-
 function usePreloaded(srcs: string[]) {
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -43,7 +51,7 @@ function usePreloaded(srcs: string[]) {
   return ready;
 }
 
-//  timer that keeps cadence across tab visibility changes
+// keep timer cadence across tab visibility changes
 function useAccurateTimer(run: boolean, stepMs: number, onTick: () => void) {
   const nextAt = useRef<number | null>(null);
   useEffect(() => {
@@ -69,34 +77,30 @@ function useAccurateTimer(run: boolean, stepMs: number, onTick: () => void) {
 }
 
 /* =========================
-   ADA-friendly seamless Carousel (one direction)
+   ADA-friendly Carousel
    ========================= */
-
 function Carousel() {
   const base = SLIDES;
   const slides = useMemo(() => {
     if (base.length === 0) return [];
-    return [base[base.length - 1], ...base, base[0]]; // [last, ...base, first]
+    return [base[base.length - 1], ...base, base[0]];
   }, [base]);
 
   const ready = usePreloaded(useMemo(() => base.map((s) => s.src), [base]));
-  const [idx, setIdx] = useState(1); // point at first real slide
+  const [idx, setIdx] = useState(1);
   const [transitioning, setTransitioning] = useState(true);
 
-  // motion controls
   const [userPaused, setUserPaused] = useState(false);
   const [hovering, setHovering] = useState(false);
   const [focusWithin, setFocusWithin] = useState(false);
-
   const autoRun = ready && !userPaused && !hovering && !focusWithin;
-  const step = () => setIdx((p) => p + 1);
-  useAccurateTimer(autoRun, 7000, step);
+
+  useAccurateTimer(autoRun, 7000, () => setIdx((p) => p + 1));
 
   const trackRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLElement>(null);
   const liveRef = useRef<HTMLDivElement>(null);
 
-  // keep loop seamless
   useEffect(() => {
     const t = trackRef.current;
     if (!t) return;
@@ -121,13 +125,12 @@ function Carousel() {
     }
   }, [transitioning]);
 
-  // Announce slide changes succinctly for SR users
+  // concise SR updates
   useEffect(() => {
     if (!liveRef.current) return;
     const realCount = SLIDES.length;
-    const realIndex = idx === 0 ? realCount : idx === slides.length - 1 ? 1 : idx; // 1..N index space
-    const human = `${realIndex} of ${realCount}`;
-    liveRef.current.textContent = `Slide ${human}`;
+    const realIndex = idx === 0 ? realCount : idx === slides.length - 1 ? 1 : idx;
+    liveRef.current.textContent = `Slide ${realIndex} of ${realCount}`;
   }, [idx, slides.length]);
 
   const percent = idx * 100;
@@ -159,14 +162,12 @@ function Carousel() {
     }
   };
   const onBlurCapture = (e: React.FocusEvent) => {
-    // when focus leaves carousel entirely
     if (carouselRef.current && !carouselRef.current.contains(e.relatedTarget as Node)) {
       setFocusWithin(false);
     }
   };
 
-  const currentRealIndex =
-    idx === 0 ? SLIDES.length - 1 : idx === slides.length - 1 ? 0 : idx - 1;
+  const currentRealIndex = idx === 0 ? SLIDES.length - 1 : idx === slides.length - 1 ? 0 : idx - 1;
 
   return (
     <section
@@ -180,7 +181,6 @@ function Carousel() {
       onFocusCapture={onFocusCapture}
       onBlurCapture={onBlurCapture}
     >
-      {/* Instructions for screen readers */}
       <p id="carousel-instructions" className="sr-only">
         Carousel: use the previous and next buttons or Left and Right arrow keys to navigate.
         Use the Play or Pause button to control auto-advance. Press Home to go to the first slide and End for the last.
@@ -194,11 +194,9 @@ function Carousel() {
           style={{ transform: `translateX(-${percent}%)` }}
         >
           {slides.map((s, i) => {
-            // map to 1..N for SR label
             let srIndex = i;
-            if (i === 0) srIndex = SLIDES.length; // cloned last
-            else if (i === slides.length - 1) srIndex = 1; // cloned first
-            else srIndex = i;
+            if (i === 0) srIndex = SLIDES.length;
+            else if (i === slides.length - 1) srIndex = 1;
 
             return (
               <div
@@ -209,10 +207,7 @@ function Carousel() {
                 aria-label={`Slide ${srIndex} of ${SLIDES.length}`}
               >
                 {s.href ? (
-                  <a
-                    href={s.href}
-                    className="block focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/40"
-                  >
+                  <a href={s.href} className="block focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/40">
                     <img src={s.src} alt={s.alt} className="block w-full h-auto select-none" draggable={false} />
                   </a>
                 ) : (
@@ -223,12 +218,11 @@ function Carousel() {
           })}
         </div>
 
-        {/* Live region for concise updates */}
+        {/* Live region */}
         <div aria-live="polite" aria-atomic="true" className="sr-only" ref={liveRef} />
 
-        {/* Controls bar: Play/Pause + arrows + dots (dots hidden on mobile) */}
+        {/* Controls */}
         <div className="absolute inset-x-0 bottom-2 flex items-center justify-center gap-4">
-          {/* Play/Pause button satisfies WCAG pause requirement */}
           <button
             type="button"
             onClick={() => setUserPaused((p) => !p)}
@@ -240,11 +234,7 @@ function Carousel() {
           </button>
 
           {/* Dots (desktop only) */}
-          <div
-            className="hidden md:flex gap-2"
-            role="tablist"
-            aria-label="Slide navigation"
-          >
+          <div className="hidden md:flex gap-2" role="tablist" aria-label="Slide navigation">
             {SLIDES.map((_, realI) => (
               <button
                 key={realI}
@@ -254,29 +244,27 @@ function Carousel() {
                 tabIndex={realI === currentRealIndex ? 0 : -1}
                 onClick={() => setIdx(realI + 1)}
                 className={`h-3 w-3 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white ${
-                  realI === currentRealIndex ? "bg-white shadow ring-1 ring-black/20" : "bg-white/60 hover:bg-white"
+                  realI === currentRealIndex ? "bg-white shadow ring-1 ring-black/20" : "bg-white/70 hover:bg-white"
                 }`}
               />
             ))}
           </div>
         </div>
 
-        {/* Arrows: small on mobile, large on desktop; plain glyphs, no box */}
+        {/* NEW: rounded, Bootstrap-like chevrons in circular pills */}
         <button
           aria-label="Previous slide"
           onClick={() => setIdx((p) => p - 1)}
-          className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 z-10 text-white text-3xl md:text-6xl leading-none select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-          style={{ textShadow: "0 1px 3px rgba(0,0,0,.6)" }}
+          className="group absolute left-3 md:left-5 top-1/2 -translate-y-1/2 z-10 rounded-full bg-black/45 hover:bg-black/60 p-2 md:p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
-          &lt;
+          <ChevronLeft className="h-6 w-6 md:h-7 md:w-7 text-white drop-shadow-sm" aria-hidden="true" />
         </button>
         <button
           aria-label="Next slide"
           onClick={() => setIdx((p) => p + 1)}
-          className="absolute right-3 md:right-5 top-1/2 -translate-y-1/2 z-10 text-white text-3xl md:text-6xl leading-none select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-          style={{ textShadow: "0 1px 3px rgba(0,0,0,.6)" }}
+          className="group absolute right-3 md:right-5 top-1/2 -translate-y-1/2 z-10 rounded-full bg-black/45 hover:bg-black/60 p-2 md:p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
-          &gt;
+          <ChevronRight className="h-6 w-6 md:h-7 md:w-7 text-white drop-shadow-sm" aria-hidden="true" />
         </button>
       </div>
     </section>
@@ -284,9 +272,8 @@ function Carousel() {
 }
 
 /* =========================
-   Spotlight (equal height, no crop/zoom)
+   Spotlight (equal height, no letterbox)
    ========================= */
-
 function SpotlightCard({
   img,
   alt,
@@ -299,11 +286,14 @@ function SpotlightCard({
   idx: number;
 }) {
   return (
-    <article className="h-full rounded-xl bg-white shadow hover:shadow-md transition focus-within:shadow-md" aria-labelledby={`spot-${idx}-title`}>
-      {/* Fixed responsive media area for equal heights */}
+    <article
+      className="h-full rounded-xl bg-[#F6F1E7] shadow hover:shadow-md transition focus-within:shadow-md"
+      aria-labelledby={`spot-${idx}-title`}
+    >
+      {/* Fixed responsive media area */}
       <div
         className="
-          w-full overflow-hidden bg-white
+          w-full overflow-hidden
           h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px]
           flex items-center justify-center
         "
@@ -313,12 +303,11 @@ function SpotlightCard({
           alt={alt}
           decoding="async"
           loading="lazy"
-          className="max-h-full w-auto h-auto object-contain"
+          className="max-h-full max-w-full object-contain"
         />
       </div>
 
       <div className="p-4">
-        {/* Hidden label that names the card for AT */}
         <span id={`spot-${idx}-title`} className="sr-only">
           {alt}
         </span>
@@ -326,7 +315,7 @@ function SpotlightCard({
         <a
           href={href}
           aria-describedby={`spot-${idx}-title`}
-          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+          className="inline-flex items-center gap-2 rounded-md bg-blue-700 px-3 py-2 text-white hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
         >
           Learn more <ArrowRight className="size-4" aria-hidden="true" />
         </a>
@@ -338,14 +327,13 @@ function SpotlightCard({
 /* =========================
    Quick links + News/Events
    ========================= */
-
 const quickLinks = [
-  { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx", color: "bg-slate-600" },
-  { label: "NJ Grants & Scholarships", href: "/Pages/NJGrantsHome.aspx", color: "bg-red-700" },
-  { label: "NJCLASS Family Loans", href: "/Pages/NJCLASSHome.aspx", color: "bg-cyan-800" },
-  { label: "NJBEST", href: "/pages/NJBESTHome.aspx", color: "bg-cyan-700" },
-  { label: "Loan Redemption Programs", href: "/Pages/LoanRedemptionPrograms.aspx", color: "bg-red-700" },
-  { label: "Employer Resources", href: "/Pages/EmployerResources.aspx", color: "bg-emerald-800" },
+  { label: "Apply for State Aid", href: "/Pages/financialaidhub.aspx", color: "bg-slate-700" }, // slightly darker for contrast
+  { label: "NJ Grants & Scholarships", href: "/Pages/NJGrantsHome.aspx", color: "bg-red-800" },
+  { label: "NJCLASS Family Loans", href: "/Pages/NJCLASSHome.aspx", color: "bg-cyan-900" },
+  { label: "NJBEST", href: "/pages/NJBESTHome.aspx", color: "bg-cyan-800" },
+  { label: "Loan Redemption Programs", href: "/Pages/LoanRedemptionPrograms.aspx", color: "bg-red-800" },
+  { label: "Employer Resources", href: "/Pages/EmployerResources.aspx", color: "bg-emerald-900" },
 ];
 
 export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb?: boolean }) {
@@ -364,10 +352,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
       <section aria-labelledby="spotlight-title" className={`${CONTAINER} mt-6`}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <h2
-              id="spotlight-title"
-              className="text-2xl md:text-3xl font-semibold text-amber-800 text-center mb-4"
-            >
+            <h2 id="spotlight-title" className="text-2xl md:text-3xl font-semibold text-amber-800 text-center mb-4">
               HESAA Spotlight
             </h2>
 
@@ -412,79 +397,82 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
         </div>
       </section>
 
-      {/* News + Events */}
-      <section className="mt-12 py-10 bg-slate-50/80" aria-labelledby="news-and-events">
-        <h2 id="news-and-events" className="sr-only">
-          News and Events
-        </h2>
-        <div className={`${CONTAINER} grid lg:grid-cols-2 gap-8`}>
-          <div aria-labelledby="recent-news-title">
-            <h3
-              id="recent-news-title"
-              className="flex items-center justify-center gap-2 text-2xl md:text-3xl font-semibold text-amber-800 mb-4"
-            >
-              <Newspaper className="size-7 md:size-8" aria-hidden="true" /> Recent News
-            </h3>
-            <ul className="space-y-3" role="list">
-              {[
-                { date: "Aug 14, 2025", title: "RFP Depository Banking Services", href: "#" },
-                { date: "Jul 18, 2025", title: "HESAA Board Meeting Notice", href: "#" },
-                { date: "Jul 16, 2025", title: "WTC Scholarship Fund Board Meeting", href: "#" },
-                { date: "Jun 14, 2025", title: "NJBEST 529 & Financial Aid in NJ", href: "#" },
-              ].map((n) => {
-                const [mon, day] = n.date.replace(",", "").split(" ");
-                return (
-                  <li key={n.title}>
-                    <a
-                      href={n.href}
-                      className="flex items-center gap-4 rounded-xl bg-white px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-                    >
-                      <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
-                        <div className="text-[18px] font-bold">{mon}</div>
-                        <div className="text-[18px] opacity-90">{day}</div>
-                      </div>
-                      <div className="font-medium text-slate-900 text-base md:text-[18px] leading-snug">
-                        {n.title}
-                      </div>
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+{/* News + Events */}
+<section className="mt-12 py-10 bg-[#F6F1E7]" aria-labelledby="news-and-events">
+  <h2 id="news-and-events" className="sr-only">
+    News and Events
+  </h2>
+  <div className={`${CONTAINER} grid lg:grid-cols-2 gap-8`}>
+    {/* News */}
+    <div aria-labelledby="recent-news-title">
+      <h3
+        id="recent-news-title"
+        className="flex items-center justify-center gap-2 text-2xl md:text-3xl font-semibold text-amber-800 mb-4"
+      >
+        <Newspaper className="size-7 md:size-8" aria-hidden="true" /> Recent News
+      </h3>
+      <ul className="space-y-3" role="list">
+        {[
+          { date: "Aug 14, 2025", title: "RFP Depository Banking Services", href: "#" },
+          { date: "Jul 18, 2025", title: "HESAA Board Meeting Notice", href: "#" },
+          { date: "Jul 16, 2025", title: "WTC Scholarship Fund Board Meeting", href: "#" },
+          { date: "Jun 14, 2025", title: "NJBEST 529 & Financial Aid in NJ", href: "#" },
+        ].map((n) => {
+          const [mon, day] = n.date.replace(",", "").split(" ");
+          return (
+            <li key={n.title}>
+              <a
+                href={n.href}
+                className="flex items-center gap-4 rounded-xl bg-[#F6F1E7] px-5 py-4 shadow hover:shadow-md hover:bg-[#e9e0d4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              >
+                <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
+                  <div className="text-[18px] font-bold">{mon}</div>
+                  <div className="text-[18px] opacity-90">{day}</div>
+                </div>
+                <div className="font-medium text-slate-900 text-base md:text-[18px] leading-snug">
+                  {n.title}
+                </div>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
 
-          <div aria-labelledby="events-title">
-            <h3
-              id="events-title"
-              className="flex items-center justify-center gap-2 text-2xl md:text-3xl font-semibold text-amber-800 mb-4"
+    {/* Events */}
+    <div aria-labelledby="events-title">
+      <h3
+        id="events-title"
+        className="flex items-center justify-center gap-2 text-2xl md:text-3xl font-semibold text-amber-800 mb-4"
+      >
+        <CalendarDays className="size-7 md:size-8" aria-hidden="true" /> Events
+      </h3>
+      <ul className="space-y-3" role="list">
+        {[
+          { m: "Sep", d: "15", title: "FA Application Deadline for Renewal Students", href: "#" },
+          { m: "Oct", d: "02", title: "School Counselor Workshop", href: "#" },
+          { m: "Oct", d: "20", title: "Financial Aid Session — Newark", href: "#" },
+        ].map((e) => (
+          <li key={e.title}>
+            <a
+              href={e.href}
+              className="flex items-center gap-4 rounded-xl bg-[#F6F1E7] px-5 py-4 shadow hover:shadow-md hover:bg-[#e9e0d4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
             >
-              <CalendarDays className="size-7 md:size-8" aria-hidden="true" /> Events
-            </h3>
-            <ul className="space-y-3" role="list">
-              {[
-                { m: "Sep", d: "15", title: "FA Application Deadline for Renewal Students", href: "#" },
-                { m: "Oct", d: "02", title: "School Counselor Workshop", href: "#" },
-                { m: "Oct", d: "20", title: "Financial Aid Session — Newark", href: "#" },
-              ].map((e) => (
-                <li key={e.title}>
-                  <a
-                    href={e.href}
-                    className="flex items-center gap-4 rounded-xl bg-white px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-                  >
-                    <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
-                      <div className="text-[18px] font-bold">{e.m}</div>
-                      <div className="text-[18px] opacity-90">{e.d}</div>
-                    </div>
-                    <div className="font-medium text-slate-900 text-base md:text-[18px] leading-snug">
-                      {e.title}
-                    </div>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
+              <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
+                <div className="text-[18px] font-bold">{e.m}</div>
+                <div className="text-[18px] opacity-90">{e.d}</div>
+              </div>
+              <div className="font-medium text-slate-900 text-base md:text-[18px] leading-snug">
+                {e.title}
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
+
     </main>
   );
 }
