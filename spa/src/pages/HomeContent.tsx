@@ -266,14 +266,7 @@ function Carousel() {
 <button
   aria-label="Previous slide"
   onClick={() => setIdx((p) => p - 1)}
-  className="
-    absolute left-3 md:left-5 top-1/2 -translate-y-1/2 z-10
-    inline-flex items-center justify-center rounded-full
-    h-10 w-10 lg:h-16 lg:w-16
-    bg-black/55 hover:bg-black/65 text-white
-    backdrop-blur-[1px] shadow
-    focus:outline-none focus-visible:ring-2 focus-visible:ring-white
-  "
+className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 z-10 text-white text-4xl md:text-7xl leading-none select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
 >
   <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 lg:h-8 lg:w-8">
     <path fill="currentColor" d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
@@ -320,26 +313,35 @@ function SpotlightCard({
 }) {
   return (
     <article
-      className={`h-full rounded-xl ${CARD_BG} ${CARD_BORDER} shadow hover:shadow-md transition focus-within:shadow-md`}
+      className="h-full rounded-xl bg-white shadow hover:shadow-md transition focus-within:shadow-md"
       aria-labelledby={`spot-${idx}-title`}
     >
-      {/* Media well with no extra white bands */}
-      <div className="w-full overflow-hidden h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px] flex items-center justify-center">
+      {/* Fixed responsive media area — filled by image (no top/bottom gap) */}
+      <div
+        className="
+          w-full overflow-hidden bg-white
+          h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px]
+        "
+      >
         <img
           src={img}
           alt={alt}
           decoding="async"
           loading="lazy"
-          className="max-h-full w-auto h-auto object-contain"
+          className="w-full h-full object-cover"
         />
       </div>
 
       <div className="p-4">
-        <span id={`spot-${idx}-title`} className="sr-only">{alt}</span>
+        {/* Hidden label that names the card for AT */}
+        <span id={`spot-${idx}-title`} className="sr-only">
+          {alt}
+        </span>
+
         <a
           href={href}
           aria-describedby={`spot-${idx}-title`}
-          className="inline-flex items-center gap-2 rounded-md bg-blue-700 px-3 py-2 text-white hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
         >
           Learn more <ArrowRight className="size-4" aria-hidden="true" />
         </a>
