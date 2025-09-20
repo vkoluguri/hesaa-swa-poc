@@ -57,7 +57,7 @@ export default function Footer() {
             <h3 id="ft-hesaa" className="text-md font-semibold text-slate-900 mb-3">
               HESAA
             </h3>
-            <ul className="space-y-2 text-[13px] text-slate-800">
+            <ul className="space-y-1 text-[13px] text-slate-800">
               <li><a href="/Pages/Careers.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">Careers</a></li>
               <li><a href="/Pages/PrivacyPolicy.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">Privacy Policy</a></li>
               <li><a href="/Pages/WebsiteTerms.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">Website T &amp; C</a></li>
@@ -69,7 +69,7 @@ export default function Footer() {
             <h3 id="ft-grants" className="text-md font-semibold text-slate-900 mb-3">
               Grants &amp; Scholarships
             </h3>
-            <ul className="space-y-2 text-[13px] text-slate-800">
+            <ul className="space-y-1 text-[13px] text-slate-800">
               <li><a href="https://njfams.hesaa.org" target="_blank" rel="noopener noreferrer" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">NJFAMS Account</a></li>
               <li><a href="/Pages/StateApplicationDeadlines.aspx" className="hover:text-blue-700 focus:text-blue-700 hover:underline focus:outline-none">Application Deadlines</a></li>
             </ul>
@@ -79,7 +79,7 @@ export default function Footer() {
             <h3 id="ft-njclass" className="text-md font-semibold text-slate-900 mb-3">
               NJCLASS
             </h3>
-            <ul className="space-y-2 text-[13px] text-slate-800">
+            <ul className="space-y-1 text-[13px] text-slate-800">
               <li><a href="/Pages/NJCLASSHome.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">Apply Now</a></li>
               <li><a href="https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp" target="_blank" rel="noopener noreferrer" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">Login</a></li>
               <li><a href="/Pages/NJCLASSMakePayment.aspx" className="hover:text-blue-700 hover:underline focus:text-blue-700 focus:outline-none">Make a Payment</a></li>

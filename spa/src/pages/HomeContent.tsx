@@ -327,14 +327,15 @@ function SpotlightCard({
 }) {
   return (
     <article
-      className="h-full rounded-xl ${CARD_BG} ${CARD_BORDER} bg-white shadow hover:shadow-md transition focus-within:shadow-md"
+      className="h-full rounded-xl bg-[#fdfaf5] border border-slate-200 shadow hover:shadow-md transition focus-within:shadow-md"
       aria-labelledby={`spot-${idx}-title`}
     >
-      {/* Fixed responsive media area — filled by image (no top/bottom gap) */}
+      {/* Fixed responsive media area */}
       <div
         className="
-          w-full overflow-hidden bg-white
+          w-full overflow-hidden
           h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px]
+          flex items-center justify-center
         "
       >
         <img
@@ -342,27 +343,29 @@ function SpotlightCard({
           alt={alt}
           decoding="async"
           loading="lazy"
-          className="w-full h-full object-cover"
+          className="max-h-full w-auto h-auto object-contain"
         />
       </div>
 
       <div className="p-4">
-        {/* Hidden label that names the card for AT */}
         <span id={`spot-${idx}-title`} className="sr-only">
           {alt}
         </span>
 
-        <a
-          href={href}
-          aria-describedby={`spot-${idx}-title`}
-          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-        >
-          Learn more <ArrowRight className="size-4" aria-hidden="true" />
-        </a>
+// "Learn more" button in SpotlightCard
+<a
+  href={href}
+  aria-describedby={`spot-${idx}-title`}
+  className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3.5 py-2.5 text-[16px] md:text-[17px] text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+>
+  Learn more <ArrowRight className="size-5" aria-hidden="true" />
+</a>
+
       </div>
     </article>
   );
 }
+
 
 /* =========================
    Quick links + News/Events
@@ -378,7 +381,7 @@ const quickLinks = [
 
 export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb?: boolean }) {
   return (
-    <main className="w-full">
+    <main className="w-full text-[17px] md:text-[18px] lg:text-[19px]">
       {showBreadcrumb ? (
         <div className={`${CONTAINER} text-sm text-slate-500 mt-2`} aria-label="Breadcrumb">
           Home
@@ -392,9 +395,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
       <section aria-labelledby="spotlight-title" className={`${CONTAINER} mt-6`}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <h2 id="spotlight-title" className="text-2xl md:text-3xl font-semibold text-amber-800 text-center mb-4">
-              HESAA Spotlight
-            </h2>
+<h2 id="spotlight-title" className="text-3xl md:text-4xl font-semibold text-amber-800 text-center mb-4">HESAA Spotlight</h2>
 
             <ul className="grid sm:grid-cols-2 gap-6 list-none p-0 m-0" role="list">
               {[
@@ -417,9 +418,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
           </div>
 
           <aside className="lg:col-span-1" aria-labelledby="quick-links-title">
-            <h2 id="quick-links-title" className="text-2xl md:text-3xl font-semibold text-amber-800 text-center mb-4">
-              Quick Links
-            </h2>
+<h2 id="quick-links-title" className="text-3xl md:text-4xl font-semibold text-amber-800 text-center mb-4">Quick Links</h2>
             <ul className="grid sm:grid-cols-1 gap-3" role="list">
               {quickLinks.map((q) => (
                 <li key={q.label}>
@@ -427,7 +426,9 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
                     href={q.href}
                     className={`group ${q.color} text-white w-full inline-flex items-center justify-between rounded-lg px-4 py-4 shadow hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-600`}
                   >
-                    <span className="font-semibold text-base md:text-[22px] leading-tight">{q.label}</span>
+                    // Quick Links label (make a little larger)
+<span className="font-semibold text-[18px] md:text-[22px] leading-tight">{q.label}</span>
+
                     <ExternalLink className="size-4 opacity-90 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
                   </a>
                 </li>
@@ -440,7 +441,9 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
 {/* News + Events */}
 <section className="mt-12 py-10" aria-labelledby="news-and-events">
 
-  <h2 id="news-and-events" className="sr-only">News and Events</h2>
+{/* <h3 id="recent-news-title" className="flex items-center justify-center gap-2 text-3xl md:text-4xl font-semibold text-amber-800 mb-4">
+  <Newspaper className="size-7 md:size-8" aria-hidden="true" /> Recent News
+</h3> */}
 
   <div className={`${CONTAINER} grid lg:grid-cols-2 gap-8`}>
     {/* Recent News */}
@@ -464,10 +467,10 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
                 className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER} px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
               >
                 <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
-                  <div className="text-[18px] font-bold">{mon}</div>
-                  <div className="text-[18px] opacity-90">{day}</div>
+                  <div className="text-[20px] font-bold">{mon}</div>
+                  <div className="text-[20px] opacity-90">{day}</div>
                 </div>
-                <div className={`font-medium ${BODY_TEXT} text-base md:text-[18px] leading-snug`}>
+                <div className={`font-medium text-slate-900 text-[17px] md:text-[19px] leading-snug`}>
                   {n.title}
                 </div>
               </a>
@@ -479,10 +482,10 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
 
     {/* Events */}
     <div aria-labelledby="events-title">
-      <h3 id="events-title"
-          className={`flex items-center justify-center gap-2 text-2xl md:text-3xl font-semibold ${HEAD_COLOR} mb-4`}>
-        <CalendarDays className="size-7 md:size-8" aria-hidden="true" /> Events
-      </h3>
+<h3 id="events-title"
+  className="flex items-center justify-center gap-2 text-3xl md:text-4xl font-semibold text-amber-800 mb-4">
+  <CalendarDays className="size-7 md:size-8" aria-hidden="true" /> Events
+</h3>
       <ul className="space-y-3" role="list">
         {[
           { m: "Sep", d: "15", title: "FA Application Deadline for Renewal Students", href: "#" },
@@ -498,7 +501,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
                 <div className="text-[18px] font-bold">{e.m}</div>
                 <div className="text-[18px] opacity-90">{e.d}</div>
               </div>
-              <div className={`font-medium ${BODY_TEXT} text-base md:text-[18px] leading-snug`}>
+              <div className={`font-medium text-slate-900 text-[17px] md:text-[19px] leading-snug`}>
                 {e.title}
               </div>
             </a>
