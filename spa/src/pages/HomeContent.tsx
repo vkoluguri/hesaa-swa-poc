@@ -262,14 +262,24 @@ function Carousel() {
           </div>
         </div>
 
-{/* Arrows: round buttons; bigger on desktop */}
+{/* Arrows: round buttons; bigger arrows on desktop */}
 <button
   aria-label="Previous slide"
   onClick={() => setIdx((p) => p - 1)}
-className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 z-10 text-white text-4xl md:text-7xl leading-none select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+  className="
+    absolute left-3 md:left-5 top-1/2 -translate-y-1/2 z-10
+    inline-flex items-center justify-center rounded-full
+    h-10 w-10 lg:h-16 lg:w-16
+    bg-black/55 hover:bg-black/65 text-white
+    backdrop-blur-[1px] shadow
+    focus:outline-none focus-visible:ring-2 focus-visible:ring-white
+  "
 >
-  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 lg:h-8 lg:w-8">
-    <path fill="currentColor" d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-7 w-7 lg:h-12 lg:w-12">
+    <path
+      fill="currentColor"
+      d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"
+    />
   </svg>
   <span className="sr-only">Previous</span>
 </button>
@@ -286,11 +296,15 @@ className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 z-10 text-white te
     focus:outline-none focus-visible:ring-2 focus-visible:ring-white
   "
 >
-  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 lg:h-8 lg:w-8">
-    <path fill="currentColor" d="m8.59 16.59 1.41 1.41 6-6-6-6-1.41 1.41L13.17 12z"/>
+  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-7 w-7 lg:h-12 lg:w-12">
+    <path
+      fill="currentColor"
+      d="m8.59 16.59 1.41 1.41 6-6-6-6-1.41 1.41L13.17 12z"
+    />
   </svg>
   <span className="sr-only">Next</span>
 </button>
+
 
       </div>
     </section>
@@ -313,7 +327,7 @@ function SpotlightCard({
 }) {
   return (
     <article
-      className="h-full rounded-xl bg-white shadow hover:shadow-md transition focus-within:shadow-md"
+      className="h-full rounded-xl ${CARD_BG} ${CARD_BORDER} bg-white shadow hover:shadow-md transition focus-within:shadow-md"
       aria-labelledby={`spot-${idx}-title`}
     >
       {/* Fixed responsive media area — filled by image (no top/bottom gap) */}
