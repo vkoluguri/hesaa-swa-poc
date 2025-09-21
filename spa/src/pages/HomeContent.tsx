@@ -215,13 +215,15 @@ function Carousel() {
             else if (i === slides.length - 1) srIndex = 1;
 
             return (
-              <div
-                key={`${s.src}-${i}`}
-                className="w-full shrink-0"
-                role="group"
-                aria-roledescription="slide"
-                aria-label={`Slide ${srIndex} of ${SLIDES.length}`}
-              >
+<div
+  key={`${s.src}-${i}`}
+  id={`carousel-slide-${srIndex}`}   // NEW
+  className="w-full shrink-0"
+  role="group"
+  aria-roledescription="slide"
+  aria-label={`Slide ${srIndex} of ${SLIDES.length}`}
+>
+
                 {s.href ? (
                   <a href={s.href} className="block focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/40">
                     <img src={s.src} alt={s.alt} className="block w-full h-auto select-none" draggable={false} />
@@ -249,22 +251,34 @@ function Carousel() {
             <span>{userPaused ? "Play" : "Pause"}</span>
           </button>
 
-          {/* Dots (desktop only) */}
-          <div className="hidden md:flex gap-2" role="tablist" aria-label="Slide navigation">
-            {SLIDES.map((_, realI) => (
-              <button
-                key={realI}
-                role="tab"
-                aria-selected={realI === currentRealIndex}
-                aria-label={`Go to slide ${realI + 1}`}
-                tabIndex={realI === currentRealIndex ? 0 : -1}
-                onClick={() => setIdx(realI + 1)}
-                className={`h-3 w-3 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white ${
-                  realI === currentRealIndex ? "bg-white shadow ring-1 ring-black/20" : "bg-white/70 hover:bg-white"
-                }`}
-              />
-            ))}
-          </div>
+
+{/* Dots (desktop only) */}
+<div
+  className="hidden md:flex gap-2"
+  role="tablist"
+  aria-label="Carousel slide navigation"
+>
+  {SLIDES.map((_, realI) => {
+    const selected = realI === currentRealIndex;
+    return (
+      <button
+        key={realI}
+        role="tab"
+        aria-selected={selected}
+        aria-label={`Go to slide ${realI + 1} of ${SLIDES.length}`}
+        aria-controls={`carousel-slide-${realI + 1}`}
+        tabIndex={selected ? 0 : -1}
+        onClick={() => setIdx(realI + 1)}
+        className={`h-3 w-3 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+          selected
+            ? "bg-white shadow ring-1 ring-black/20"
+            : "bg-white/70 hover:bg-white"
+        }`}
+      />
+    );
+  })}
+</div>
+
         </div>
 
 {/* Arrows: round buttons; bigger arrows on desktop */}
@@ -349,7 +363,7 @@ function SpotlightCard({
           alt={alt}                        // meaningful description for SR
           decoding="async"
           loading="lazy"
-          className="block w-full h-full object-contain lg:object-cover select-none"
+          className="block w-full h-full object-contain lg:object-cover select-none -mt-px sm:mt-0"
           draggable={false}
         />
       </div>

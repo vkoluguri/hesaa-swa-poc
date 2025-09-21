@@ -1,10 +1,23 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Menu, Search, Globe, ChevronDown, ChevronRight } from "lucide-react";
 
-const TOP_ACTIVE_BG = "bg-[#357ae8]";   // the solid highlight
-const TOP_ACTIVE_TEXT = "text-white";
-const TOP_HOVER_BG = "hover:bg-[#cfe0ff]";
+// 🎨 Accessible nav palette (AA on text)
+const NAV_ROW_BG     = "bg-[#c7d7ff]";   // darker than before; still gentle
+const TOP_TEXT_BASE  = "text-slate-900"; // default text color on light bar
+
+// Active tab (solid, high contrast on white text)
+const TOP_ACTIVE_BG  = "bg-[#1e40af]";   // ~tailwind blue-800
+const TOP_ACTIVE_TEXT= "text-white";
+
+// Hover/focus (light, keeps 4.5:1 for blue-900 text)
+const TOP_HOVER_BG   = "hover:bg-[#d6e3ff]";
 const TOP_HOVER_TEXT = "hover:text-blue-900";
+
+// Submenu styling
+const SUBMENU_BG     = "bg-white";
+const SUBMENU_BORDER = "border border-slate-200";
+const SUBMENU_ITEM_HOVER = "hover:bg-[#e6efff] hover:text-blue-900";
+
 
 const CURR_PATH = typeof window !== "undefined" ? window.location.pathname.toLowerCase() : "";
 
@@ -597,11 +610,15 @@ const onKeyDown = (e: React.KeyboardEvent) => {
   onBlur={() => armClose(200)}
   onKeyDown={onKeyDown}
   className={[
-    "px-3 xl:px-4 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 whitespace-nowrap lg:text-[16px] xl:text-[18px]",
-    "font-semibold",                        // class
-    `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
-    (open || isActive) ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
-  ].join(" ")}
+  "px-3 xl:px-4 py-2 rounded-md transition-colors",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+  "whitespace-nowrap lg:text-[16px] xl:text-[18px]",
+  "font-semibold",
+  TOP_TEXT_BASE,
+  TOP_HOVER_BG, TOP_HOVER_TEXT,
+  (open || isActive) ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
+].join(" ")}
+
   style={{ fontWeight: 600 }}               // inline for belt & suspenders
 >
   <span className="font-semibold" style={{ fontWeight: 600 }}>
@@ -618,11 +635,15 @@ const onKeyDown = (e: React.KeyboardEvent) => {
         role="menuitem"
         href={item.href || "#"}
         className={[
-          "px-3 xl:px-4 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 whitespace-nowrap lg:text-[16px] xl:text-[18px]",
-          "font-semibold",
-          `${TOP_HOVER_BG} ${TOP_HOVER_TEXT} text-slate-900`,
-          isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
-        ].join(" ")}
+  "px-3 xl:px-4 py-2 rounded-md transition-colors",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+  "whitespace-nowrap lg:text-[16px] xl:text-[18px]",
+  "font-semibold",
+  TOP_TEXT_BASE,
+  TOP_HOVER_BG, TOP_HOVER_TEXT,
+  isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
+].join(" ")}
+
         style={{ fontWeight: 600 }}
         aria-current={isActive ? "page" : undefined}
       >
@@ -631,14 +652,14 @@ const onKeyDown = (e: React.KeyboardEvent) => {
       )}
 
 {hasChildren && open && (
-  <ul
-    id={submenuId}
-    role="menu"
-    aria-label={`${item.label} submenu`}
-    className="absolute left-1/2 -translate-x-1/2 top-full mt-2 min-w-[26rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl z-40 nav-dropdown"
-    onMouseEnter={() => armOpen(0)}
-    onMouseLeave={() => armClose(200)}   // <-- close only when leaving the whole submenu
-  >
+<ul
+  id={submenuId}
+  role="menu"
+  aria-label={`${item.label} submenu`}
+  className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 min-w-[26rem] rounded-md ${SUBMENU_BORDER} ${SUBMENU_BG} p-2 shadow-2xl z-40 nav-dropdown`}
+  onMouseEnter={() => armOpen(0)}
+  onMouseLeave={() => armClose(200)}
+>
     {/* bridge: removes the 2px gap between top tab and submenu */}
     <div className="pointer-events-auto absolute -top-2 left-0 right-0 h-2" />
 
@@ -647,7 +668,7 @@ const onKeyDown = (e: React.KeyboardEvent) => {
         <li key={child.label} className="relative group" role="none">
         <button
           type="button"
-          className="group-header w-full flex items-center justify-between rounded-md px-3 py-2 text-left text-[16px] text-slate-900 hover:bg-[#e3ecff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+          className={`group-header w-full flex items-center justify-between rounded-md px-3 py-2 text-left text-[16px] text-slate-900 ${SUBMENU_ITEM_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
           role="menuitem"
           aria-haspopup="menu"
           aria-expanded="false"
@@ -657,13 +678,13 @@ const onKeyDown = (e: React.KeyboardEvent) => {
           <ChevronRight className="ml-2 size-4 shrink-0 text-slate-400 group-hover:text-blue-700" aria-hidden="true" />
         </button>
 
-          <ul
-            role="menu"
-            aria-label={`${child.label} submenu`}
-            className="absolute top-0 left-full min-w-[20rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl hidden group-hover:block"
-            // IMPORTANT: no armClose here — outer UL handles leave/close
-            onMouseEnter={() => armOpen(0)}
-          >
+<ul
+  role="menu"
+  aria-label={`${child.label} submenu`}
+  className={`absolute top-0 left-full min-w-[20rem] rounded-md ${SUBMENU_BORDER} ${SUBMENU_BG} p-2 shadow-2xl hidden group-hover:block`}
+  onMouseEnter={() => armOpen(0)}
+>
+
             {/* bridge: keeps hover when moving back from flyout to column */}
             <div className="pointer-events-auto absolute -left-2 top-0 h-full w-2" />
             {child.children!.map((leaf) => (
@@ -684,7 +705,7 @@ const onKeyDown = (e: React.KeyboardEvent) => {
                     ? "page"
                     : undefined
                 }
-                  className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#e3ecff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                 className={`block rounded-md px-3 py-2 text-[16px] text-slate-900 ${SUBMENU_ITEM_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
                   tabIndex={-1}
                 >
                   {leaf.label}
@@ -711,7 +732,7 @@ const onKeyDown = (e: React.KeyboardEvent) => {
               ? "page"
               : undefined
           }
-            className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#dbe5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            className={`block rounded-md px-3 py-2 text-[16px] text-slate-900 ${SUBMENU_ITEM_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
             tabIndex={-1}
           >
             {child.label}
@@ -739,10 +760,12 @@ function MobileItem({ item }: { item: NavNode }) {
   return (
     <div className="px-1">
       <button
-        className={[
-          "w-full flex items-center justify-between rounded-md px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
-          open || isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : "text-slate-900"
-        ].join(" ")}
+className={[
+  "w-full flex items-center justify-between rounded-md px-3 py-2 text-left transition-colors",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+  open || isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : TOP_TEXT_BASE
+].join(" ")}
+
         onClick={() => (hasChildren ? setOpen((v) => !v) : (window.location.href = item.href || "#"))}
         aria-expanded={open}
         aria-current={isActive ? "page" : undefined}
@@ -797,7 +820,7 @@ function MobileItem({ item }: { item: NavNode }) {
               ? "page"
               : undefined
           }
-          className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#e3ecff] hover:text-blue-900 hover:border-l-2 hover:border-blue-600"
+          className={`block rounded-md px-3 py-2 text-[16px] text-slate-900 ${SUBMENU_ITEM_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
         >
           {leaf.label}
         </a>
@@ -823,7 +846,7 @@ function MobileItem({ item }: { item: NavNode }) {
                     ? "page"
                     : undefined
                 }
-                  className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#dbe5f9] ont-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                  className={`block rounded-md px-3 py-2 text-[16px] text-slate-900 ${SUBMENU_ITEM_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
                 >
                   {child.label}
                 </a>
@@ -960,13 +983,14 @@ export default function Header() {
           </div>
 
           {/* Mobile hamburger (label under) */}
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-expanded={menuOpen}
-            aria-controls="mobile-panel"
-            className="lg:hidden inline-flex flex-col items-center justify-center rounded-lg px-3 py-2 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-          >
+<button
+  type="button"
+  onClick={() => setMenuOpen((v) => !v)}
+  aria-expanded={menuOpen}
+  aria-controls="mobile-panel"
+  aria-label={menuOpen ? "Close main menu" : "Open main menu"}   // NEW
+  className="lg:hidden inline-flex flex-col items-center justify-center rounded-lg px-3 py-2 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+>
             <Menu className="size-6" aria-hidden />
             <span className="text-xs mt-1">Menu</span>
           </button>
@@ -974,15 +998,14 @@ export default function Header() {
       </div>
 
       {/* Main nav row */}
-      <div className="w-full border-t border-slate-200 mt-3" style={{ backgroundColor: "#dbe5f9" }}>
-        <div className="max-w-[120rem] mx-auto px-4">
-        <nav aria-label="Primary" className="hidden lg:flex items-stretch justify-center gap-2 py-2">
-          <ul role="menubar" className="flex items-center gap-2 text-[18px] font-medium">
-            {NAV.map((item) => <NavItem key={item.label} item={item} />)}
-          </ul>
-        </nav>
-
-        </div>
+<div className={`w-full border-t border-slate-200 mt-3 ${NAV_ROW_BG}`}>
+  <div className="max-w-[120rem] mx-auto px-4">
+    <nav aria-label="Primary" className="hidden lg:flex items-stretch justify-center gap-2 py-2">
+      <ul role="menubar" className="flex items-center gap-2 text-[18px] font-medium">
+        {NAV.map((item) => <NavItem key={item.label} item={item} />)}
+      </ul>
+    </nav>
+  </div>
 
         {/* Mobile panel */}
         <div id="mobile-panel" className={`lg:hidden ${menuOpen ? "block" : "hidden"}`}>
