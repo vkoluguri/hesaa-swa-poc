@@ -1,40 +1,40 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Menu, Search, Globe, ChevronDown, ChevronRight } from "lucide-react";
 
-/* =========================================================
-   Accessible nav palette for dark bar (#0d132d)
-   ========================================================= */
-const NAV_ROW_BG        = "bg-[#0d132d]";   // main bar bg
-const TOP_TEXT_BASE     = "text-white";     // default text
-// Hover/focus chip (slightly lighter than bar so it’s visible)
-const TOP_HOVER_BG      = "hover:bg-[#182244]";  // ~+20% lighter
-const TOP_HOVER_TEXT    = "";                   // keep white text
-// Active tab pill (high contrast, distinct from bar)
-const TOP_ACTIVE_BG     = "bg-[#0b5fad]";   // accessible accent
-const TOP_ACTIVE_TEXT   = "text-white";
-// Focus ring offset matches the bar for visibility
+/* =========================
+   Dark palette / tokens
+   ========================= */
+const NAV_ROW_BG = "bg-[#0d132d]";
+const TOP_TEXT_BASE = "text-white";
+const TOP_HOVER_BG = "hover:bg-[#182244]";
+const TOP_ACTIVE_BG = "bg-[#0b5fad]";
+const TOP_ACTIVE_TEXT = "text-white";
 const RING_OFFSET_ON_BAR = "focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]";
 
-// Submenu (stays light for readability)
-const SUBMENU_BG            = "bg-white";
-const SUBMENU_BORDER        = "border border-slate-200";
-const SUBMENU_ITEM_TEXT     = "text-slate-900";
-const SUBMENU_ITEM_HOVER_BG = "hover:bg-[#e6efff]";     // light blue
-const SUBMENU_ITEM_HOVER_TX = "hover:text-blue-900";    // strong text on hover
-const SUBMENU_ITEM_FOCUS    = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600";
+const SUBMENU_BG = "bg-white";
+const SUBMENU_BORDER = "border border-slate-200";
+const SUBMENU_ITEM_TEXT = "text-slate-900";
+const SUBMENU_ITEM_HOVER_BG = "hover:bg-[#e6efff]";
+const SUBMENU_ITEM_HOVER_TX = "hover:text-blue-900";
+const SUBMENU_ITEM_FOCUS = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600";
 
-const CURR_PATH = typeof window !== "undefined" ? window.location.pathname.toLowerCase() : "";
+// Mobile panel palette
+const MOBILE_PANEL_BG = "bg-[#0d132d] text-white";
+
+const CURR_PATH =
+  typeof window !== "undefined" ? window.location.pathname.toLowerCase() : "";
 
 /* uid */
 function useUID(prefix: string) {
-  const [id] = React.useState(() => `${prefix}-${Math.random().toString(36).slice(2, 8)}`);
+  const [id] = React.useState(
+    () => `${prefix}-${Math.random().toString(36).slice(2, 8)}`
+  );
   return id;
 }
 
 /* =========================
    NAV DATA (yours)
    ========================= */
-
 type NavLeaf = { label: string; href: string; target?: "_blank" };
 type NavGroup = { label: string; href?: string; children?: NavLeaf[] };
 type NavNode = { label: string; href?: string; children?: (NavLeaf | NavGroup)[] };
@@ -164,7 +164,7 @@ const NAV: NavNode[] = [
 ];
 
 /* ----------------------------------------------------------------
-   Persistent banner (Option B: /assets/banner.json)
+   Persistent banner
 ------------------------------------------------------------------*/
 function useBanner() {
   const [msg, setMsg] = useState<string | null>(null);
@@ -184,9 +184,8 @@ function useBanner() {
     }
 
     const pad = (n: number) => String(n).padStart(2, "0");
-
     function easternOffsetISO(year: number, month: number, day: number): string {
-      const utcNoon = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+      const utcNoon = new Date(Date.UTC(year, month - 1, day, 12));
       const tzName = new Intl.DateTimeFormat("en-US", {
         timeZone: "America/New_York",
         timeZoneName: "short",
@@ -194,36 +193,27 @@ function useBanner() {
       const isEDT = /EDT|GMT-4/i.test(tzName);
       return isEDT ? "-04:00" : "-05:00";
     }
-
     function parseDateFlexible(raw?: string): Date | null {
       if (!raw) return null;
       const s = raw.trim();
-
       if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
         const d = new Date(s);
         return isNaN(+d) ? null : d;
       }
-
-      const m = s.match(
-        /^(\d{2})-(\d{2})-(\d{4})(?:\s+(\d{1,2}):(\d{2})\s*(AM|PM))?(?:\s*(EST|EDT))?$/i
-      );
+      const m = s.match(/^(\d{2})-(\d{2})-(\d{4})(?:\s+(\d{1,2}):(\d{2})\s*(AM|PM))?(?:\s*(EST|EDT))?$/i);
       if (!m) return null;
-
       const [, mmS, ddS, yyyyS, hhS, minS, ampmS, tzS] = m;
       const mm = Number(mmS), dd = Number(ddS), yyyy = Number(yyyyS);
-
       let hh = 0, minute = 0;
       if (hhS && minS) {
         hh = Number(hhS) % 12;
         minute = Number(minS);
         if ((ampmS || "").toUpperCase() === "PM") hh += 12;
       }
-
       let offset = easternOffsetISO(yyyy, mm, dd);
       if ((tzS || "").toUpperCase() === "EST") offset = "-05:00";
       if ((tzS || "").toUpperCase() === "EDT") offset = "-04:00";
-
-      const iso = `${yyyy}-${pad(mm)}-${pad(dd)}T${pad(hh)}:${pad(minute)}:00${offset}`;
+      const iso = `${yyyy}-${pad(mm)}-${pad(dd)}T${String(hh).padStart(2,"0")}:${String(minute).padStart(2,"0")}:00${offset}`;
       const d = new Date(iso);
       return isNaN(+d) ? null : d;
     }
@@ -239,18 +229,14 @@ function useBanner() {
 
       if (isDev) console.debug("[banner]", { now, startAt, endAt, showNow, message, toneIn });
 
-      if (showNow) {
-        setMsg(message);
-        setTone(toneIn);
-      } else {
-        setMsg(null);
-      }
+      setMsg(showNow ? message : null);
+      setTone(toneIn);
 
       if (startAt && now < startAt) {
-        startId = window.setTimeout(() => applyFromSource(source), startAt.getTime() - now.getTime());
+        window.setTimeout(() => applyFromSource(source), startAt.getTime() - now.getTime());
       }
       if (endAt && now < endAt) {
-        endId = window.setTimeout(() => setMsg(null), endAt.getTime() - now.getTime());
+        window.setTimeout(() => setMsg(null), endAt.getTime() - now.getTime());
       }
     }
 
@@ -260,17 +246,10 @@ function useBanner() {
         const r = await fetch("/assets/banner.json", { cache: "no-store" });
         if (r.ok) {
           const j = await r.json();
-          if (j && j.message && String(j.message).trim()) {
-            applyFromSource(j);
-          } else {
-            setMsg(null);
-          }
-        } else {
-          if (isDev) console.warn("[banner] fetch not ok:", r.status);
-          setMsg(null);
-        }
-      } catch (e) {
-        if (isDev) console.warn("[banner] fetch error:", e);
+          if (j && j.message && String(j.message).trim()) applyFromSource(j);
+          else setMsg(null);
+        } else setMsg(null);
+      } catch {
         setMsg(null);
       }
     }
@@ -296,11 +275,7 @@ function SiteBanner() {
   const { msg, toneClass } = useBanner();
   if (!msg) return null;
   return (
-    <div
-      className={`w-full border ${toneClass} text-center text-lg py-2`}
-      role="status"
-      aria-live="polite"
-    >
+    <div className={`w-full border ${toneClass} text-center text-lg py-2`} role="status" aria-live="polite">
       {msg}
     </div>
   );
@@ -451,7 +426,6 @@ function TranslatePopover({
           <span ref={poweredSlotRef} id="gt-powered-slot" className="text-[11px] text-slate-500" />
         </div>
         <div className="text-[12px] text-slate-700 leading-snug">
-          {/* disclosure text unchanged */}
           The State of NJ site may contain optional links, information, services and/or content from other websites...
         </div>
       </div>
@@ -521,17 +495,11 @@ function NavItem({ item }: { item: NavNode }) {
         }
         break;
       case "ArrowRight":
-        e.preventDefault();
-        moveHoriz(1);
-        break;
+        e.preventDefault(); moveHoriz(1); break;
       case "ArrowLeft":
-        e.preventDefault();
-        moveHoriz(-1);
-        break;
+        e.preventDefault(); moveHoriz(-1); break;
       case "Escape":
-        setOpen(false);
-        current.focus();
-        break;
+        setOpen(false); current.focus(); break;
     }
   };
 
@@ -635,8 +603,7 @@ function NavItem({ item }: { item: NavNode }) {
                         aria-current={
                           CURR_PATH && (leaf.href || "").toLowerCase() &&
                           CURR_PATH.startsWith((leaf.href || "").toLowerCase())
-                            ? "page"
-                            : undefined
+                            ? "page" : undefined
                         }
                         className={[
                           "block rounded-md px-3 py-2 text-[16px]",
@@ -664,8 +631,7 @@ function NavItem({ item }: { item: NavNode }) {
                   aria-current={
                     CURR_PATH && (child.href || "").toLowerCase() &&
                     CURR_PATH.startsWith((child.href || "").toLowerCase())
-                      ? "page"
-                      : undefined
+                      ? "page" : undefined
                   }
                   className={[
                     "block rounded-md px-3 py-2 text-[16px]",
@@ -687,7 +653,57 @@ function NavItem({ item }: { item: NavNode }) {
   );
 }
 
-/* ---------------- Mobile item (accordion) ---------------- */
+/* ---------------- Mobile group + item ---------------- */
+function MobileGroup({ group }: { group: NavGroup }) {
+  const [gOpen, setGOpen] = useState(false);
+  const panelId = useUID(`m-sub-${group.label.replace(/\s+/g, "-").toLowerCase()}`);
+
+  return (
+    <li className="rounded-md">
+      <button
+        className={[
+          "w-full flex items-center justify-between px-3 py-2 text-[16px] rounded-md",
+          "text-white/95 hover:bg-white/10",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+          "focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
+        ].join(" ")}
+        onClick={(e) => { e.preventDefault(); setGOpen(v => !v); }}
+        aria-expanded={gOpen}
+        aria-controls={panelId}
+      >
+        <span>{group.label}</span>
+        <ChevronDown className={`size-4 transition-transform ${gOpen ? "rotate-180" : ""} text-white/80`} aria-hidden />
+      </button>
+
+      <ul id={panelId} className={`mt-1 rounded-md bg-[#111b39] ${gOpen ? "block" : "hidden"}`}>
+        {group.children!.map((leaf) => (
+          <li key={leaf.label}>
+            <a
+              href={leaf.href}
+              target={leaf.target}
+              rel={leaf.target === "_blank" ? "noopener noreferrer" : undefined}
+              aria-label={leaf.target === "_blank" ? `${leaf.label} (opens in a new tab)` : undefined}
+              aria-current={
+                CURR_PATH && (leaf.href || "").toLowerCase() &&
+                CURR_PATH.startsWith((leaf.href || "").toLowerCase())
+                  ? "page" : undefined
+              }
+              className={[
+                "block rounded-md px-3 py-2 text-[16px]",
+                "text-white/95 hover:bg-white/10",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                "focus-visible:ring-offset-2 focus-visible:ring-offset-[#111b39]"
+              ].join(" ")}
+            >
+              {leaf.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </li>
+  );
+}
+
 function MobileItem({ item }: { item: NavNode }) {
   const [open, setOpen] = useState<boolean>(false);
   const hasChildren = !!item.children?.length;
@@ -699,8 +715,9 @@ function MobileItem({ item }: { item: NavNode }) {
       <button
         className={[
           "w-full flex items-center justify-between rounded-md px-3 py-2 text-left transition-colors",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
-          open || isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : "text-slate-900"
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+          "focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]",
+          open || isActive ? "bg-[#0b5fad] text-white" : "text-white/95 hover:bg-white/10"
         ].join(" ")}
         onClick={() => (hasChildren ? setOpen((v) => !v) : (window.location.href = item.href || "#"))}
         aria-expanded={open}
@@ -709,7 +726,7 @@ function MobileItem({ item }: { item: NavNode }) {
         <span className="font-medium">{item.label}</span>
         {hasChildren && (
           <ChevronDown
-            className={`size-4 transition-transform ${open ? "rotate-180" : ""} ${open || isActive ? "text-white" : "text-slate-500"}`}
+            className={`size-4 transition-transform ${open ? "rotate-180" : ""} ${open || isActive ? "text-white" : "text-white/80"}`}
             aria-hidden
           />
         )}
@@ -719,49 +736,7 @@ function MobileItem({ item }: { item: NavNode }) {
         <ul className="ml-2 mt-1 space-y-1">
           {item.children!.map((child) =>
             isGroup(child) ? (
-              <li key={child.label} className="rounded-md bg-[#eef3ff]">
-                <button
-                  className="w-full flex items-center justify-between px-3 py-2 text-[16px]"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const next = (e.currentTarget as HTMLButtonElement).nextElementSibling as HTMLElement | null;
-                    if (next) next.classList.toggle("hidden");
-                    e.currentTarget.querySelector("svg")?.classList.toggle("rotate-180");
-                  }}
-                  aria-expanded={false}
-                >
-                  <span>{child.label}</span>
-                  <ChevronDown className="size-4 transition-transform" />
-                </button>
-
-                <ul className="mb-2 pl-0 pt-1 hidden">
-                  {child.children!.map((leaf) => (
-                    <li key={leaf.label}>
-                      <a
-                        href={leaf.href}
-                        target={leaf.target}
-                        rel={leaf.target === "_blank" ? "noopener noreferrer" : undefined}
-                        aria-label={leaf.target === "_blank" ? `${leaf.label} (opens in a new tab)` : undefined}
-                        aria-current={
-                          CURR_PATH && (leaf.href || "").toLowerCase() &&
-                          CURR_PATH.startsWith((leaf.href || "").toLowerCase())
-                            ? "page"
-                            : undefined
-                        }
-                        className={[
-                          "block rounded-md px-3 py-2 text-[16px]",
-                          SUBMENU_ITEM_TEXT,
-                          SUBMENU_ITEM_HOVER_BG,
-                          SUBMENU_ITEM_HOVER_TX,
-                          SUBMENU_ITEM_FOCUS
-                        ].join(" ")}
-                      >
-                        {leaf.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </li>
+              <MobileGroup key={child.label} group={child} />
             ) : (
               <li key={child.label}>
                 <a
@@ -772,15 +747,13 @@ function MobileItem({ item }: { item: NavNode }) {
                   aria-current={
                     CURR_PATH && (child.href || "").toLowerCase() &&
                     CURR_PATH.startsWith((child.href || "").toLowerCase())
-                      ? "page"
-                      : undefined
+                      ? "page" : undefined
                   }
                   className={[
                     "block rounded-md px-3 py-2 text-[16px]",
-                    SUBMENU_ITEM_TEXT,
-                    SUBMENU_ITEM_HOVER_BG,
-                    SUBMENU_ITEM_HOVER_TX,
-                    SUBMENU_ITEM_FOCUS
+                    "text-white/95 hover:bg-white/10",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                    "focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                   ].join(" ")}
                 >
                   {child.label}
@@ -848,7 +821,7 @@ export default function Header() {
             />
           </a>
 
-          {/* Right block */}
+          {/* Right block (DESKTOP) */}
           <div className="hidden md:grid grid-cols-[34px_auto] grid-rows-2 gap-x-3 items-start text-[13px] leading-5 mt-[2px] text-right">
             <img
               src="/assets/NJLogo_small.gif"
@@ -868,6 +841,7 @@ export default function Header() {
               <a className="hover:underline" href="https://www.nj.gov/faqs/">NJ Gov FAQs</a>
             </div>
 
+            {/* Desktop tools row (DESKTOP refs + neutral styling) */}
             <div className="col-span-2 mt-1 flex items-center justify-end gap-3">
               <button
                 ref={desktopTranslateBtnRef}
@@ -925,17 +899,19 @@ export default function Header() {
         </div>
 
         {/* Mobile panel */}
-        <div id="mobile-panel" className={`lg:hidden ${menuOpen ? "block" : "hidden"}`}>
+        <div id="mobile-panel" className={`lg:hidden ${menuOpen ? "block" : "hidden"} ${MOBILE_PANEL_BG}`}>
           <div className="px-4 pb-4 space-y-2">
+            {/* Mobile pills – dark friendly (ring + shadow) */}
             <div className="pt-3 pb-2 flex items-center gap-2">
               <button
                 ref={mobileTranslateBtnRef}
                 onClick={() => setTranslateOpen((v) => !v)}
-                className="inline-flex items-center gap-2 rounded-full border border-black/25 px-3 py-2 text-slate-900 bg-white/80"
+                className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-slate-900 bg-white/90 shadow ring-1 ring-white/10 border border-white/10"
               >
                 <Globe className="size-4" />
                 Translate
               </button>
+
               <form role="search" aria-label="Site search" action="/search" method="get" className="relative flex-1">
                 <label className="sr-only" htmlFor="m-site-search">Search the site</label>
                 <input
@@ -943,19 +919,20 @@ export default function Header() {
                   name="q"
                   type="search"
                   placeholder="Search..."
-                  className="w-full rounded-full border border-black/25 py-2 pl-9 pr-9 text-[16px] leading-6 md:text-base placeholder:text-black/50 text-slate-900 bg-white/80"
+                  className="w-full rounded-full py-2 pl-9 pr-9 text-[16px] leading-6 placeholder:text-black/60 text-slate-900 bg-white/90 shadow ring-1 ring-white/10 border border-white/10"
                 />
                 <Search className="absolute left-2.5 top-2.5 size-4 text-black/40" aria-hidden="true" />
                 <button type="submit" className="sr-only">Submit search</button>
               </form>
             </div>
 
-            <div className="border-t border-slate-200" />
+            <div className="border-t border-slate-200/30" />
             {NAV.map((item) => <MobileItem key={item.label} item={item} />)}
           </div>
         </div>
       </div>
 
+      {/* Shared translate popover */}
       <TranslatePopover
         open={translateOpen}
         onClose={() => setTranslateOpen(false)}
