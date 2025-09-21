@@ -332,29 +332,30 @@ function SpotlightCard({
 }) {
   return (
     <article
-      // use flex so content flows correctly; no reliance on aspect plugin
-      className="flex flex-col rounded-xl bg-[#fdfaf5] border border-slate-200 shadow hover:shadow-md transition focus-within:shadow-md overflow-hidden"
+      className="h-full rounded-xl bg-[#fdfaf5] border border-slate-200 shadow hover:shadow-md transition focus-within:shadow-md"
       aria-labelledby={`spot-${idx}-title`}
+      role="region"                       // identifies card as a landmark region
     >
-      {/* Media wrapper: explicit responsive heights (smaller on mobile) */}
+      {/* Image area */}
       <div
         className="
-          w-full overflow-hidden bg-white
+          w-full overflow-hidden bg-[#fdfaf5] 
           h-[180px] sm:h-[220px] md:h-[300px] lg:h-[340px]
           flex items-center justify-center
         "
       >
         <img
           src={img}
-          alt={alt}
+          alt={alt}                        // meaningful description for SR
           decoding="async"
           loading="lazy"
-          className="block max-h-full max-w-full w-auto h-auto object-contain"
+          className="block w-full h-full object-contain lg:object-cover select-none"
+          draggable={false}
         />
       </div>
 
-      {/* Body */}
-      <div className="p-3 sm:p-4">
+      <div className="p-4">
+        {/* Hidden label ties image + button together */}
         <span id={`spot-${idx}-title`} className="sr-only">
           {alt}
         </span>
@@ -362,7 +363,10 @@ function SpotlightCard({
         <a
           href={href}
           aria-describedby={`spot-${idx}-title`}
-          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3.5 py-2.5 text-[16px] md:text-[17px] text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3.5 py-2.5 
+                     text-[16px] md:text-[17px] text-white 
+                     hover:bg-blue-700 focus-visible:outline-none 
+                     focus-visible:ring-2 focus-visible:ring-blue-600"
         >
           Learn more
           <ArrowRight className="size-5" aria-hidden="true" />
