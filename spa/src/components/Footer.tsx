@@ -2,10 +2,12 @@ import React from "react";
 
 const year = new Date().getFullYear();
 
-// Match site rail (footer typically slightly narrower for comfort)
+// Match site rail (comfortable width)
 const CONTAINER = "max-w-[85rem] mx-auto px-4";
 
-// ---- Solid, accessible social icons (currentColor) ----
+// Dark brand color (same as main nav)
+const FOOTER_BG = "#0d132d";
+
 function IconFacebook(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
@@ -49,20 +51,20 @@ function IconLinkedIn(props: React.SVGProps<SVGSVGElement>) {
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-[#dbe5f9]" role="contentinfo">
-      {/* Top: four columns */}
-      <div className={`${CONTAINER} py-10`}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 justify-items-start">
+    <footer className="w-full" role="contentinfo" style={{ backgroundColor: FOOTER_BG }}>
+      {/* Top: four columns (reduced vertical space on desktop) */}
+      <div className={`${CONTAINER} py-8 md:py-7 lg:py-6`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 justify-items-start text-white">
           {/* Column 1 */}
           <nav aria-labelledby="ft-hesaa">
-            <h2 id="ft-hesaa" className="text-[16px] font-semibold text-slate-900 mb-3">
+            <h2 id="ft-hesaa" className="text-[16px] font-semibold mb-3 text-white">
               HESAA
             </h2>
-            <ul className="space-y-1 text-[14px] leading-6 text-slate-800">
+            <ul className="space-y-1 text-[14px] leading-6">
               <li>
                 <a
                   href="/Pages/Careers.aspx"
-                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                  className="rounded underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                 >
                   Careers
                 </a>
@@ -70,7 +72,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/Pages/PrivacyPolicy.aspx"
-                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                  className="rounded underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                 >
                   Privacy Policy
                 </a>
@@ -78,7 +80,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/Pages/WebsiteTerms.aspx"
-                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                  className="rounded underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                 >
                   Website T&nbsp;&amp;&nbsp;C
                 </a>
@@ -86,7 +88,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/Pages/SiteMap.aspx"
-                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                  className="rounded underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                 >
                   Sitemap
                 </a>
@@ -96,16 +98,16 @@ export default function Footer() {
 
           {/* Column 2 */}
           <nav aria-labelledby="ft-grants">
-            <h2 id="ft-grants" className="text-[16px] font-semibold text-slate-900 mb-3">
+            <h2 id="ft-grants" className="text-[16px] font-semibold mb-3 text-white">
               Grants &amp; Scholarships
             </h2>
-            <ul className="space-y-1 text-[14px] leading-6 text-slate-800">
+            <ul className="space-y-1 text-[14px] leading-6">
               <li>
                 <a
                   href="https://njfams.hesaa.org"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                  className="rounded underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                   aria-label="NJFAMS Account (opens in a new tab)"
                 >
                   NJFAMS Account
@@ -115,7 +117,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/Pages/StateApplicationDeadlines.aspx"
-                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                  className="rounded underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                 >
                   Application Deadlines
                 </a>
@@ -125,14 +127,14 @@ export default function Footer() {
 
           {/* Column 3 */}
           <nav aria-labelledby="ft-njclass">
-            <h2 id="ft-njclass" className="text-[16px] font-semibold text-slate-900 mb-3">
+            <h2 id="ft-njclass" className="text-[16px] font-semibold mb-3 text-white">
               NJCLASS
             </h2>
-            <ul className="space-y-1 text-[14px] leading-6 text-slate-800">
+            <ul className="space-y-1 text-[14px] leading-6">
               <li>
                 <a
                   href="/Pages/NJCLASSHome.aspx"
-                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                  className="rounded underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                 >
                   Apply Now
                 </a>
@@ -142,7 +144,7 @@ export default function Footer() {
                   href="https://www.hesaa.org/CustAuth/jsp/loggedin/WelcomeNJCLASS.jsp"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                  className="rounded underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                   aria-label="NJCLASS Login (opens in a new tab)"
                 >
                   Login
@@ -152,7 +154,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/Pages/NJCLASSMakePayment.aspx"
-                  className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60 hover:underline"
+                  className="rounded underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                 >
                   Make a Payment
                 </a>
@@ -162,7 +164,7 @@ export default function Footer() {
 
           {/* Column 4: Contact / Social */}
           <section aria-labelledby="ft-contact">
-            <h2 id="ft-contact" className="text-[16px] font-semibold text-slate-900 mb-3">
+            <h2 id="ft-contact" className="text-[16px] font-semibold mb-3 text-white">
               Contact Us
             </h2>
             <ul className="flex items-center gap-5">
@@ -170,7 +172,7 @@ export default function Footer() {
                 <a
                   href="#"
                   aria-label="HESAA on Facebook"
-                  className="text-slate-900 hover:text-blue-700 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60"
+                  className="text-white hover:text-blue-200 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                 >
                   <IconFacebook className="h-7 w-7" />
                 </a>
@@ -179,7 +181,7 @@ export default function Footer() {
                 <a
                   href="#"
                   aria-label="HESAA on YouTube"
-                  className="text-slate-900 hover:text-blue-700 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60"
+                  className="text-white hover:text-blue-200 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                 >
                   <IconYouTube className="h-7 w-7" />
                 </a>
@@ -188,7 +190,7 @@ export default function Footer() {
                 <a
                   href="#"
                   aria-label="HESAA on X"
-                  className="text-slate-900 hover:text-blue-700 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60"
+                  className="text-white hover:text-blue-200 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                 >
                   <IconX className="h-7 w-7" />
                 </a>
@@ -197,7 +199,7 @@ export default function Footer() {
                 <a
                   href="#"
                   aria-label="HESAA on LinkedIn"
-                  className="text-slate-900 hover:text-blue-700 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60"
+                  className="text-white hover:text-blue-200 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                 >
                   <IconLinkedIn className="h-7 w-7" />
                 </a>
@@ -209,16 +211,16 @@ export default function Footer() {
 
       {/* Divider */}
       <div className={`${CONTAINER}`}>
-        <hr className="border-slate-300" aria-hidden="true" />
+        <hr className="border-white/20" aria-hidden="true" />
       </div>
 
-      {/* Bottom row (no overflow on small screens) */}
-      <div className={`${CONTAINER} py-6`}>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-2 gap-4">
+      {/* Bottom row (reduced height) */}
+      <div className={`${CONTAINER} py-5 md:py-4`}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-1 gap-4">
           {/* OPRA badge (left) */}
           <a
             href="/Pages/OpenPublicRecordsAct.aspx"
-            className="block rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/60"
+            className="block rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
           >
             <img
               src="/assets/OPRA.jpg"
@@ -230,7 +232,7 @@ export default function Footer() {
           </a>
 
           {/* Copyright (wraps gracefully) */}
-          <p className="text-slate-800 text-[14px] sm:text-[15px] leading-snug sm:leading-6 break-words whitespace-normal max-w-full">
+          <p className="text-white text-[14px] sm:text-[15px] leading-snug sm:leading-6 break-words whitespace-normal max-w-full">
             © {year} Higher Education Student Assistance Authority
           </p>
         </div>
