@@ -332,16 +332,15 @@ function SpotlightCard({
 }) {
   return (
     <article
-      // drop h-full on mobile so the card can shrink to content; keep equal-height from md+
-      className="rounded-xl md:h-full bg-[#fdfaf5] border border-slate-200 shadow hover:shadow-md transition focus-within:shadow-md overflow-hidden"
+      // use flex so content flows correctly; no reliance on aspect plugin
+      className="flex flex-col rounded-xl bg-[#fdfaf5] border border-slate-200 shadow hover:shadow-md transition focus-within:shadow-md overflow-hidden"
       aria-labelledby={`spot-${idx}-title`}
     >
-      {/* Media: aspect on mobile, fixed heights only from md+ */}
+      {/* Media wrapper: explicit responsive heights (smaller on mobile) */}
       <div
         className="
-          w-full overflow-hidden
-          aspect-[16/9] sm:aspect-[2/1]           /* no fixed height on small screens */
-          md:aspect-auto md:h-[320px] lg:h-[360px] /* equal height from md+ */
+          w-full overflow-hidden bg-white
+          h-[180px] sm:h-[220px] md:h-[300px] lg:h-[340px]
           flex items-center justify-center
         "
       >
@@ -350,10 +349,11 @@ function SpotlightCard({
           alt={alt}
           decoding="async"
           loading="lazy"
-          className="max-h-full max-w-full w-auto h-auto object-contain block"
+          className="block max-h-full max-w-full w-auto h-auto object-contain"
         />
       </div>
 
+      {/* Body */}
       <div className="p-3 sm:p-4">
         <span id={`spot-${idx}-title`} className="sr-only">
           {alt}
@@ -371,7 +371,6 @@ function SpotlightCard({
     </article>
   );
 }
-
 
 
 /* =========================
