@@ -1,22 +1,22 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Menu, Search, Globe, ChevronDown, ChevronRight } from "lucide-react";
 
-// 🎨 Accessible nav palette (AA on text)
-const NAV_ROW_BG     = "bg-[#c7d7ff]";   // darker than before; still gentle
-const TOP_TEXT_BASE  = "text-slate-900"; // default text color on light bar
+// ==== Accessible nav palette for dark bar (#042130) ====
+const NAV_ROW_BG      = "bg-[#042130]";   // main bar bg
+const TOP_TEXT_BASE   = "text-white";     // default text on bar
 
-// Active tab (solid, high contrast on white text)
-const TOP_ACTIVE_BG  = "bg-[#1e40af]";   // ~tailwind blue-800
-const TOP_ACTIVE_TEXT= "text-white";
+// Hover/focus chip (slightly lighter than bar so it’s visible)
+const TOP_HOVER_BG    = "hover:bg-[#09354e]"; // ~+15% lighter
+const TOP_HOVER_TEXT  = "";                   // keep white text
 
-// Hover/focus (light, keeps 4.5:1 for blue-900 text)
-const TOP_HOVER_BG   = "hover:bg-[#d6e3ff]";
-const TOP_HOVER_TEXT = "hover:text-blue-900";
+// Active tab pill (high contrast, distinct from bar)
+const TOP_ACTIVE_BG   = "bg-[#0b5fad]";   // accessible accent
+const TOP_ACTIVE_TEXT = "text-white";
 
-// Submenu styling
-const SUBMENU_BG     = "bg-white";
-const SUBMENU_BORDER = "border border-slate-200";
-const SUBMENU_ITEM_HOVER = "hover:bg-[#e6efff] hover:text-blue-900";
+// Submenu (stays light for readability)
+const SUBMENU_BG          = "bg-white";
+const SUBMENU_BORDER      = "border border-slate-200";
+const SUBMENU_ITEM_HOVER  = "hover:bg-[#e6efff] hover:text-blue-900";
 
 
 const CURR_PATH = typeof window !== "undefined" ? window.location.pathname.toLowerCase() : "";
@@ -609,40 +609,44 @@ const onKeyDown = (e: React.KeyboardEvent) => {
   onFocus={() => armOpen(0)}
   onBlur={() => armClose(200)}
   onKeyDown={onKeyDown}
-  className={[
+className={[
   "px-3 xl:px-4 py-2 rounded-md transition-colors",
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+  "focus-visible:ring-offset-2 focus-visible:ring-offset-[#042130]", // visible on dark bar
   "whitespace-nowrap lg:text-[16px] xl:text-[18px]",
   "font-semibold",
-  TOP_TEXT_BASE,
-  TOP_HOVER_BG, TOP_HOVER_TEXT,
+  TOP_TEXT_BASE,                     // white text
+  TOP_HOVER_BG,                      // lighter chip on hover
   (open || isActive) ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
 ].join(" ")}
+
 
   style={{ fontWeight: 600 }}               // inline for belt & suspenders
 >
   <span className="font-semibold" style={{ fontWeight: 600 }}>
     {item.label}
   </span>
-          <ChevronDown
-            className={`inline size-4 ml-1 transition-colors ${open || isActive ? "text-white" : "text-slate-500"}`}
-            aria-hidden
-          />
+<ChevronDown
+  className={`inline size-4 ml-1 transition-colors ${open || isActive ? "text-white" : "text-white/80"}`}
+  aria-hidden
+/>
         </button>
       ) : (
 // simple link (no children)
       <a
         role="menuitem"
         href={item.href || "#"}
-        className={[
+className={[
   "px-3 xl:px-4 py-2 rounded-md transition-colors",
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+  "focus-visible:ring-offset-2 focus-visible:ring-offset-[#042130]",
   "whitespace-nowrap lg:text-[16px] xl:text-[18px]",
   "font-semibold",
   TOP_TEXT_BASE,
-  TOP_HOVER_BG, TOP_HOVER_TEXT,
+  TOP_HOVER_BG,
   isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
 ].join(" ")}
+
 
         style={{ fontWeight: 600 }}
         aria-current={isActive ? "page" : undefined}
@@ -668,7 +672,7 @@ const onKeyDown = (e: React.KeyboardEvent) => {
         <li key={child.label} className="relative group" role="none">
         <button
           type="button"
-          className={`group-header w-full flex items-center justify-between rounded-md px-3 py-2 text-left text-[16px] text-slate-900 ${SUBMENU_ITEM_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
+         className={`group-header w-full flex items-center justify-between rounded-md px-3 py-2 text-left text-[16px] text-slate-900 ${SUBMENU_ITEM_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
           role="menuitem"
           aria-haspopup="menu"
           aria-expanded="false"
@@ -760,12 +764,12 @@ function MobileItem({ item }: { item: NavNode }) {
   return (
     <div className="px-1">
       <button
+// top row button
 className={[
   "w-full flex items-center justify-between rounded-md px-3 py-2 text-left transition-colors",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
-  open || isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : TOP_TEXT_BASE
+  open || isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : "text-slate-900"
 ].join(" ")}
-
         onClick={() => (hasChildren ? setOpen((v) => !v) : (window.location.href = item.href || "#"))}
         aria-expanded={open}
         aria-current={isActive ? "page" : undefined}
@@ -821,6 +825,7 @@ className={[
               : undefined
           }
           className={`block rounded-md px-3 py-2 text-[16px] text-slate-900 ${SUBMENU_ITEM_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
+
         >
           {leaf.label}
         </a>
