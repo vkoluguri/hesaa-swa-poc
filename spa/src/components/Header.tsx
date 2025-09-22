@@ -588,7 +588,7 @@ function NavItem({ item }: { item: NavNode }) {
                 <ul
                   role="menu"
                   aria-label={`${child.label} submenu`}
-                  className={`absolute top-0 left-full min-w-[20rem] rounded-md ${SUBMENU_BORDER} ${SUBMENU_BG} p-2 shadow-2xl hidden group-hover:block`}
+                  className={`absolute top-0 left-full min-w-[20rem] rounded-md ${SUBMENU_BORDER} ${SUBMENU_BG} p-2 shadow-2xl hidden group-hover:block group-focus-within:block`}
                   onMouseEnter={() => armOpen(0)}
                 >
                   <div className="pointer-events-auto absolute -left-2 top-0 h-full w-2" />
@@ -828,10 +828,33 @@ export default function Header() {
               alt="State of New Jersey"
               className="row-span-2 h-[34px] w-[34px] object-contain justify-self-start"
             />
+
+            {/* Row 1 (names with real links & clear labels) */}
             <div className="font-semibold text-blue-700">
-              Governor Philip D. Murphy <span className="mx-1 text-slate-500">•</span> Lt. Governor Tahesha L. Way
+              <a
+                href="https://nj.gov/governor/"
+                className="hover:underline"
+                rel="noopener noreferrer"
+                aria-label="New Jersey Governor, Philip D. Murphy — official website"
+              >
+                Governor Philip D. Murphy
+              </a>
+              <span className="mx-1 text-slate-500">•</span>
+              <a
+                href="https://nj.gov/governor/admin/lt/"
+                className="hover:underline"
+                rel="noopener noreferrer"
+                aria-label="New Jersey Lieutenant Governor, Tahesha L. Way — official website"
+              >
+                Lt. Governor Tahesha L. Way
+              </a>
             </div>
-            <div className="flex flex-wrap items-center justify-end gap-x-2 text-blue-700">
+
+            {/* Row 2 (NOW a nav landmark for clarity) */}
+            <nav
+              aria-label="State of New Jersey resources"
+              className="flex flex-wrap items-center justify-end gap-x-2 text-blue-700"
+            >
               <a className="hover:underline" href="https://www.nj.gov/">NJ Home</a>
               <span className="text-slate-400">|</span>
               <a className="hover:underline" href="https://nj.gov/services/">Services A to Z</a>
@@ -839,7 +862,7 @@ export default function Header() {
               <a className="hover:underline" href="https://nj.gov/nj/deptserv/">Departments/Agencies</a>
               <span className="text-slate-400">|</span>
               <a className="hover:underline" href="https://www.nj.gov/faqs/">NJ Gov FAQs</a>
-            </div>
+            </nav>
 
             {/* Desktop tools row (DESKTOP refs + neutral styling) */}
             <div className="col-span-2 mt-1 flex items-center justify-end gap-3">

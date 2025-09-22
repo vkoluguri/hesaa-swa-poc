@@ -51,7 +51,14 @@ function IconLinkedIn(props: React.SVGProps<SVGSVGElement>) {
 
 export default function Footer() {
   return (
-    <footer className="w-full" role="contentinfo" style={{ backgroundColor: FOOTER_BG }}>
+    <footer aria-labelledby="footer-title" className="w-full" role="contentinfo" style={{ backgroundColor: FOOTER_BG }}>
+      <h2 className="sr-only" id="footer-title">Site footer</h2>
+
+      {/* Put this once near the top of the footer, inside <footer> */}
+<p id="ft-ext-note" className="sr-only">
+  Social media links open in a new browser tab.
+</p>
+
       {/* Top: four columns (reduced vertical space on desktop) */}
       <div className={`${CONTAINER} py-8 md:py-7 lg:py-6`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 justify-items-start text-white">
@@ -171,7 +178,9 @@ export default function Footer() {
               <li>
                 <a
                   href="#"
-                  aria-label="HESAA on Facebook"
+                  target="_blank"
+                  aria-label="Follow HESAA on Facebook (opens in a new tab)"
+                   aria-describedby="ft-ext-note"
                   className="text-white hover:text-blue-200 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                 >
                   <IconFacebook className="h-7 w-7" />
@@ -180,7 +189,9 @@ export default function Footer() {
               <li>
                 <a
                   href="#"
-                  aria-label="HESAA on YouTube"
+                  target="_blank"
+                  aria-label="Follow HESAA on Youtube (opens in a new tab)"
+                  aria-describedby="ft-ext-note"
                   className="text-white hover:text-blue-200 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                 >
                   <IconYouTube className="h-7 w-7" />
@@ -189,7 +200,9 @@ export default function Footer() {
               <li>
                 <a
                   href="#"
-                  aria-label="HESAA on X"
+                  target="_blank"
+                  aria-label="Follow HESAA on X (opens in a new tab)"
+                  aria-describedby="ft-ext-note"
                   className="text-white hover:text-blue-200 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                 >
                   <IconX className="h-7 w-7" />
@@ -198,7 +211,9 @@ export default function Footer() {
               <li>
                 <a
                   href="#"
-                  aria-label="HESAA on LinkedIn"
+                  target="_blank"
+                  aria-label="Follow HESAA on LinkendIn (opens in a new tab)"
+                  aria-describedby="ft-ext-note"
                   className="text-white hover:text-blue-200 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]"
                 >
                   <IconLinkedIn className="h-7 w-7" />
