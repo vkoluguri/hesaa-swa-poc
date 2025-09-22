@@ -1,6 +1,6 @@
 ﻿{
-  "message": "System maintenance tonight 7–9 PM.",
+  "message": "System maintenance tonight 9- 10 AM.",
   "tone": "danger",
-  "start_at": "09-16-2025 07:55 PM EDT",
-  "end_at":   "09-16-2025 08:00 PM EDT"
+  "start_at": "09-22-2025 09:40 AM EDT",
+  "end_at":   "09-22-2025 10:00 AM EDT"
 }
