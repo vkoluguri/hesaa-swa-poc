@@ -448,12 +448,19 @@ function useActiveTopLabel() {
   return active;
 }
 
-/* ---------------- Desktop nav item ---------------- */
+/* ---------------- Desktop nav item (fixed keyboard focus) ---------------- */
 function NavItem({ item }: { item: NavNode }) {
   const hasChildren = !!item.children?.length;
+
   const [open, setOpen] = useState(false);
   const openTimer = useRef<number | null>(null);
   const closeTimer = useRef<number | null>(null);
+
+  // NEW: keep a ref to the whole li so we can test whether the next focus is still inside
+  const rootRef = useRef<HTMLLIElement>(null);
+  // NEW: ref to the trigger so we can return focus on Escape
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+
   const submenuId = useUID(`submenu-${item.label.replace(/\s+/g, "-").toLowerCase()}`);
 
   const activeTop = useActiveTopLabel();
@@ -468,14 +475,25 @@ function NavItem({ item }: { item: NavNode }) {
     closeTimer.current = window.setTimeout(() => setOpen(false), delay);
   }
 
+  // NEW: collapse only when focus actually leaves the whole <li>
+  const onBlurWithin = (e: React.FocusEvent) => {
+    const next = e.relatedTarget as Node | null;
+    if (next && rootRef.current?.contains(next)) return; // focus is still inside — keep open
+    setOpen(false);
+  };
+
+  // Keep existing keyboard support, but don’t auto-close when we’re navigating into submenu
   const onKeyDown = (e: React.KeyboardEvent) => {
     const current = e.currentTarget as HTMLElement;
     const moveHoriz = (dir: -1 | 1) => {
-      const all = Array.from(current.closest("[role='menubar']")!.querySelectorAll<HTMLElement>("[role='menuitem']"));
+      const menubar = current.closest("[role='menubar']");
+      if (!menubar) return;
+      const all = Array.from(menubar.querySelectorAll<HTMLElement>("[role='menuitem']"));
       const i = all.indexOf(current);
       const next = all[(i + dir + all.length) % all.length];
       next?.focus();
     };
+
     switch (e.key) {
       case "Enter":
       case " ":
@@ -483,7 +501,7 @@ function NavItem({ item }: { item: NavNode }) {
         e.preventDefault();
         setOpen(true);
         requestAnimationFrame(() => {
-          const first = document.querySelector<HTMLAnchorElement>(`#${submenuId} a, #${submenuId} button`);
+          const first = document.querySelector<HTMLElement>(`#${submenuId} a, #${submenuId} button`);
           first?.focus();
         });
         break;
@@ -499,21 +517,30 @@ function NavItem({ item }: { item: NavNode }) {
       case "ArrowLeft":
         e.preventDefault(); moveHoriz(-1); break;
       case "Escape":
-        setOpen(false); current.focus(); break;
+        setOpen(false);
+        triggerRef.current?.focus();
+        break;
     }
   };
 
   return (
-    <li className="relative" onMouseEnter={() => armOpen(120)} onMouseLeave={() => armClose(200)}>
+    <li
+      ref={rootRef}
+      className="relative"
+      onMouseEnter={() => armOpen(120)}
+      onMouseLeave={() => armClose(200)}
+      // NEW: manage focus at the <li> level
+      onBlur={onBlurWithin}
+    >
       {hasChildren ? (
         <button
+          ref={triggerRef}
           type="button"
           role="menuitem"
           aria-haspopup="true"
           aria-expanded={open}
           aria-controls={submenuId}
-          onFocus={() => armOpen(0)}
-          onBlur={() => armClose(200)}
+          onFocus={() => armOpen(0)}         // open as soon as the trigger gets focus
           onKeyDown={onKeyDown}
           className={[
             "px-3 xl:px-4 py-2 rounded-md transition-colors",
@@ -560,6 +587,16 @@ function NavItem({ item }: { item: NavNode }) {
           role="menu"
           aria-label={`${item.label} submenu`}
           className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 min-w-[26rem] rounded-md ${SUBMENU_BORDER} ${SUBMENU_BG} p-2 shadow-2xl z-40 nav-dropdown`}
+          // keep open while focusing inside submenu; close on true focus exit
+          onFocus={() => setOpen(true)}
+          onBlur={onBlurWithin}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              e.preventDefault();
+              setOpen(false);
+              triggerRef.current?.focus();
+            }
+          }}
           onMouseEnter={() => armOpen(0)}
           onMouseLeave={() => armClose(200)}
         >
@@ -589,7 +626,8 @@ function NavItem({ item }: { item: NavNode }) {
                   role="menu"
                   aria-label={`${child.label} submenu`}
                   className={`absolute top-0 left-full min-w-[20rem] rounded-md ${SUBMENU_BORDER} ${SUBMENU_BG} p-2 shadow-2xl hidden group-hover:block group-focus-within:block`}
-                  onMouseEnter={() => armOpen(0)}
+                  // Hover can open; focus within keeps it visible
+                  onFocus={() => setOpen(true)}
                 >
                   <div className="pointer-events-auto absolute -left-2 top-0 h-full w-2" />
                   {child.children!.map((leaf) => (
