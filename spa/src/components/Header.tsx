@@ -581,25 +581,78 @@ function NavItem({ item }: { item: NavNode }) {
         </a>
       )}
 
-      {hasChildren && open && (
-        <ul
-          id={submenuId}
-          role="menu"
-          aria-label={`${item.label} submenu`}
-          className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 min-w-[26rem] rounded-md ${SUBMENU_BORDER} ${SUBMENU_BG} p-2 shadow-2xl z-40 nav-dropdown`}
-          // keep open while focusing inside submenu; close on true focus exit
-          onFocus={() => setOpen(true)}
-          onBlur={onBlurWithin}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              e.preventDefault();
-              setOpen(false);
-              triggerRef.current?.focus();
-            }
-          }}
-          onMouseEnter={() => armOpen(0)}
-          onMouseLeave={() => armClose(200)}
-        >
+{hasChildren && open && (
+  <ul
+    id={submenuId}
+    role="menu"
+    aria-label={`${item.label} submenu`}
+    className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 min-w-[26rem] rounded-md ${SUBMENU_BORDER} ${SUBMENU_BG} p-2 shadow-2xl z-40 nav-dropdown`}
+    onFocus={() => setOpen(true)}
+    onBlur={onBlurWithin}
+    onMouseEnter={() => armOpen(0)}
+    onMouseLeave={() => armClose(200)}
+    // NEW: roving focus with arrow keys per ARIA menubar pattern
+    onKeyDown={(e) => {
+      const list = e.currentTarget as HTMLElement;
+      const items = Array.from(
+        list.querySelectorAll<HTMLElement>('a[role="menuitem"],button[role="menuitem"]')
+      );
+      const active = document.activeElement as HTMLElement | null;
+      const i = active ? items.indexOf(active) : -1;
+
+      const focusAt = (idx: number) => items[idx]?.focus();
+
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          focusAt(i < 0 ? 0 : (i + 1) % items.length);
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          focusAt(i < 0 ? items.length - 1 : (i - 1 + items.length) % items.length);
+          break;
+        case "Home":
+          e.preventDefault();
+          focusAt(0);
+          break;
+        case "End":
+          e.preventDefault();
+          focusAt(items.length - 1);
+          break;
+        case "Escape":
+          e.preventDefault();
+          setOpen(false);
+          triggerRef.current?.focus();
+          break;
+        case "ArrowLeft": {
+          e.preventDefault();
+          // Move to previous top-level tab
+          const menubar = list.closest('[role="menubar"]');
+          if (!menubar) return;
+          const tops = Array.from(menubar.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+          const currentTop = triggerRef.current;
+          const ti = currentTop ? tops.indexOf(currentTop) : -1;
+          const prev = tops[(ti - 1 + tops.length) % tops.length];
+          setOpen(false);
+          prev?.focus();
+          break;
+        }
+        case "ArrowRight": {
+          e.preventDefault();
+          // Move to next top-level tab
+          const menubar = list.closest('[role="menubar"]');
+          if (!menubar) return;
+          const tops = Array.from(menubar.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+          const currentTop = triggerRef.current;
+          const ti = currentTop ? tops.indexOf(currentTop) : -1;
+          const next = tops[(ti + 1) % tops.length];
+          setOpen(false);
+          next?.focus();
+          break;
+        }
+      }
+    }}
+  >
           <div className="pointer-events-auto absolute -top-2 left-0 right-0 h-2" />
           {item.children!.map((child) =>
             isGroup(child) ? (
