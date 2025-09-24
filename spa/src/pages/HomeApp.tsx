@@ -17,8 +17,12 @@ export default function HomeApp() {
       <Header />
 
       {/* small gap so page content/breadcrumb never crowds the nav */}
-      <main id="main" className="mt-4 md:mt-6" role="main">
-        {/* Home page: no breadcrumb */}
+      <main
+        id="main"
+        tabIndex={-1}                 // ← enables focus landing from the skip link
+        aria-labelledby="page-title"   // ← points to the page H1 (see below)
+        className="mt-4 md:mt-6"
+      >
         <HomeContent showBreadcrumb={false} />
       </main>
 

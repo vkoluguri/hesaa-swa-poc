@@ -1,36 +1,71 @@
-<!doctype html>
-<html lang="en">
-  <head>
+<head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Home | New Jersey Student Financial Aid | HESAA</title>
 
-  <!-- SEO -->
-  <meta name="description" content="Official website of New Jersey’s Higher Education Student Assistance Authority (HESAA). Learn about state grants & scholarships, NJCLASS family loans, NJBEST 529, deadlines, and financial aid resources." />
-  <link rel="canonical" href="https://www.hesaa.org/" />
-  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <!-- SEO: concise, unique description -->
+  <meta name="description"
+        content="Official site of the Higher Education Student Assistance Authority (HESAA). Learn about New Jersey grants, scholarships, NJCLASS family loans, deadlines, and college savings options." />
 
-  <!-- Social cards -->
-  <meta property="og:site_name" content="HESAA" />
+  <!-- SEO: canonical to prevent duplicate URLs -->
+  <link rel="canonical" href="https://lemon-mud-0d5bdc10f.2.azurestaticapps.net/" />
+
+  <!-- Open Graph / Twitter for rich shares -->
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="HESAA" />
   <meta property="og:title" content="New Jersey Student Financial Aid | HESAA" />
-  <meta property="og:description" content="Grants & scholarships, NJCLASS loans, NJBEST 529, and financial aid resources for New Jersey students and families." />
-  <meta property="og:url" content="https://www.hesaa.org/" />
-  <meta property="og:image" content="/assets/social/hesaa-share.jpg" />
+  <meta property="og:description"
+        content="Grants & scholarships, NJCLASS loans, deadlines, workshops, and resources for NJ students and families." />
+  <meta property="og:url" content="https://lemon-mud-0d5bdc10f.2.azurestaticapps.net/" />
+  <meta property="og:image" content="/assets/Grants-Scholarships-Banner2.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
 
-  <!-- Favicon + PWA-ish bits -->
+  <!-- Robots + sitemap hint -->
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+  <!-- Performance / connection hints -->
+  <link rel="preconnect" href="https://translate.google.com" crossorigin>
+  <link rel="dns-prefetch" href="//translate.google.com">
+
+  <!-- Favicon + PWA bits -->
   <link rel="icon" href="/assets/HESAAFAVICON.ico" sizes="any" />
   <link rel="apple-touch-icon" href="/assets/HESAALogo.png" />
   <meta name="theme-color" content="#0a2c5f" />
 
   <!-- Compiled Tailwind CSS -->
   <link rel="stylesheet" href="/assets/app/hesaa-homepage.css" />
+
+  <!-- Preload first hero to stabilize LCP (Best Practices) -->
+  <link rel="preload" as="image"
+        href="/assets/Grants-Scholarships-Banner2.jpg"
+        imagesrcset="/assets/Grants-Scholarships-Banner2.jpg 1920w"
+        imagesizes="100vw" fetchpriority="high" />
+
   <style>
     #gt-container select { width: 100% !important; }
     #gt-container .skiptranslate iframe { display: none !important; }
   </style>
+
+  <!-- Structured data (SEO) -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"Organization",
+    "name":"Higher Education Student Assistance Authority",
+    "url":"https://lemon-mud-0d5bdc10f.2.azurestaticapps.net/",
+    "logo":"https://lemon-mud-0d5bdc10f.2.azurestaticapps.net/assets/logo.gif",
+    "sameAs":[
+      "https://www.facebook.com/hesaa",
+      "https://www.youtube.com/hesaa",
+      "https://twitter.com/hesaa",
+      "https://www.linkedin.com/company/hesaa"
+    ]
+  }
+  </script>
 </head>
+
 
   <body class="antialiased bg-white text-slate-900">
     <!-- Vite/React mount -->

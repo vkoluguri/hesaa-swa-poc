@@ -404,8 +404,10 @@ const quickLinks = [
 
 export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb?: boolean }) {
   return (
-    <main id="main" className="w-full text-[17px] md:text-[18px] lg:text-[19px]">
-      <h1 className="sr-only">Higher Education Student Assistance Authority — Official Website</h1>
+    <main className="w-full text-[17px] md:text-[18px] lg:text-[19px]">
+      <h1 id="page-title" className="sr-only">
+        Higher Education Student Assistance Authority — Official Website
+      </h1>
       {showBreadcrumb ? (
         <div className={`${CONTAINER} text-sm text-slate-500 mt-2`} aria-label="Breadcrumb">
           Home
@@ -450,7 +452,14 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
                     href={q.href}
                     className={`group ${q.color} text-white w-full inline-flex items-center justify-between rounded-lg px-4 py-4 shadow hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-600`}
                   >
-<span className="font-semibold text-[18px] md:text-[22px] leading-tight">{q.label}</span>
+<span
+  role="heading"
+  aria-level={3}
+  className="font-semibold text-[18px] md:text-[22px] leading-tight"
+>
+  {q.label}
+</span>
+
 
                     <ExternalLink className="size-4 opacity-90 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
                   </a>
@@ -491,7 +500,7 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
           return (
             <li key={n.title}>
               <a
-                href={n.href}
+                href="#" role="link" aria-disabled="true" onClick={(e)=>e.preventDefault()}
                 className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER} px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
               >
                 {/* semantic date */}
