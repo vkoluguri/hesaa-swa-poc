@@ -29,10 +29,6 @@ const MONTH_TO_NUM: Record<string, string> = {
   Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
   Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
 };
-// --- Image dimension tokens (update to source sizes) ---
-const HERO_W = 1853, HERO_H = 400;         // carousel banners (approx 16:5)
-const SPOT_W = 608, SPOT_H = 360;         // spotlight cards (4:3–ish)
-
 
 /* =========================
    Slides
@@ -227,35 +223,13 @@ function Carousel() {
   aria-label={`Slide ${srIndex} of ${SLIDES.length}`}
 >
 
-          { s.href ? (
-            <a href={s.href} className="block focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/40">
-              <img
-                src={s.src}
-                alt={s.alt}
-                width={HERO_W}
-                height={HERO_H}
-                // first real slide gets eager/high; the rest lazy/auto
-                loading={srIndex === 1 ? "eager" : "lazy"}
-                fetchPriority={srIndex === 1 ? "high" : "auto"}
-                decoding="async"
-                className="block w-full h-auto select-none"
-                draggable={false}
-              />
-            </a>
-          ) : (
-            <img
-              src={s.src}
-              alt={s.alt}
-              width={HERO_W}
-              height={HERO_H}
-              loading={srIndex === 1 ? "eager" : "lazy"}
-              fetchPriority={srIndex === 1 ? "high" : "auto"}
-              decoding="async"
-              className="block w-full h-auto select-none"
-              draggable={false}
-            />
-          )}
-
+                {s.href ? (
+                  <a href={s.href} className="block focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/40">
+                    <img src={s.src} alt={s.alt} className="block w-full h-auto select-none" draggable={false} />
+                  </a>
+                ) : (
+                  <img src={s.src} alt={s.alt} className="block w-full h-auto select-none" draggable={false} />
+                )}
               </div>
             );
           })}
@@ -383,17 +357,14 @@ function SpotlightCard({
           flex items-center justify-center
         "
       >
-      <img
-        src={img}
-        alt={alt}
-        width={SPOT_W}
-        height={SPOT_H}
-        decoding="async"
-        loading="lazy"
-        className="block w-full h-full object-contain lg:object-cover select-none -mt-px sm:mt-0"
-        draggable={false}
-      />
-
+        <img
+          src={img}
+          alt={alt}                        // meaningful description for SR
+          decoding="async"
+          loading="lazy"
+          className="block w-full h-full object-contain lg:object-cover select-none -mt-px sm:mt-0"
+          draggable={false}
+        />
       </div>
 
       <div className="p-4">
