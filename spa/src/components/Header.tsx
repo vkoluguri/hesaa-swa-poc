@@ -295,7 +295,7 @@ function ensureGoogleTranslate(): Promise<void> {
     if (!document.querySelector<HTMLScriptElement>("#gt-script")) {
       const s = document.createElement("script");
       s.id = "gt-script";
-      s.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+      s.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
       s.defer = true;
       document.body.appendChild(s);
     }
@@ -456,9 +456,7 @@ function NavItem({ item }: { item: NavNode }) {
   const openTimer = useRef<number | null>(null);
   const closeTimer = useRef<number | null>(null);
 
-  // NEW: keep a ref to the whole li so we can test whether the next focus is still inside
   const rootRef = useRef<HTMLLIElement>(null);
-  // NEW: ref to the trigger so we can return focus on Escape
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const submenuId = useUID(`submenu-${item.label.replace(/\s+/g, "-").toLowerCase()}`);
@@ -475,14 +473,12 @@ function NavItem({ item }: { item: NavNode }) {
     closeTimer.current = window.setTimeout(() => setOpen(false), delay);
   }
 
-  // NEW: collapse only when focus actually leaves the whole <li>
   const onBlurWithin = (e: React.FocusEvent) => {
     const next = e.relatedTarget as Node | null;
-    if (next && rootRef.current?.contains(next)) return; // focus is still inside — keep open
+    if (next && rootRef.current?.contains(next)) return;
     setOpen(false);
   };
 
-  // Keep existing keyboard support, but don’t auto-close when we’re navigating into submenu
   const onKeyDown = (e: React.KeyboardEvent) => {
     const current = e.currentTarget as HTMLElement;
     const moveHoriz = (dir: -1 | 1) => {
@@ -526,10 +522,10 @@ function NavItem({ item }: { item: NavNode }) {
   return (
     <li
       ref={rootRef}
+      role="none"
       className="relative"
       onMouseEnter={() => armOpen(120)}
       onMouseLeave={() => armClose(200)}
-      // NEW: manage focus at the <li> level
       onBlur={onBlurWithin}
     >
       {hasChildren ? (
@@ -540,7 +536,7 @@ function NavItem({ item }: { item: NavNode }) {
           aria-haspopup="true"
           aria-expanded={open}
           aria-controls={submenuId}
-          onFocus={() => armOpen(0)}         // open as soon as the trigger gets focus
+          onFocus={() => armOpen(0)}
           onKeyDown={onKeyDown}
           className={[
             "px-3 xl:px-4 py-2 rounded-md transition-colors",
@@ -581,82 +577,79 @@ function NavItem({ item }: { item: NavNode }) {
         </a>
       )}
 
-{hasChildren && open && (
-  <ul
-    id={submenuId}
-    role="menu"
-    aria-label={`${item.label} submenu`}
-    className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 min-w-[26rem] rounded-md ${SUBMENU_BORDER} ${SUBMENU_BG} p-2 shadow-2xl z-40 nav-dropdown`}
-    onFocus={() => setOpen(true)}
-    onBlur={onBlurWithin}
-    onMouseEnter={() => armOpen(0)}
-    onMouseLeave={() => armClose(200)}
-    // NEW: roving focus with arrow keys per ARIA menubar pattern
-    onKeyDown={(e) => {
-      const list = e.currentTarget as HTMLElement;
-      const items = Array.from(
-        list.querySelectorAll<HTMLElement>('a[role="menuitem"],button[role="menuitem"]')
-      );
-      const active = document.activeElement as HTMLElement | null;
-      const i = active ? items.indexOf(active) : -1;
+      {hasChildren && open && (
+        <ul
+          id={submenuId}
+          role="menu"
+          aria-label={`${item.label} submenu`}
+          className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 min-w-[26rem] rounded-md ${SUBMENU_BORDER} ${SUBMENU_BG} p-2 shadow-2xl z-40 nav-dropdown`}
+          onFocus={() => setOpen(true)}
+          onBlur={onBlurWithin}
+          onMouseEnter={() => armOpen(0)}
+          onMouseLeave={() => armClose(200)}
+          onKeyDown={(e) => {
+            const list = e.currentTarget as HTMLElement;
+            const items = Array.from(
+              list.querySelectorAll<HTMLElement>('a[role="menuitem"],button[role="menuitem"]')
+            );
+            const active = document.activeElement as HTMLElement | null;
+            const i = active ? items.indexOf(active) : -1;
 
-      const focusAt = (idx: number) => items[idx]?.focus();
+            const focusAt = (idx: number) => items[idx]?.focus();
 
-      switch (e.key) {
-        case "ArrowDown":
-          e.preventDefault();
-          focusAt(i < 0 ? 0 : (i + 1) % items.length);
-          break;
-        case "ArrowUp":
-          e.preventDefault();
-          focusAt(i < 0 ? items.length - 1 : (i - 1 + items.length) % items.length);
-          break;
-        case "Home":
-          e.preventDefault();
-          focusAt(0);
-          break;
-        case "End":
-          e.preventDefault();
-          focusAt(items.length - 1);
-          break;
-        case "Escape":
-          e.preventDefault();
-          setOpen(false);
-          triggerRef.current?.focus();
-          break;
-        case "ArrowLeft": {
-          e.preventDefault();
-          // Move to previous top-level tab
-          const menubar = list.closest('[role="menubar"]');
-          if (!menubar) return;
-          const tops = Array.from(menubar.querySelectorAll<HTMLElement>('[role="menuitem"]'));
-          const currentTop = triggerRef.current;
-          const ti = currentTop ? tops.indexOf(currentTop) : -1;
-          const prev = tops[(ti - 1 + tops.length) % tops.length];
-          setOpen(false);
-          prev?.focus();
-          break;
-        }
-        case "ArrowRight": {
-          e.preventDefault();
-          // Move to next top-level tab
-          const menubar = list.closest('[role="menubar"]');
-          if (!menubar) return;
-          const tops = Array.from(menubar.querySelectorAll<HTMLElement>('[role="menuitem"]'));
-          const currentTop = triggerRef.current;
-          const ti = currentTop ? tops.indexOf(currentTop) : -1;
-          const next = tops[(ti + 1) % tops.length];
-          setOpen(false);
-          next?.focus();
-          break;
-        }
-      }
-    }}
-  >
+            switch (e.key) {
+              case "ArrowDown":
+                e.preventDefault();
+                focusAt(i < 0 ? 0 : (i + 1) % items.length);
+                break;
+              case "ArrowUp":
+                e.preventDefault();
+                focusAt(i < 0 ? items.length - 1 : (i - 1 + items.length) % items.length);
+                break;
+              case "Home":
+                e.preventDefault();
+                focusAt(0);
+                break;
+              case "End":
+                e.preventDefault();
+                focusAt(items.length - 1);
+                break;
+              case "Escape":
+                e.preventDefault();
+                setOpen(false);
+                triggerRef.current?.focus();
+                break;
+              case "ArrowLeft": {
+                e.preventDefault();
+                const menubar = list.closest('[role="menubar"]');
+                if (!menubar) return;
+                const tops = Array.from(menubar.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+                const currentTop = triggerRef.current;
+                const ti = currentTop ? tops.indexOf(currentTop) : -1;
+                const prev = tops[(ti - 1 + tops.length) % tops.length];
+                setOpen(false);
+                prev?.focus();
+                break;
+              }
+              case "ArrowRight": {
+                e.preventDefault();
+                const menubar = list.closest('[role="menubar"]');
+                if (!menubar) return;
+                const tops = Array.from(menubar.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+                const currentTop = triggerRef.current;
+                const ti = currentTop ? tops.indexOf(currentTop) : -1;
+                const next = tops[(ti + 1) % tops.length];
+                setOpen(false);
+                next?.focus();
+                break;
+              }
+            }
+          }}
+        >
           <div className="pointer-events-auto absolute -top-2 left-0 right-0 h-2" />
           {item.children!.map((child) =>
             isGroup(child) ? (
-              <li key={child.label} className="relative group" role="none">
+              <li key={child.label} role="none" className="relative group">
                 <button
                   type="button"
                   className={[
@@ -670,6 +663,27 @@ function NavItem({ item }: { item: NavNode }) {
                   aria-haspopup="menu"
                   aria-expanded="false"
                   tabIndex={-1}
+                 onKeyDown={(e) => {
+                  // → into the flyout: focus the first item inside the child <ul role="menu">
+                  if (e.key === "ArrowRight") {
+                    e.preventDefault();
+                    const first =
+                      (e.currentTarget.parentElement as HTMLElement | null)
+                        ?.querySelector<HTMLElement>(
+                          'ul[role="menu"] a[role="menuitem"], ul[role="menu"] button[role="menuitem"]'
+                        );
+                    first?.focus();
+                  }
+
+                  // ← back to the parent trigger (the group header's owning submenu trigger)
+                  if (e.key === "ArrowLeft") {
+                    e.preventDefault();
+                    const parentTrigger = document.querySelector<HTMLElement>(
+                      `[aria-controls="${submenuId}"]`
+                    );
+                    parentTrigger?.focus();
+                  }
+                }}
                 >
                   <span className="flex-1">{child.label}</span>
                   <ChevronRight className="ml-2 size-4 shrink-0 text-slate-400 group-hover:text-blue-700" aria-hidden="true" />
@@ -679,7 +693,6 @@ function NavItem({ item }: { item: NavNode }) {
                   role="menu"
                   aria-label={`${child.label} submenu`}
                   className={`absolute top-0 left-full min-w-[20rem] rounded-md ${SUBMENU_BORDER} ${SUBMENU_BG} p-2 shadow-2xl hidden group-hover:block group-focus-within:block`}
-                  // Hover can open; focus within keeps it visible
                   onFocus={() => setOpen(true)}
                 >
                   <div className="pointer-events-auto absolute -left-2 top-0 h-full w-2" />
@@ -750,7 +763,7 @@ function MobileGroup({ group }: { group: NavGroup }) {
   const panelId = useUID(`m-sub-${group.label.replace(/\s+/g, "-").toLowerCase()}`);
 
   return (
-    <li className="rounded-md">
+    <li className="rounded-md" role="none">
       <button
         className={[
           "w-full flex items-center justify-between px-3 py-2 text-[16px] rounded-md",
@@ -761,15 +774,17 @@ function MobileGroup({ group }: { group: NavGroup }) {
         onClick={(e) => { e.preventDefault(); setGOpen(v => !v); }}
         aria-expanded={gOpen}
         aria-controls={panelId}
+        aria-haspopup="true"
       >
         <span>{group.label}</span>
         <ChevronDown className={`size-4 transition-transform ${gOpen ? "rotate-180" : ""} text-white/80`} aria-hidden />
       </button>
 
-      <ul id={panelId} className={`mt-1 rounded-md bg-[#111b39] ${gOpen ? "block" : "hidden"}`}>
+      <ul id={panelId} role="menu" className={`mt-1 rounded-md bg-[#111b39] ${gOpen ? "block" : "hidden"}`}>
         {group.children!.map((leaf) => (
-          <li key={leaf.label}>
+          <li key={leaf.label} role="none">
             <a
+              role="menuitem"
               href={leaf.href}
               target={leaf.target}
               rel={leaf.target === "_blank" ? "noopener noreferrer" : undefined}
@@ -801,8 +816,29 @@ function MobileItem({ item }: { item: NavNode }) {
   const activeTop = useActiveTopLabel();
   const isActive = activeTop === item.label;
 
+  if (!hasChildren) {
+    // SEO: use a real link when there's no submenu
+    return (
+      <div className="px-1" role="none">
+        <a
+          href={item.href || "#"}
+          className={[
+            "w-full block rounded-md px-3 py-2 transition-colors",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+            "focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]",
+            isActive ? "bg-[#0b5fad] text-white" : "text-white/95 hover:bg-white/10"
+          ].join(" ")}
+          aria-current={isActive ? "page" : undefined}
+          role="menuitem"
+        >
+          <span className="font-medium">{item.label}</span>
+        </a>
+      </div>
+    );
+  }
+
   return (
-    <div className="px-1">
+    <div className="px-1" role="none">
       <button
         className={[
           "w-full flex items-center justify-between rounded-md px-3 py-2 text-left transition-colors",
@@ -810,27 +846,28 @@ function MobileItem({ item }: { item: NavNode }) {
           "focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]",
           open || isActive ? "bg-[#0b5fad] text-white" : "text-white/95 hover:bg-white/10"
         ].join(" ")}
-        onClick={() => (hasChildren ? setOpen((v) => !v) : (window.location.href = item.href || "#"))}
+        onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        aria-haspopup="true"
+        role="menuitem"
         aria-current={isActive ? "page" : undefined}
       >
         <span className="font-medium">{item.label}</span>
-        {hasChildren && (
-          <ChevronDown
-            className={`size-4 transition-transform ${open ? "rotate-180" : ""} ${open || isActive ? "text-white" : "text-white/80"}`}
-            aria-hidden
-          />
-        )}
+        <ChevronDown
+          className={`size-4 transition-transform ${open ? "rotate-180" : ""} ${open || isActive ? "text-white" : "text-white/80"}`}
+          aria-hidden
+        />
       </button>
 
-      {hasChildren && open && (
-        <ul className="ml-2 mt-1 space-y-1">
+      {open && (
+        <ul className="ml-2 mt-1 space-y-1" role="menu" aria-label={`${item.label} submenu`}>
           {item.children!.map((child) =>
             isGroup(child) ? (
               <MobileGroup key={child.label} group={child} />
             ) : (
-              <li key={child.label}>
+              <li key={child.label} role="none">
                 <a
+                  role="menuitem"
                   href={child.href}
                   target={child.target}
                   rel={child.target === "_blank" ? "noopener noreferrer" : undefined}
@@ -897,6 +934,11 @@ export default function Header() {
 
   return (
     <header className="w-full">
+      {/* A11y: skip link to main landmark */}
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:bg-white focus:text-blue-700 focus:px-3 focus:py-2 focus:rounded-md">
+        Skip to main content
+      </a>
+
       <SiteBanner />
 
       {/* Logo + right-links */}
@@ -917,10 +959,13 @@ export default function Header() {
             <img
               src="/assets/NJLogo_small.gif"
               alt="State of New Jersey"
+              width={34}
+              height={34}
+              decoding="async"
               className="row-span-2 h-[34px] w-[34px] object-contain justify-self-start"
             />
 
-            {/* Row 1 (names with real links & clear labels) */}
+            {/* Row 1 */}
             <div className="font-semibold text-blue-700">
               <a
                 href="https://nj.gov/governor/"
@@ -930,7 +975,7 @@ export default function Header() {
               >
                 Governor Philip D. Murphy
               </a>
-              <span className="mx-1 text-slate-500">•</span>
+              <span className="mx-1 text-slate-500" aria-hidden>•</span>
               <a
                 href="https://nj.gov/governor/admin/lt/"
                 className="hover:underline"
@@ -941,35 +986,36 @@ export default function Header() {
               </a>
             </div>
 
-            {/* Row 2 (NOW a nav landmark for clarity) */}
+            {/* Row 2 */}
             <nav
               aria-label="State of New Jersey resources"
               className="flex flex-wrap items-center justify-end gap-x-2 text-blue-700"
             >
               <a className="hover:underline" href="https://www.nj.gov/">NJ Home</a>
-              <span className="text-slate-400">|</span>
+              <span className="text-slate-400" aria-hidden>|</span>
               <a className="hover:underline" href="https://nj.gov/services/">Services A to Z</a>
-              <span className="text-slate-400">|</span>
+              <span className="text-slate-400" aria-hidden>|</span>
               <a className="hover:underline" href="https://nj.gov/nj/deptserv/">Departments/Agencies</a>
-              <span className="text-slate-400">|</span>
+              <span className="text-slate-400" aria-hidden>|</span>
               <a className="hover:underline" href="https://www.nj.gov/faqs/">NJ Gov FAQs</a>
             </nav>
 
-            {/* Desktop tools row (DESKTOP refs + neutral styling) */}
+            {/* Desktop tools */}
             <div className="col-span-2 mt-1 flex items-center justify-end gap-3">
               <button
                 ref={desktopTranslateBtnRef}
                 type="button"
                 aria-expanded={translateOpen}
+                aria-haspopup="dialog"
                 onClick={(e) => {
                   e.stopPropagation();
                   setTranslateOpen((v) => !v);
                 }}
                 className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-[6px] text-slate-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
               >
-                <Globe className="size-4" />
-                Translate
-                <ChevronDown className="size-4" />
+                <Globe className="size-4" aria-hidden />
+                <span>Translate</span>
+                <ChevronDown className="size-4" aria-hidden />
               </button>
 
               <form role="search" aria-label="Site search" action="/search" method="get" className="relative">
@@ -978,10 +1024,12 @@ export default function Header() {
                   id="site-search"
                   name="q"
                   type="search"
-                  placeholder="Search..."
+                  placeholder="Search…"
+                  autoComplete="search"
+                  inputMode="search"
                   className="w-60 rounded-full border border-slate-300 py-1.5 pl-9 pr-9 text-[13px] placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
                 />
-                <Search className="absolute left-2.5 top-1.5 size-4 text-slate-400" aria-hidden="true" />
+                <Search className="absolute left-2.5 top-1.5 size-4 text-slate-400" aria-hidden />
                 <button type="submit" className="sr-only">Submit search</button>
               </form>
             </div>
@@ -1015,15 +1063,17 @@ export default function Header() {
         {/* Mobile panel */}
         <div id="mobile-panel" className={`lg:hidden ${menuOpen ? "block" : "hidden"} ${MOBILE_PANEL_BG}`}>
           <div className="px-4 pb-4 space-y-2">
-            {/* Mobile pills – dark friendly (ring + shadow) */}
+            {/* Mobile pills */}
             <div className="pt-3 pb-2 flex items-center gap-2">
               <button
                 ref={mobileTranslateBtnRef}
                 onClick={() => setTranslateOpen((v) => !v)}
+                aria-haspopup="dialog"
+                aria-expanded={translateOpen}
                 className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-slate-900 bg-white/90 shadow ring-1 ring-white/10 border border-white/10"
               >
-                <Globe className="size-4" />
-                Translate
+                <Globe className="size-4" aria-hidden />
+                <span>Translate</span>
               </button>
 
               <form role="search" aria-label="Site search" action="/search" method="get" className="relative flex-1">
@@ -1032,16 +1082,24 @@ export default function Header() {
                   id="m-site-search"
                   name="q"
                   type="search"
-                  placeholder="Search..."
+                  placeholder="Search…"
+                  autoComplete="search"
+                  inputMode="search"
                   className="w-full rounded-full py-2 pl-9 pr-9 text-[16px] leading-6 placeholder:text-black/60 text-slate-900 bg-white/90 shadow ring-1 ring-white/10 border border-white/10"
                 />
-                <Search className="absolute left-2.5 top-2.5 size-4 text-black/40" aria-hidden="true" />
+                <Search className="absolute left-2.5 top-2.5 size-4 text-black/40" aria-hidden />
                 <button type="submit" className="sr-only">Submit search</button>
               </form>
             </div>
 
             <div className="border-t border-slate-200/30" />
-            {NAV.map((item) => <MobileItem key={item.label} item={item} />)}
+            <ul role="menu" aria-label="Primary mobile">
+              {NAV.map((item) => (
+                <li key={item.label} role="none">
+                  <MobileItem item={item} />
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>

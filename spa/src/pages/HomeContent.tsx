@@ -405,7 +405,7 @@ const quickLinks = [
 
 export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb?: boolean }) {
   return (
-    <main className="w-full text-[17px] md:text-[18px] lg:text-[19px]">
+    <main id="main" className="w-full text-[17px] md:text-[18px] lg:text-[19px]">
       <h1 className="sr-only">Higher Education Student Assistance Authority — Official Website</h1>
       {showBreadcrumb ? (
         <div className={`${CONTAINER} text-sm text-slate-500 mt-2`} aria-label="Breadcrumb">
