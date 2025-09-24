@@ -449,17 +449,17 @@ function useActiveTopLabel() {
 }
 
 /* ---------------- Desktop nav item (fixed keyboard focus) ---------------- */
-/* ---------------- Desktop nav item (stateful flyout; keyboard-solid) ---------------- */
 function NavItem({ item }: { item: NavNode }) {
   const hasChildren = !!item.children?.length;
 
   const [open, setOpen] = useState(false);
-  const [flyout, setFlyout] = useState<number | null>(null); // which group’s flyout is open
   const openTimer = useRef<number | null>(null);
   const closeTimer = useRef<number | null>(null);
 
+  // NEW: keep a ref to the whole li so we can test whether the next focus is still inside
   const rootRef = useRef<HTMLLIElement>(null);
-  const triggerRef = useRef<HTMLButtonElement | HTMLAnchorElement | null>(null);
+  // NEW: ref to the trigger so we can return focus on Escape
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const submenuId = useUID(`submenu-${item.label.replace(/\s+/g, "-").toLowerCase()}`);
 
@@ -472,22 +472,18 @@ function NavItem({ item }: { item: NavNode }) {
   }
   function armClose(delay = 250) {
     if (openTimer.current) window.clearTimeout(openTimer.current);
-    closeTimer.current = window.setTimeout(() => {
-      setFlyout(null);
-      setOpen(false);
-    }, delay);
+    closeTimer.current = window.setTimeout(() => setOpen(false), delay);
   }
 
-  // Collapse only when focus truly leaves this <li>
+  // NEW: collapse only when focus actually leaves the whole <li>
   const onBlurWithin = (e: React.FocusEvent) => {
     const next = e.relatedTarget as Node | null;
-    if (next && rootRef.current?.contains(next)) return;
-    setFlyout(null);
+    if (next && rootRef.current?.contains(next)) return; // focus is still inside — keep open
     setOpen(false);
   };
 
-  // Top-level trigger keyboard
-  const onKeyDownTop = (e: React.KeyboardEvent) => {
+  // Keep existing keyboard support, but don’t auto-close when we’re navigating into submenu
+  const onKeyDown = (e: React.KeyboardEvent) => {
     const current = e.currentTarget as HTMLElement;
     const moveHoriz = (dir: -1 | 1) => {
       const menubar = current.closest("[role='menubar']");
@@ -497,6 +493,7 @@ function NavItem({ item }: { item: NavNode }) {
       const next = all[(i + dir + all.length) % all.length];
       next?.focus();
     };
+
     switch (e.key) {
       case "Enter":
       case " ":
@@ -504,15 +501,25 @@ function NavItem({ item }: { item: NavNode }) {
         e.preventDefault();
         setOpen(true);
         requestAnimationFrame(() => {
-          const first = document.querySelector<HTMLElement>(
-            `#${submenuId} a[role="menuitem"], #${submenuId} button[role="menuitem"]`
-          );
+          const first = document.querySelector<HTMLElement>(`#${submenuId} a, #${submenuId} button`);
           first?.focus();
         });
         break;
-      case "ArrowRight": e.preventDefault(); moveHoriz(1); break;
-      case "ArrowLeft":  e.preventDefault(); moveHoriz(-1); break;
-      case "Escape":     e.preventDefault(); setFlyout(null); setOpen(false); triggerRef.current?.focus(); break;
+      case "ArrowUp":
+        if (hasChildren && open) {
+          e.preventDefault();
+          const items = Array.from(document.querySelectorAll<HTMLElement>(`#${submenuId} a, #${submenuId} button`));
+          items[items.length - 1]?.focus();
+        }
+        break;
+      case "ArrowRight":
+        e.preventDefault(); moveHoriz(1); break;
+      case "ArrowLeft":
+        e.preventDefault(); moveHoriz(-1); break;
+      case "Escape":
+        setOpen(false);
+        triggerRef.current?.focus();
+        break;
     }
   };
 
@@ -522,43 +529,50 @@ function NavItem({ item }: { item: NavNode }) {
       className="relative"
       onMouseEnter={() => armOpen(120)}
       onMouseLeave={() => armClose(200)}
+      // NEW: manage focus at the <li> level
       onBlur={onBlurWithin}
     >
       {hasChildren ? (
         <button
-          ref={(el) => (triggerRef.current = el)}
+          ref={triggerRef}
           type="button"
           role="menuitem"
           aria-haspopup="true"
           aria-expanded={open}
           aria-controls={submenuId}
-          onFocus={() => armOpen(0)}
-          onKeyDown={onKeyDownTop}
+          onFocus={() => armOpen(0)}         // open as soon as the trigger gets focus
+          onKeyDown={onKeyDown}
           className={[
             "px-3 xl:px-4 py-2 rounded-md transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-            "focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]",
-            "whitespace-nowrap lg:text-[16px] xl:text-[18px] font-semibold",
-            "text-white hover:bg-[#182244]",
-            (open || isActive) ? "bg-[#0b5fad] text-white" : ""
+            RING_OFFSET_ON_BAR,
+            "whitespace-nowrap lg:text-[16px] xl:text-[18px]",
+            "font-semibold",
+            TOP_TEXT_BASE,
+            TOP_HOVER_BG,
+            (open || isActive) ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
           ].join(" ")}
           style={{ fontWeight: 600 }}
         >
           <span className="font-semibold" style={{ fontWeight: 600 }}>{item.label}</span>
-          <ChevronDown className={`inline size-4 ml-1 transition-colors ${open || isActive ? "text-white" : "text-white/80"}`} aria-hidden />
+          <ChevronDown
+            className={`inline size-4 ml-1 transition-colors ${open || isActive ? "text-white" : "text-white/80"}`}
+            aria-hidden
+          />
         </button>
       ) : (
         <a
-          ref={(el) => (triggerRef.current = el)}
           role="menuitem"
           href={item.href || "#"}
           className={[
             "px-3 xl:px-4 py-2 rounded-md transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-            "focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d132d]",
-            "whitespace-nowrap lg:text-[16px] xl:text-[18px] font-semibold",
-            "text-white hover:bg-[#182244]",
-            isActive ? "bg-[#0b5fad] text-white" : ""
+            RING_OFFSET_ON_BAR,
+            "whitespace-nowrap lg:text-[16px] xl:text-[18px]",
+            "font-semibold",
+            TOP_TEXT_BASE,
+            TOP_HOVER_BG,
+            isActive ? `${TOP_ACTIVE_BG} ${TOP_ACTIVE_TEXT}` : ""
           ].join(" ")}
           style={{ fontWeight: 600 }}
           aria-current={isActive ? "page" : undefined}
@@ -567,133 +581,137 @@ function NavItem({ item }: { item: NavNode }) {
         </a>
       )}
 
-      {hasChildren && open && (
-        <ul
-          id={submenuId}
-          role="menu"
-          aria-label={`${item.label} submenu`}
-          className="absolute left-1/2 -translate-x-1/2 top-full mt-2 min-w-[26rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl z-40 nav-dropdown"
-          onFocus={() => setOpen(true)}
-          onBlur={onBlurWithin}
-          onMouseEnter={() => armOpen(0)}
-          onMouseLeave={() => armClose(200)}
-          onKeyDown={(e) => {
-            const list = e.currentTarget as HTMLElement;
-            const items = Array.from(list.querySelectorAll<HTMLElement>('a[role="menuitem"],button[role="menuitem"]'));
-            const active = document.activeElement as HTMLElement | null;
-            const i = active ? items.indexOf(active) : -1;
-            const focusAt = (idx: number) => items[idx]?.focus();
+{hasChildren && open && (
+  <ul
+    id={submenuId}
+    role="menu"
+    aria-label={`${item.label} submenu`}
+    className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 min-w-[26rem] rounded-md ${SUBMENU_BORDER} ${SUBMENU_BG} p-2 shadow-2xl z-40 nav-dropdown`}
+    onFocus={() => setOpen(true)}
+    onBlur={onBlurWithin}
+    onMouseEnter={() => armOpen(0)}
+    onMouseLeave={() => armClose(200)}
+    // NEW: roving focus with arrow keys per ARIA menubar pattern
+    onKeyDown={(e) => {
+      const list = e.currentTarget as HTMLElement;
+      const items = Array.from(
+        list.querySelectorAll<HTMLElement>('a[role="menuitem"],button[role="menuitem"]')
+      );
+      const active = document.activeElement as HTMLElement | null;
+      const i = active ? items.indexOf(active) : -1;
 
-            switch (e.key) {
-              case "ArrowDown": e.preventDefault(); focusAt(i < 0 ? 0 : (i + 1) % items.length); break;
-              case "ArrowUp":   e.preventDefault(); focusAt(i < 0 ? items.length - 1 : (i - 1 + items.length) % items.length); break;
-              case "Home":      e.preventDefault(); focusAt(0); break;
-              case "End":       e.preventDefault(); focusAt(items.length - 1); break;
-              case "Escape":    e.preventDefault(); setFlyout(null); setOpen(false); triggerRef.current?.focus(); break;
-            }
-          }}
-        >
+      const focusAt = (idx: number) => items[idx]?.focus();
+
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          focusAt(i < 0 ? 0 : (i + 1) % items.length);
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          focusAt(i < 0 ? items.length - 1 : (i - 1 + items.length) % items.length);
+          break;
+        case "Home":
+          e.preventDefault();
+          focusAt(0);
+          break;
+        case "End":
+          e.preventDefault();
+          focusAt(items.length - 1);
+          break;
+        case "Escape":
+          e.preventDefault();
+          setOpen(false);
+          triggerRef.current?.focus();
+          break;
+        case "ArrowLeft": {
+          e.preventDefault();
+          // Move to previous top-level tab
+          const menubar = list.closest('[role="menubar"]');
+          if (!menubar) return;
+          const tops = Array.from(menubar.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+          const currentTop = triggerRef.current;
+          const ti = currentTop ? tops.indexOf(currentTop) : -1;
+          const prev = tops[(ti - 1 + tops.length) % tops.length];
+          setOpen(false);
+          prev?.focus();
+          break;
+        }
+        case "ArrowRight": {
+          e.preventDefault();
+          // Move to next top-level tab
+          const menubar = list.closest('[role="menubar"]');
+          if (!menubar) return;
+          const tops = Array.from(menubar.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+          const currentTop = triggerRef.current;
+          const ti = currentTop ? tops.indexOf(currentTop) : -1;
+          const next = tops[(ti + 1) % tops.length];
+          setOpen(false);
+          next?.focus();
+          break;
+        }
+      }
+    }}
+  >
           <div className="pointer-events-auto absolute -top-2 left-0 right-0 h-2" />
-          {item.children!.map((child, idx) =>
-            isGroup(child) ? (() => {
-              const gid = `${submenuId}-fly-${idx}`;
-              const headerId = `${gid}-header`;
-              const isFlyOpen = flyout === idx;
+          {item.children!.map((child) =>
+            isGroup(child) ? (
+              <li key={child.label} className="relative group" role="none">
+                <button
+                  type="button"
+                  className={[
+                    "group-header w-full flex items-center justify-between rounded-md px-3 py-2 text-left text-[16px]",
+                    SUBMENU_ITEM_TEXT,
+                    SUBMENU_ITEM_HOVER_BG,
+                    SUBMENU_ITEM_HOVER_TX,
+                    SUBMENU_ITEM_FOCUS
+                  ].join(" ")}
+                  role="menuitem"
+                  aria-haspopup="menu"
+                  aria-expanded="false"
+                  tabIndex={-1}
+                >
+                  <span className="flex-1">{child.label}</span>
+                  <ChevronRight className="ml-2 size-4 shrink-0 text-slate-400 group-hover:text-blue-700" aria-hidden="true" />
+                </button>
 
-              return (
-                <li key={child.label} className="relative" role="none"
-                    onMouseEnter={() => { setFlyout(idx); armOpen(0); }}
-                    onMouseLeave={() => setFlyout((v) => (v === idx ? null : v))}>
-                  {/* Group header */}
-                  <button
-                    id={headerId}
-                    type="button"
-                    className="w-full flex items-center justify-between rounded-md px-3 py-2 text-left text-[16px] text-slate-900 hover:bg-[#e6efff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-                    role="menuitem"
-                    aria-haspopup="menu"
-                    aria-controls={gid}
-                    aria-expanded={isFlyOpen}
-                    tabIndex={-1}
-                    onKeyDown={(e) => {
-                      if (e.key === "ArrowRight" || e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setFlyout(idx);
-                        requestAnimationFrame(() => {
-                          const first = document.querySelector<HTMLElement>(
-                            `#${gid} a[role="menuitem"], #${gid} button[role="menuitem"]`
-                          );
-                          first?.focus();
-                        });
-                      } else if (e.key === "ArrowLeft") {
-                        e.preventDefault();
-                        // move back to previous top tab
-                        const menubar = (e.currentTarget as HTMLElement).closest('[role="menubar"]');
-                        const tops = menubar ? Array.from(menubar.querySelectorAll<HTMLElement>('[role="menuitem"]')) : [];
-                        const ti = triggerRef.current ? tops.indexOf(triggerRef.current) : -1;
-                        const prev = tops[(ti - 1 + tops.length) % tops.length];
-                        setFlyout(null); setOpen(false); prev?.focus();
-                      }
-                    }}
-                  >
-                    <span className="flex-1">{child.label}</span>
-                    <ChevronRight className="ml-2 size-4 shrink-0 text-slate-400" aria-hidden />
-                  </button>
-
-                  {/* Flyout (visibility controlled by state) */}
-                  <ul
-                    id={gid}
-                    role="menu"
-                    aria-label={`${child.label} submenu`}
-                    className={`absolute top-0 left-full min-w-[20rem] rounded-md border border-slate-200 bg-white p-2 shadow-2xl ${isFlyOpen ? "block" : "hidden"}`}
-                    onKeyDown={(e) => {
-                      const list = e.currentTarget as HTMLElement;
-                      const items = Array.from(list.querySelectorAll<HTMLElement>('a[role="menuitem"],button[role="menuitem"]'));
-                      const active = document.activeElement as HTMLElement | null;
-                      const i = active ? items.indexOf(active) : -1;
-                      const focusAt = (idx: number) => items[idx]?.focus();
-
-                      switch (e.key) {
-                        case "ArrowDown": e.preventDefault(); focusAt(i < 0 ? 0 : (i + 1) % items.length); break;
-                        case "ArrowUp":   e.preventDefault(); focusAt(i < 0 ? items.length - 1 : (i - 1 + items.length) % items.length); break;
-                        case "Home":      e.preventDefault(); focusAt(0); break;
-                        case "End":       e.preventDefault(); focusAt(items.length - 1); break;
-                        case "ArrowLeft":
-                          e.preventDefault();
-                          setFlyout(null);
-                          document.getElementById(headerId)?.focus();
-                          break;
-                        case "Escape":
-                          e.preventDefault();
-                          setFlyout(null); setOpen(false); triggerRef.current?.focus();
-                          break;
-                      }
-                    }}
-                  >
-                    <div className="pointer-events-auto absolute -left-2 top-0 h-full w-2" />
-                    {child.children!.map((leaf) => (
-                      <li key={leaf.label} role="none">
-                        <a
-                          role="menuitem"
-                          href={leaf.href}
-                          target={leaf.target}
-                          rel={leaf.target === "_blank" ? "noopener noreferrer" : undefined}
-                          aria-label={leaf.target === "_blank" ? `${leaf.label} (opens in a new tab)` : undefined}
-                          aria-current={
-                            CURR_PATH && (leaf.href || "").toLowerCase() &&
-                            CURR_PATH.startsWith((leaf.href || "").toLowerCase())
-                              ? "page" : undefined
-                          }
-                          className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#e6efff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-                          tabIndex={-1}
-                        >
-                          {leaf.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              );
-            })() : (
+                <ul
+                  role="menu"
+                  aria-label={`${child.label} submenu`}
+                  className={`absolute top-0 left-full min-w-[20rem] rounded-md ${SUBMENU_BORDER} ${SUBMENU_BG} p-2 shadow-2xl hidden group-hover:block group-focus-within:block`}
+                  // Hover can open; focus within keeps it visible
+                  onFocus={() => setOpen(true)}
+                >
+                  <div className="pointer-events-auto absolute -left-2 top-0 h-full w-2" />
+                  {child.children!.map((leaf) => (
+                    <li key={leaf.label} role="none">
+                      <a
+                        role="menuitem"
+                        href={leaf.href}
+                        target={leaf.target}
+                        rel={leaf.target === "_blank" ? "noopener noreferrer" : undefined}
+                        aria-label={leaf.target === "_blank" ? `${leaf.label} (opens in a new tab)` : undefined}
+                        aria-current={
+                          CURR_PATH && (leaf.href || "").toLowerCase() &&
+                          CURR_PATH.startsWith((leaf.href || "").toLowerCase())
+                            ? "page" : undefined
+                        }
+                        className={[
+                          "block rounded-md px-3 py-2 text-[16px]",
+                          SUBMENU_ITEM_TEXT,
+                          SUBMENU_ITEM_HOVER_BG,
+                          SUBMENU_ITEM_HOVER_TX,
+                          SUBMENU_ITEM_FOCUS
+                        ].join(" ")}
+                        tabIndex={-1}
+                      >
+                        {leaf.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ) : (
               <li key={child.label} role="none">
                 <a
                   role="menuitem"
@@ -706,7 +724,13 @@ function NavItem({ item }: { item: NavNode }) {
                     CURR_PATH.startsWith((child.href || "").toLowerCase())
                       ? "page" : undefined
                   }
-                  className="block rounded-md px-3 py-2 text-[16px] text-slate-900 hover:bg-[#e6efff] hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                  className={[
+                    "block rounded-md px-3 py-2 text-[16px]",
+                    SUBMENU_ITEM_TEXT,
+                    SUBMENU_ITEM_HOVER_BG,
+                    SUBMENU_ITEM_HOVER_TX,
+                    SUBMENU_ITEM_FOCUS
+                  ].join(" ")}
                   tabIndex={-1}
                 >
                   {child.label}
@@ -719,7 +743,6 @@ function NavItem({ item }: { item: NavNode }) {
     </li>
   );
 }
-
 
 /* ---------------- Mobile group + item ---------------- */
 function MobileGroup({ group }: { group: NavGroup }) {
