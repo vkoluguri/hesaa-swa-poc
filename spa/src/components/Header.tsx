@@ -664,25 +664,29 @@ function NavItem({ item }: { item: NavNode }) {
                   aria-expanded="false"
                   tabIndex={-1}
                  onKeyDown={(e) => {
-                  // → into the flyout: focus the first item inside the child <ul role="menu">
                   if (e.key === "ArrowRight") {
                     e.preventDefault();
-                    const first =
-                      (e.currentTarget.parentElement as HTMLElement | null)
-                        ?.querySelector<HTMLElement>(
-                          'ul[role="menu"] a[role="menuitem"], ul[role="menu"] button[role="menuitem"]'
-                        );
+
+                    // find this item's submenu, then its first focusable menuitem
+                    const parent = (e.currentTarget as HTMLElement).parentElement as HTMLElement | null;
+                    const submenu = parent?.querySelector('ul[role="menu"]') as HTMLElement | null;
+                    const first = submenu?.querySelector<HTMLElement>('[role="menuitem"]');
+
                     first?.focus();
                   }
 
-                  // ← back to the parent trigger (the group header's owning submenu trigger)
                   if (e.key === "ArrowLeft") {
                     e.preventDefault();
-                    const parentTrigger = document.querySelector<HTMLElement>(
-                      `[aria-controls="${submenuId}"]`
-                    );
-                    parentTrigger?.focus();
+
+                    // Return focus to the parent trigger (button or link)
+                    const parent = (e.currentTarget as HTMLElement).parentElement as HTMLElement | null;
+                    const trigger =
+                      parent?.querySelector<HTMLElement>('button[role="menuitem"], a[role="menuitem"]') ??
+                      (e.currentTarget as HTMLElement).closest<HTMLElement>('button[role="menuitem"], a[role="menuitem"]');
+
+                    trigger?.focus();
                   }
+
                 }}
                 >
                   <span className="flex-1">{child.label}</span>
