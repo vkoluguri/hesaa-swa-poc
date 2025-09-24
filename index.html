@@ -1,45 +1,49 @@
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Home | New Jersey Student Financial Aid | HESAA</title>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-  <!-- SEO -->
-  <meta name="description" content="Official website of New Jersey’s Higher Education Student Assistance Authority (HESAA). Learn about state grants & scholarships, NJCLASS family loans, NJBEST 529, deadlines, and financial aid resources." />
-  <link rel="canonical" href="https://www.hesaa.org/" />
-  <meta name="robots" content="index,follow,max-image-preview:large" />
+    <title>Home | New Jersey Student Financial Aid | HESAA</title>
 
-  <!-- Social cards -->
-  <meta property="og:site_name" content="HESAA" />
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="New Jersey Student Financial Aid | HESAA" />
-  <meta property="og:description" content="Grants & scholarships, NJCLASS loans, NJBEST 529, and financial aid resources for New Jersey students and families." />
-  <meta property="og:url" content="https://www.hesaa.org/" />
-  <meta property="og:image" content="/assets/social/hesaa-share.jpg" />
-  <meta name="twitter:card" content="summary_large_image" />
+    <!-- Canonical (point to production root) -->
+    <link rel="canonical" href="https://www.hesaa.org/" />
 
-  <!-- Favicon + PWA-ish bits -->
-  <link rel="icon" href="/assets/HESAAFAVICON.ico" sizes="any" />
-  <link rel="apple-touch-icon" href="/assets/HESAALogo.png" />
-  <meta name="theme-color" content="#0a2c5f" />
+    <!-- Meta description (keep ~155 chars) -->
+    <meta name="description"
+          content="Official site of New Jersey’s Higher Education Student Assistance Authority (HESAA). Learn about grants, scholarships, NJCLASS loans, and student aid resources." />
 
-  <!-- Compiled Tailwind CSS -->
-  <link rel="stylesheet" href="/assets/app/hesaa-homepage.css" />
-  <style>
-    #gt-container select { width: 100% !important; }
-    #gt-container .skiptranslate iframe { display: none !important; }
-  </style>
-</head>
+    <!-- Favicon + PWA-ish bits -->
+    <link rel="icon" href="/assets/HESAAFAVICON.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/assets/HESAALogo.png" />
+    <meta name="theme-color" content="#0a2c5f" />
 
+    <!-- Preload the first carousel image (LCP). 
+         Update the path/size if your first slide changes. -->
+    <link rel="preload"
+          as="image"
+          href="/assets/Grants-Scholarships-Banner2.jpg"
+          imagesrcset="/assets/Grants-Scholarships-Banner2.jpg 1600w"
+          imagesizes="100vw"
+          fetchpriority="high" />
+
+    <!-- Compiled Tailwind CSS -->
+    <link rel="stylesheet" href="/assets/app/hesaa-homepage.css" />
+
+    <style>
+      #gt-container select { width: 100% !important; }
+      #gt-container .skiptranslate iframe { display: none !important; }
+    </style>
+  </head>
   <body class="antialiased bg-white text-slate-900">
-    <!-- Vite/React mount -->
     <div id="root"></div>
 
-   <!-- SPA IIFE bundle -->
-<script src="/assets/app/hesaa-homepage.iife.js" defer></script>
+    <!-- SPA bundle -->
+    <script src="/assets/app/hesaa-homepage.iife.js" defer></script>
 
-<!-- Google Translate loader (callback is created by Header.tsx) -->
-<script id="gt-script" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
-
-
+    <!-- Keep Translate lazy; Lighthouse may still report a 3rd-party cookie (NID). -->
+    <script id="gt-script"
+            src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+            defer></script>
   </body>
 </html>
