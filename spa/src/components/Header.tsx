@@ -1022,22 +1022,29 @@ export default function Header() {
                 <ChevronDown className="size-4" aria-hidden />
               </button>
 
-              <form role="search" aria-label="Site search" action="/search" method="get" className="relative">
-                <label className="sr-only" htmlFor="site-search">Search the site</label>
-<input
-  id="site-search"
-  name="q"
-  type="search"
-  placeholder="Search…"
-  autoComplete="on"        // ← was "search" (invalid). Use "on" or "off".
-  inputMode="search"       // fine to keep
-  enterKeyHint="search"    // optional UX improvement
-  className="w-60 rounded-full border border-slate-300 py-1.5 pl-9 pr-9 text-[13px] placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
-/>
+          <form
+            role="search"
+            aria-label="Site search"
+            action="/search"
+            method="get"
+            className="relative"
+          >
+            <label className="sr-only" htmlFor="site-search">Search the site</label>
+            <input
+              id="site-search"
+              name="q"
+              type="search"
+              placeholder="Search..."
+              autoComplete="off"            // ← fixed (was "search")
+              enterKeyHint="search"         // ← optional but nice
+              className="w-60 rounded-full border border-slate-300 py-1.5 pl-9 pr-9 text-[13px] placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
+            />
+            <Search className="absolute left-2.5 top-1.5 size-4 text-slate-400" aria-hidden="true" />
 
-                <Search className="absolute left-2.5 top-1.5 size-4 text-slate-400" aria-hidden />
-                <button type="submit" className="sr-only">Submit search</button>
-              </form>
+            {/* Hidden submit so Enter still works, but it cannot receive focus */}
+            <input type="submit" hidden tabIndex={-1} aria-hidden="true" />
+          </form>
+
             </div>
           </div>
 
@@ -1082,22 +1089,29 @@ export default function Header() {
                 <span>Translate</span>
               </button>
 
-              <form role="search" aria-label="Site search" action="/search" method="get" className="relative flex-1">
-                <label className="sr-only" htmlFor="m-site-search">Search the site</label>
-<input
-  id="m-site-search"
-  name="q"
-  type="search"
-  placeholder="Search…"
-  autoComplete="on"        // ← fix here too
-  inputMode="search"
-  enterKeyHint="search"
-  className="w-full rounded-full py-2 pl-9 pr-9 text-[16px] leading-6 placeholder:text-black/60 text-slate-900 bg-white/90 shadow ring-1 ring-white/10 border border-white/10"
-/>
+        <form
+          role="search"
+          aria-label="Site search"
+          action="/search"
+          method="get"
+          className="relative flex-1"
+        >
+          <label className="sr-only" htmlFor="m-site-search">Search the site</label>
+          <input
+            id="m-site-search"
+            name="q"
+            type="search"
+            placeholder="Search..."
+            autoComplete="off"            // ← fixed (was "search")
+            enterKeyHint="search"
+            className="w-full rounded-full py-2 pl-9 pr-9 text-[16px] leading-6 placeholder:text-black/60 text-slate-900 bg-white/90 shadow ring-1 ring-white/10 border border-white/10"
+          />
+          <Search className="absolute left-2.5 top-2.5 size-4 text-black/40" aria-hidden="true" />
 
-                <Search className="absolute left-2.5 top-2.5 size-4 text-black/40" aria-hidden />
-                <button type="submit" className="sr-only">Submit search</button>
-              </form>
+          {/* Hidden submit so Enter still works, but it cannot receive focus */}
+          <input type="submit" hidden tabIndex={-1} aria-hidden="true" />
+        </form>
+
             </div>
 
             <div className="border-t border-slate-200/30" />
