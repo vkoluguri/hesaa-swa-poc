@@ -107,15 +107,12 @@ function Carousel() {
 
   const [userPaused, setUserPaused] = useState(false);
   const [hovering, setHovering] = useState(false);
-
-  // 👇 this already exists in your code; we’ll leverage it
-  const [focusWithin, setFocusWithin] = useState(false);
+  const [focusWithin, setFocusWithin] = useState(false); // gate announcements
 
   const autoRun = ready && !userPaused && !hovering && !focusWithin;
   useAccurateTimer(autoRun, 7000, () => setIdx((p) => p + 1));
 
   const trackRef = useRef<HTMLDivElement>(null);
-  const carouselRef = useRef<HTMLElement>(null);
   const liveRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -142,7 +139,7 @@ function Carousel() {
     }
   }, [transitioning]);
 
-  // 🔊 Announce slide only when user is interacting with the carousel
+  // Announce slide changes only while the carousel has focus inside it
   useEffect(() => {
     if (!liveRef.current || !focusWithin) return;
     const realCount = SLIDES.length;
@@ -152,56 +149,24 @@ function Carousel() {
 
   const percent = idx * 100;
 
-  const onKey = (e: React.KeyboardEvent) => {
-    switch (e.key) {
-      case "ArrowRight":
-        e.preventDefault();
-        setIdx((p) => p + 1);
-        break;
-      case "ArrowLeft":
-        e.preventDefault();
-        setIdx((p) => p - 1);
-        break;
-      case "Home":
-        e.preventDefault();
-        setIdx(1);
-        break;
-      case "End":
-        e.preventDefault();
-        setIdx(slides.length - 2);
-        break;
-    }
-  };
-
-  const onFocusCapture = (e: React.FocusEvent) => {
-    if (carouselRef.current && carouselRef.current.contains(e.target as Node)) {
-      setFocusWithin(true);
-    }
-  };
-  const onBlurCapture = (e: React.FocusEvent) => {
-    if (carouselRef.current && !carouselRef.current.contains(e.relatedTarget as Node)) {
-      setFocusWithin(false);
-    }
-  };
-
   const currentRealIndex =
     idx === 0 ? SLIDES.length - 1 : idx === slides.length - 1 ? 0 : idx - 1;
 
   return (
     <section
-      ref={carouselRef}
-      aria-roledescription="carousel"
+      /* Keep this simple: no roledescription, no key handlers at the section */
       aria-label="Promotional banners"
       className="w-full"
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
-      onKeyDown={onKey}
-      onFocusCapture={onFocusCapture}
-      onBlurCapture={onBlurCapture}
+      onFocus={() => setFocusWithin(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) setFocusWithin(false);
+      }}
     >
       <p id="carousel-instructions" className="sr-only">
-        Carousel: use the previous and next buttons or Left and Right arrow keys to navigate.
-        Use the Play or Pause button to control auto-advance. Press Home to go to the first slide and End for the last.
+        Carousel: use the previous and next buttons to navigate. Use the Play or Pause button to
+        control auto-advance.
       </p>
 
       <div className="relative w-full overflow-hidden bg-slate-100" aria-describedby="carousel-instructions">
@@ -219,10 +184,9 @@ function Carousel() {
             return (
               <div
                 key={`${s.src}-${i}`}
-                id={`carousel-slide-${srIndex}`}
+                id={`carousel-slide-${srIndex}`}     // referenced by the dots’ aria-controls
                 className="w-full shrink-0"
-                role="group"
-                aria-roledescription="slide"
+                /* Remove role/roledescription to avoid forcing focus mode */
                 aria-label={`Slide ${srIndex} of ${SLIDES.length}`}
               >
                 {s.href ? (
@@ -237,15 +201,10 @@ function Carousel() {
           })}
         </div>
 
-        {/* Live region — only active when focused inside the carousel */}
-        <div
-          ref={liveRef}
-          className="sr-only"
-          aria-atomic="true"
-          aria-live={focusWithin ? "polite" : "off"}
-        />
+        {/* Live region (always polite; we only write to it while focusWithin=true) */}
+        <div ref={liveRef} className="sr-only" aria-atomic="true" aria-live="polite" />
 
-        {/* Controls (unchanged) */}
+        {/* Controls */}
         <div className="absolute inset-x-0 bottom-2 flex items-center justify-center gap-4">
           <button
             type="button"
@@ -257,18 +216,15 @@ function Carousel() {
             <span>{userPaused ? "Play" : "Pause"}</span>
           </button>
 
-          {/* Dots */}
-          <div className="hidden md:flex gap-2" role="tablist" aria-label="Carousel slide navigation">
+          {/* Dots (tabs not needed; simple buttons are clearer for SRs) */}
+          <div className="hidden md:flex gap-2" aria-label="Carousel slide navigation">
             {SLIDES.map((_, realI) => {
               const selected = realI === currentRealIndex;
               return (
                 <button
                   key={realI}
-                  role="tab"
-                  aria-selected={selected}
+                  aria-current={selected ? "true" : undefined}
                   aria-label={`Go to slide ${realI + 1} of ${SLIDES.length}`}
-                  aria-controls={`carousel-slide-${realI + 1}`}
-                  tabIndex={selected ? 0 : -1}
                   onClick={() => setIdx(realI + 1)}
                   className={`h-3 w-3 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white ${
                     selected ? "bg-white shadow ring-1 ring-black/20" : "bg-white/70 hover:bg-white"
@@ -279,10 +235,14 @@ function Carousel() {
           </div>
         </div>
 
-        {/* Arrows */}
+        {/* Arrows: handle keys only on the buttons themselves (no global keydown) */}
         <button
           aria-label="Previous slide"
           onClick={() => setIdx((p) => p - 1)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowLeft") { e.preventDefault(); setIdx((p) => p - 1); }
+            if (e.key === "ArrowRight") { e.preventDefault(); setIdx((p) => p + 1); }
+          }}
           className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 z-10 inline-flex items-center justify-center rounded-full
                      h-10 w-10 lg:h-16 lg:w-16 bg-black/55 hover:bg-black/65 text-white backdrop-blur-[1px] shadow
                      focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
@@ -296,6 +256,10 @@ function Carousel() {
         <button
           aria-label="Next slide"
           onClick={() => setIdx((p) => p + 1)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowRight") { e.preventDefault(); setIdx((p) => p + 1); }
+            if (e.key === "ArrowLeft")  { e.preventDefault(); setIdx((p) => p - 1); }
+          }}
           className="absolute right-3 md:right-5 top-1/2 -translate-y-1/2 z-10 inline-flex items-center justify-center rounded-full
                      h-10 w-10 lg:h-16 lg:w-16 bg-black/55 hover:bg-black/65 text-white backdrop-blur-[1px] shadow
                      focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
@@ -309,6 +273,7 @@ function Carousel() {
     </section>
   );
 }
+
 
 
 /* =========================
