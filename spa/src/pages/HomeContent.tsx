@@ -419,88 +419,81 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
 
 {/* News + Events */}
 <section className="mt-12 py-10" aria-labelledby="news-and-events">
-  {/* Section heading for label/landmark */}
   <h2 id="news-and-events" className="sr-only">News and Events</h2>
 
   <div className={`${CONTAINER} grid lg:grid-cols-2 gap-8`}>
-    {/* Recent News */}
-    <div aria-labelledby="recent-news-title">
-  <h3
-    id="recent-news-title"
-    className={`flex items-center justify-center gap-2 text-3xl md:text-4xl font-semibold ${HEAD_COLOR} mb-4`}
-  >
-    <Newspaper className="size-7 md:size-8" aria-hidden="true" />
-    Recent News
-  </h3>
 
-  <ul className="space-y-3">
-    {[
-      { date: "Aug 14, 2025", title: "RFP Depository Banking Services", href: "#" }, // placeholder
-      { date: "Jul 18, 2025", title: "HESAA Board Meeting Notice", href: "/Pages/HESAABoardInfo.aspx" },
-      { date: "Jul 16, 2025", title: "WTC Scholarship Fund Board Meeting", href: "/Pages/wtcboardmeetings.aspx" },
-      { date: "Jun 14, 2025", title: "NJBEST 529 & Financial Aid in NJ", href: "/pages/NJBESTHome.aspx" },
-    ].map((n) => {
-      const [mon, dayComma, year] = n.date.split(" ");
-      const day = dayComma.replace(",", "");
-      const iso = `${year}-${MONTH_TO_NUM[mon]}-${day.padStart(2, "0")}`;
+    {/* Recent News (own region) */}
+    <section aria-labelledby="recent-news-title">
+      <h3
+        id="recent-news-title"
+        className={`flex items-center justify-center gap-2 text-3xl md:text-4xl font-semibold ${HEAD_COLOR} mb-4`}
+      >
+        <Newspaper className="size-7 md:size-8" aria-hidden="true" />
+        Recent News
+      </h3>
 
-      const isLive = n.href && n.href !== "#";
+      <ul className="space-y-3">
+        {[
+          { date: "Aug 14, 2025", title: "RFP Depository Banking Services", href: "#" }, // placeholder
+          { date: "Jul 18, 2025", title: "HESAA Board Meeting Notice", href: "/Pages/HESAABoardInfo.aspx" },
+          { date: "Jul 16, 2025", title: "WTC Scholarship Fund Board Meeting", href: "/Pages/wtcboardmeetings.aspx" },
+          { date: "Jun 14, 2025", title: "NJBEST 529 & Financial Aid in NJ", href: "/pages/NJBESTHome.aspx" },
+        ].map((n) => {
+          const [mon, dayComma, year] = n.date.split(" ");
+          const day = dayComma.replace(",", "");
+          const iso = `${year}-${MONTH_TO_NUM[mon]}-${day.padStart(2, "0")}`;
+          const isLive = n.href && n.href !== "#";
 
-      const CardInner = (
-        <>
-          {/* semantic date */}
-          <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
-            <div className="text-[20px] font-bold">{mon}</div>
-            <time className="text-[20px] opacity-90 block" dateTime={iso}>
-              {day}
-            </time>
-          </div>
+          const CardInner = (
+            <>
+              <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
+                <div className="text-[20px] font-bold">{mon}</div>
+                <time className="text-[20px] opacity-90 block" dateTime={iso}>
+                  {day}
+                </time>
+              </div>
 
-          <div className="flex items-center gap-2 font-medium text-slate-900 text-[17px] md:text-[19px] leading-snug">
-            <span>{n.title}</span>
-            {!isLive && (
-              <>
-                <span
-                  aria-hidden="true"
-                  className="ml-2 inline-flex rounded-full bg-slate-200 text-slate-700 text-xs px-2 py-0.5"
+              <div className="flex items-center gap-2 font-medium text-slate-900 text-[17px] md:text-[19px] leading-snug">
+                <span>{n.title}</span>
+                {!isLive && (
+                  <span className="ml-2 inline-flex rounded-full bg-slate-200 text-slate-700 text-xs px-2 py-0.5">
+                    Coming soon
+                  </span>
+                )}
+              </div>
+            </>
+          );
+
+          return (
+            <li key={n.title}>
+              {isLive ? (
+                <a
+                  href={n.href}
+                  className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER}
+                              px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition
+                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
                 >
-                  Coming soon
-                </span>
-                <span className="sr-only">(coming soon)</span>
-              </>
-            )}
-          </div>
-        </>
-      );
+                  {CardInner}
+                </a>
+              ) : (
+                // Non-interactive placeholder; announced via virtual cursor, skipped by Tab (intended)
+                <div
+                  className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER}
+                              px-5 py-4 opacity-90`}
+                  aria-label={`${n.title} (coming soon)`}
+                >
+                  {CardInner}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
 
-      return (
-        <li key={n.title}>
-          {isLive ? (
-            // Normal, interactive link
-            <a
-              href={n.href}
-              className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER} px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
-            >
-              {CardInner}
-            </a>
-          ) : (
-            // Placeholder: NON-interactive block (no aria-disabled, not focusable)
-            <div
-              className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER} px-5 py-4 opacity-90 cursor-not-allowed`}
-              aria-label={`${n.title} (coming soon)`}
-            >
-              {CardInner}
-            </div>
-          )}
-        </li>
-      );
-    })}
-  </ul>
-</div>
-
-
-    {/* Events */}
-    <div aria-labelledby="events-title">
+    {/* Events (own region) */}
+    <section aria-labelledby="events-title">
       <h3
         id="events-title"
         className={`flex items-center justify-center gap-2 text-3xl md:text-4xl font-semibold ${HEAD_COLOR} mb-4`}
@@ -520,7 +513,9 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
             <li key={e.title}>
               <a
                 href={e.href}
-                className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER} px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
+                className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER}
+                            px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition
+                            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
               >
                 <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
                   <div className="text-[18px] font-bold">{e.m}</div>
@@ -537,9 +532,11 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
           );
         })}
       </ul>
-    </div>
+    </section>
+
   </div>
 </section>
+
 
     </main>
   );
