@@ -975,7 +975,7 @@ export default function Header() {
                 href="https://nj.gov/governor/"
                 className="hover:underline"
                 rel="noopener noreferrer"
-                aria-label="New Jersey Governor, Philip D. Murphy — official website"
+                aria-label="Link to New Jersey Governor, Philip D. Murphy — official website"
               >
                 Governor Philip D. Murphy
               </a>
@@ -984,7 +984,7 @@ export default function Header() {
                 href="https://nj.gov/governor/admin/lt/"
                 className="hover:underline"
                 rel="noopener noreferrer"
-                aria-label="New Jersey Lieutenant Governor, Tahesha L. Way — official website"
+                aria-label="Link to New Jersey Lieutenant Governor, Tahesha L. Way — official website"
               >
                 Lt. Governor Tahesha L. Way
               </a>
@@ -1022,33 +1022,27 @@ export default function Header() {
                 <ChevronDown className="size-4" aria-hidden />
               </button>
 
-        <form role="search" aria-label="Site search" action="/search" method="get" className="relative">
-          <label htmlFor="site-search" className="sr-only">
-            Search the site
-          </label>
-          <input
-            id="site-search"
-            name="q"
-            type="search"
-            placeholder="Search..."
-            autoComplete="off"
-            inputMode="search"
-            className="w-60 rounded-full border border-slate-300 py-1.5 pl-9 pr-9 text-[13px] 
-                      placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
-          />
-          <svg
-            aria-hidden="true"
-            className="absolute left-2.5 top-1.5 size-4 text-slate-400"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
-          </svg>
-          <button type="submit" className="sr-only">Submit search</button>
-        </form>
-
+<form role="search" aria-label="Site search" action="/search" method="get" className="relative">
+  <label htmlFor="site-search" className="sr-only">Search the site</label>
+  <input
+    id="site-search"
+    name="q"
+    type="search"
+    autoComplete="on"
+    placeholder="Search..."
+    className="w-60 rounded-full border border-slate-300 py-1.5 pl-9 pr-9 text-[13px] placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
+  />
+  {/* Icon button — visible, focusable, labeled */}
+  <button
+    type="submit"
+    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-full text-slate-500 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+    aria-label="Submit search"
+  >
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4">
+      <path fill="currentColor" d="M21 20l-5.6-5.6a8 8 0 1 0-1.4 1.4L20 21zM4 10a6 6 0 1 1 12 0 6 6 0 0 1-12 0z"/>
+    </svg>
+  </button>
+</form>
 
             </div>
           </div>

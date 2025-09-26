@@ -107,9 +107,11 @@ function Carousel() {
 
   const [userPaused, setUserPaused] = useState(false);
   const [hovering, setHovering] = useState(false);
-  const [focusWithin, setFocusWithin] = useState(false);
-  const autoRun = ready && !userPaused && !hovering && !focusWithin;
 
+  // 👇 this already exists in your code; we’ll leverage it
+  const [focusWithin, setFocusWithin] = useState(false);
+
+  const autoRun = ready && !userPaused && !hovering && !focusWithin;
   useAccurateTimer(autoRun, 7000, () => setIdx((p) => p + 1));
 
   const trackRef = useRef<HTMLDivElement>(null);
@@ -140,13 +142,13 @@ function Carousel() {
     }
   }, [transitioning]);
 
-  // concise SR updates
+  // 🔊 Announce slide only when user is interacting with the carousel
   useEffect(() => {
-    if (!liveRef.current) return;
+    if (!liveRef.current || !focusWithin) return;
     const realCount = SLIDES.length;
     const realIndex = idx === 0 ? realCount : idx === slides.length - 1 ? 1 : idx;
     liveRef.current.textContent = `Slide ${realIndex} of ${realCount}`;
-  }, [idx, slides.length]);
+  }, [idx, slides.length, focusWithin]);
 
   const percent = idx * 100;
 
@@ -182,7 +184,8 @@ function Carousel() {
     }
   };
 
-  const currentRealIndex = idx === 0 ? SLIDES.length - 1 : idx === slides.length - 1 ? 0 : idx - 1;
+  const currentRealIndex =
+    idx === 0 ? SLIDES.length - 1 : idx === slides.length - 1 ? 0 : idx - 1;
 
   return (
     <section
@@ -214,15 +217,14 @@ function Carousel() {
             else if (i === slides.length - 1) srIndex = 1;
 
             return (
-<div
-  key={`${s.src}-${i}`}
-  id={`carousel-slide-${srIndex}`}   // NEW
-  className="w-full shrink-0"
-  role="group"
-  aria-roledescription="slide"
-  aria-label={`Slide ${srIndex} of ${SLIDES.length}`}
->
-
+              <div
+                key={`${s.src}-${i}`}
+                id={`carousel-slide-${srIndex}`}
+                className="w-full shrink-0"
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`Slide ${srIndex} of ${SLIDES.length}`}
+              >
                 {s.href ? (
                   <a href={s.href} className="block focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/40">
                     <img src={s.src} alt={s.alt} className="block w-full h-auto select-none" draggable={false} />
@@ -235,10 +237,15 @@ function Carousel() {
           })}
         </div>
 
-        {/* Live region */}
-        <div aria-live="polite" aria-atomic="true" className="sr-only" ref={liveRef} />
+        {/* Live region — only active when focused inside the carousel */}
+        <div
+          ref={liveRef}
+          className="sr-only"
+          aria-atomic="true"
+          aria-live={focusWithin ? "polite" : "off"}
+        />
 
-        {/* Controls */}
+        {/* Controls (unchanged) */}
         <div className="absolute inset-x-0 bottom-2 flex items-center justify-center gap-4">
           <button
             type="button"
@@ -250,84 +257,59 @@ function Carousel() {
             <span>{userPaused ? "Play" : "Pause"}</span>
           </button>
 
-
-{/* Dots (desktop only) */}
-<div
-  className="hidden md:flex gap-2"
-  role="tablist"
-  aria-label="Carousel slide navigation"
->
-  {SLIDES.map((_, realI) => {
-    const selected = realI === currentRealIndex;
-    return (
-      <button
-        key={realI}
-        role="tab"
-        aria-selected={selected}
-        aria-label={`Go to slide ${realI + 1} of ${SLIDES.length}`}
-        aria-controls={`carousel-slide-${realI + 1}`}
-        tabIndex={selected ? 0 : -1}
-        onClick={() => setIdx(realI + 1)}
-        className={`h-3 w-3 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white ${
-          selected
-            ? "bg-white shadow ring-1 ring-black/20"
-            : "bg-white/70 hover:bg-white"
-        }`}
-      />
-    );
-  })}
-</div>
-
+          {/* Dots */}
+          <div className="hidden md:flex gap-2" role="tablist" aria-label="Carousel slide navigation">
+            {SLIDES.map((_, realI) => {
+              const selected = realI === currentRealIndex;
+              return (
+                <button
+                  key={realI}
+                  role="tab"
+                  aria-selected={selected}
+                  aria-label={`Go to slide ${realI + 1} of ${SLIDES.length}`}
+                  aria-controls={`carousel-slide-${realI + 1}`}
+                  tabIndex={selected ? 0 : -1}
+                  onClick={() => setIdx(realI + 1)}
+                  className={`h-3 w-3 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+                    selected ? "bg-white shadow ring-1 ring-black/20" : "bg-white/70 hover:bg-white"
+                  }`}
+                />
+              );
+            })}
+          </div>
         </div>
 
-{/* Arrows: round buttons; bigger arrows on desktop */}
-<button
-  aria-label="Previous slide"
-  onClick={() => setIdx((p) => p - 1)}
-  className="
-    absolute left-3 md:left-5 top-1/2 -translate-y-1/2 z-10
-    inline-flex items-center justify-center rounded-full
-    h-10 w-10 lg:h-16 lg:w-16
-    bg-black/55 hover:bg-black/65 text-white
-    backdrop-blur-[1px] shadow
-    focus:outline-none focus-visible:ring-2 focus-visible:ring-white
-  "
->
-  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-7 w-7 lg:h-12 lg:w-12">
-    <path
-      fill="currentColor"
-      d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"
-    />
-  </svg>
-  <span className="sr-only">Previous</span>
-</button>
+        {/* Arrows */}
+        <button
+          aria-label="Previous slide"
+          onClick={() => setIdx((p) => p - 1)}
+          className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 z-10 inline-flex items-center justify-center rounded-full
+                     h-10 w-10 lg:h-16 lg:w-16 bg-black/55 hover:bg-black/65 text-white backdrop-blur-[1px] shadow
+                     focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="h-7 w-7 lg:h-12 lg:w-12">
+            <path fill="currentColor" d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+          </svg>
+          <span className="sr-only">Previous</span>
+        </button>
 
-<button
-  aria-label="Next slide"
-  onClick={() => setIdx((p) => p + 1)}
-  className="
-    absolute right-3 md:right-5 top-1/2 -translate-y-1/2 z-10
-    inline-flex items-center justify-center rounded-full
-    h-10 w-10 lg:h-16 lg:w-16
-    bg-black/55 hover:bg-black/65 text-white
-    backdrop-blur-[1px] shadow
-    focus:outline-none focus-visible:ring-2 focus-visible:ring-white
-  "
->
-  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-7 w-7 lg:h-12 lg:w-12">
-    <path
-      fill="currentColor"
-      d="m8.59 16.59 1.41 1.41 6-6-6-6-1.41 1.41L13.17 12z"
-    />
-  </svg>
-  <span className="sr-only">Next</span>
-</button>
-
-
+        <button
+          aria-label="Next slide"
+          onClick={() => setIdx((p) => p + 1)}
+          className="absolute right-3 md:right-5 top-1/2 -translate-y-1/2 z-10 inline-flex items-center justify-center rounded-full
+                     h-10 w-10 lg:h-16 lg:w-16 bg-black/55 hover:bg-black/65 text-white backdrop-blur-[1px] shadow
+                     focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="h-7 w-7 lg:h-12 lg:w-12">
+            <path fill="currentColor" d="m8.59 16.59 1.41 1.41 6-6-6-6-1.41 1.41L13.17 12z" />
+          </svg>
+          <span className="sr-only">Next</span>
+        </button>
       </div>
     </section>
   );
 }
+
 
 /* =========================
    Spotlight (equal height, no letterbox)
