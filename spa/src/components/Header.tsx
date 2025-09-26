@@ -1022,27 +1022,59 @@ export default function Header() {
                 <ChevronDown className="size-4" aria-hidden />
               </button>
 
-<form role="search" aria-label="Site search" action="/search" method="get" className="relative">
-  <label htmlFor="site-search" className="sr-only">Search the site</label>
+<form
+  role="search"
+  aria-label="Site search"
+  action="/search"
+  method="get"
+  className="relative"
+>
+  {/* Accessible name for the field (screen-reader visible) */}
+  <label htmlFor="site-search" className="sr-only">
+    Search the HESAA website
+  </label>
+
+  {/* Search input */}
   <input
     id="site-search"
     name="q"
     type="search"
-    autoComplete="on"
-    placeholder="Search..."
-    className="w-60 rounded-full border border-slate-300 py-1.5 pl-9 pr-9 text-[13px] placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
+    placeholder="Search…"
+    autoComplete="on"           // ✅ valid token; do NOT use "search"
+    inputMode="search"
+    className="w-60 rounded-full border border-slate-300 py-1.5 pl-9 pr-[4.5rem] text-[13px]
+               placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
   />
-  {/* Icon button — visible, focusable, labeled */}
+
+  {/* Decorative search icon (not focusable) */}
+  <svg
+    aria-hidden="true"
+    className="absolute left-2.5 top-1.5 size-4 text-slate-400 pointer-events-none"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="11" cy="11" r="7" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+
+  {/* Visible submit button (fixes axe focus issues) */}
   <button
     type="submit"
-    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-full text-slate-500 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+    className="absolute right-1.5 top-1/2 -translate-y-1/2
+               rounded-full px-3 py-1.5 text-xs font-medium
+               bg-blue-600 text-white hover:bg-blue-700
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
     aria-label="Submit search"
   >
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4">
-      <path fill="currentColor" d="M21 20l-5.6-5.6a8 8 0 1 0-1.4 1.4L20 21zM4 10a6 6 0 1 1 12 0 6 6 0 0 1-12 0z"/>
-    </svg>
+    Search
   </button>
 </form>
+
+
 
             </div>
           </div>
