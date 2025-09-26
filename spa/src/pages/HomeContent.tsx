@@ -425,48 +425,79 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
   <div className={`${CONTAINER} grid lg:grid-cols-2 gap-8`}>
     {/* Recent News */}
     <div aria-labelledby="recent-news-title">
-      <h3
-        id="recent-news-title"
-        className={`flex items-center justify-center gap-2 text-3xl md:text-4xl font-semibold ${HEAD_COLOR} mb-4`}
-      >
-        <Newspaper className="size-7 md:size-8" aria-hidden="true" />
-        Recent News
-      </h3>
+  <h3
+    id="recent-news-title"
+    className={`flex items-center justify-center gap-2 text-3xl md:text-4xl font-semibold ${HEAD_COLOR} mb-4`}
+  >
+    <Newspaper className="size-7 md:size-8" aria-hidden="true" />
+    Recent News
+  </h3>
 
-      <ul className="space-y-3">
-        {[
-          { date: "Aug 14, 2025", title: "RFP Depository Banking Services", href: "#" },
-          { date: "Jul 18, 2025", title: "HESAA Board Meeting Notice", href: "#" },
-          { date: "Jul 16, 2025", title: "WTC Scholarship Fund Board Meeting", href: "#" },
-          { date: "Jun 14, 2025", title: "NJBEST 529 & Financial Aid in NJ", href: "#" },
-        ].map((n) => {
-          // Build ISO date for <time datetime="">
-          const [mon, dayComma, year] = n.date.split(" ");
-          const day = dayComma.replace(",", "");
-          const iso = `${year}-${MONTH_TO_NUM[mon]}-${day.padStart(2, "0")}`;
-          return (
-            <li key={n.title}>
-              <a
-                href="#" role="link" aria-disabled="true" onClick={(e)=>e.preventDefault()}
-                className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER} px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
-              >
-                {/* semantic date */}
-                <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
-                  <div className="text-[20px] font-bold">{mon}</div>
-                  <time className="text-[20px] opacity-90 block" dateTime={iso}>
-                    {day}
-                  </time>
-                </div>
+  <ul className="space-y-3">
+    {[
+      { date: "Aug 14, 2025", title: "RFP Depository Banking Services", href: "#" }, // placeholder
+      { date: "Jul 18, 2025", title: "HESAA Board Meeting Notice", href: "/Pages/HESAABoardInfo.aspx" },
+      { date: "Jul 16, 2025", title: "WTC Scholarship Fund Board Meeting", href: "/Pages/wtcboardmeetings.aspx" },
+      { date: "Jun 14, 2025", title: "NJBEST 529 & Financial Aid in NJ", href: "/pages/NJBESTHome.aspx" },
+    ].map((n) => {
+      const [mon, dayComma, year] = n.date.split(" ");
+      const day = dayComma.replace(",", "");
+      const iso = `${year}-${MONTH_TO_NUM[mon]}-${day.padStart(2, "0")}`;
 
-                <div className="font-medium text-slate-900 text-[17px] md:text-[19px] leading-snug">
-                  {n.title}
-                </div>
-              </a>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+      const isLive = n.href && n.href !== "#";
+
+      const CardInner = (
+        <>
+          {/* semantic date */}
+          <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
+            <div className="text-[20px] font-bold">{mon}</div>
+            <time className="text-[20px] opacity-90 block" dateTime={iso}>
+              {day}
+            </time>
+          </div>
+
+          <div className="flex items-center gap-2 font-medium text-slate-900 text-[17px] md:text-[19px] leading-snug">
+            <span>{n.title}</span>
+            {!isLive && (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="ml-2 inline-flex rounded-full bg-slate-200 text-slate-700 text-xs px-2 py-0.5"
+                >
+                  Coming soon
+                </span>
+                <span className="sr-only">(coming soon)</span>
+              </>
+            )}
+          </div>
+        </>
+      );
+
+      return (
+        <li key={n.title}>
+          {isLive ? (
+            // Normal, interactive link
+            <a
+              href={n.href}
+              className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER} px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
+            >
+              {CardInner}
+            </a>
+          ) : (
+            // Placeholder: NON-interactive block (no aria-disabled, not focusable)
+            <div
+              className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER} px-5 py-4 opacity-90 cursor-not-allowed`}
+              aria-label={`${n.title} (coming soon)`}
+            >
+              {CardInner}
+            </div>
+          )}
+        </li>
+      );
+    })}
+  </ul>
+</div>
+
 
     {/* Events */}
     <div aria-labelledby="events-title">
