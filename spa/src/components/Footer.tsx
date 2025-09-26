@@ -247,9 +247,23 @@ export default function Footer() {
           </a>
 
           {/* Copyright (wraps gracefully) */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-white text-[14px] sm:text-[15px] leading-snug sm:leading-6 break-words whitespace-normal max-w-full">
             © {year} Higher Education Student Assistance Authority
           </p>
+
+          <a
+            href="#top"
+            className="inline-flex items-center gap-2 rounded-full border border-white/30
+                      px-3 py-1.5 text-[14px] text-white/90 hover:bg-white/10
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            <span aria-hidden="true">↑</span>
+            Back to top
+          </a>
+        </div>
+
+
         </div>
       </div>
     </footer>

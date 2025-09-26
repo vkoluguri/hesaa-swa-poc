@@ -937,7 +937,7 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="w-full">
+    <header id="top" className="w-full">
       {/* A11y: skip link to main landmark */}
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:bg-white focus:text-blue-700 focus:px-3 focus:py-2 focus:rounded-md">
         Skip to main content
@@ -1022,28 +1022,33 @@ export default function Header() {
                 <ChevronDown className="size-4" aria-hidden />
               </button>
 
-          <form
-            role="search"
-            aria-label="Site search"
-            action="/search"
-            method="get"
-            className="relative"
+        <form role="search" aria-label="Site search" action="/search" method="get" className="relative">
+          <label htmlFor="site-search" className="sr-only">
+            Search the site
+          </label>
+          <input
+            id="site-search"
+            name="q"
+            type="search"
+            placeholder="Search..."
+            autoComplete="off"
+            inputMode="search"
+            className="w-60 rounded-full border border-slate-300 py-1.5 pl-9 pr-9 text-[13px] 
+                      placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
+          />
+          <svg
+            aria-hidden="true"
+            className="absolute left-2.5 top-1.5 size-4 text-slate-400"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
           >
-            <label className="sr-only" htmlFor="site-search">Search the site</label>
-            <input
-              id="site-search"
-              name="q"
-              type="search"
-              placeholder="Search..."
-              autoComplete="off"            // ← fixed (was "search")
-              enterKeyHint="search"         // ← optional but nice
-              className="w-60 rounded-full border border-slate-300 py-1.5 pl-9 pr-9 text-[13px] placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30"
-            />
-            <Search className="absolute left-2.5 top-1.5 size-4 text-slate-400" aria-hidden="true" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+          </svg>
+          <button type="submit" className="sr-only">Submit search</button>
+        </form>
 
-            {/* Hidden submit so Enter still works, but it cannot receive focus */}
-            <input type="submit" hidden tabIndex={-1} aria-hidden="true" />
-          </form>
 
             </div>
           </div>
