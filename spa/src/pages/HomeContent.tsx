@@ -433,63 +433,42 @@ export default function HomeContent({ showBreadcrumb = false }: { showBreadcrumb
         Recent News
       </h3>
 
-      <ul className="space-y-3">
-        {[
-          { date: "Aug 14, 2025", title: "RFP Depository Banking Services", href: "#" }, // placeholder
-          { date: "Jul 18, 2025", title: "HESAA Board Meeting Notice", href: "/Pages/HESAABoardInfo.aspx" },
-          { date: "Jul 16, 2025", title: "WTC Scholarship Fund Board Meeting", href: "/Pages/wtcboardmeetings.aspx" },
-          { date: "Jun 14, 2025", title: "NJBEST 529 & Financial Aid in NJ", href: "/pages/NJBESTHome.aspx" },
-        ].map((n) => {
-          const [mon, dayComma, year] = n.date.split(" ");
-          const day = dayComma.replace(",", "");
-          const iso = `${year}-${MONTH_TO_NUM[mon]}-${day.padStart(2, "0")}`;
-          const isLive = n.href && n.href !== "#";
+<ul className="space-y-3">
+  {[
+    { date: "Aug 14, 2025", title: "RFP Depository Banking Services", href: "/Pages/Procurements.aspx" },
+    { date: "Jul 18, 2025", title: "HESAA Board Meeting Notice", href: "/Pages/HESAABoardInfo.aspx" },
+    { date: "Jul 16, 2025", title: "WTC Scholarship Fund Board Meeting", href: "/Pages/wtcboardmeetings.aspx" },
+    { date: "Jun 14, 2025", title: "NJBEST 529 & Financial Aid in NJ", href: "/pages/NJBESTHome.aspx" },
+  ].map((n) => {
+    const [mon, dayComma, year] = n.date.split(" ");
+    const day = dayComma.replace(",", "");
+    const iso = `${year}-${MONTH_TO_NUM[mon]}-${day.padStart(2, "0")}`;
 
-          const CardInner = (
-            <>
-              <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
-                <div className="text-[20px] font-bold">{mon}</div>
-                <time className="text-[20px] opacity-90 block" dateTime={iso}>
-                  {day}
-                </time>
-              </div>
+    return (
+      <li key={n.title}>
+        <a
+          href={n.href}
+          className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER}
+                      px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
+        >
+          {/* semantic date */}
+          <div className="shrink-0 rounded-md bg-blue-700 text-white px-3 py-2 text-center leading-none">
+            <div className="text-[20px] font-bold">{mon}</div>
+            <time className="text-[20px] opacity-90 block" dateTime={iso}>
+              {day}
+            </time>
+          </div>
 
-              <div className="flex items-center gap-2 font-medium text-slate-900 text-[17px] md:text-[19px] leading-snug">
-                <span>{n.title}</span>
-                {!isLive && (
-                  <span className="ml-2 inline-flex rounded-full bg-slate-200 text-slate-700 text-xs px-2 py-0.5">
-                    Coming soon
-                  </span>
-                )}
-              </div>
-            </>
-          );
+          <div className="font-medium text-slate-900 text-[17px] md:text-[19px] leading-snug">
+            {n.title}
+          </div>
+        </a>
+      </li>
+    );
+  })}
+</ul>
 
-          return (
-            <li key={n.title}>
-              {isLive ? (
-                <a
-                  href={n.href}
-                  className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER}
-                              px-5 py-4 shadow hover:shadow-md hover:-translate-y-0.5 transition
-                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
-                >
-                  {CardInner}
-                </a>
-              ) : (
-                // Non-interactive placeholder; announced via virtual cursor, skipped by Tab (intended)
-                <div
-                  className={`flex items-center gap-4 rounded-xl ${CARD_BG} ${CARD_BORDER}
-                              px-5 py-4 opacity-90`}
-                  aria-label={`${n.title} (coming soon)`}
-                >
-                  {CardInner}
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
     </section>
 
     {/* Events (own region) */}
